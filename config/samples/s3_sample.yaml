@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-consumer-secret
+data:
+  host: YW1xcDovL3VzZXI6UEFTU1dPUkRAcmFiYml0bXEuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbDo1Njcy
+---
+apiVersion: cloud.vance/v1alpha1
+kind: Connector
+metadata:
+  name: rabbitmq-connector-sample
+spec:
+  type: rabbitmq
+  containers:
+    - name: rabbitmq-connector-sample
+      image: jeffhollan/rabbitmq-client:dev
+      imagePullPolicy: Always
+      command:
+        - receive
+      args:
+        - "amqp://user:PASSWORD@rabbitmq.default.svc.cluster.local:5672"

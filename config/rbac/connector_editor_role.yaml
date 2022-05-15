@@ -1,0 +1,24 @@
+# permissions for end users to edit connectors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: connector-editor-role
+rules:
+- apiGroups:
+  - vance.io
+  resources:
+  - connectors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - vance.io
+  resources:
+  - connectors/status
+  verbs:
+  - get

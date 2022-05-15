@@ -1,0 +1,15 @@
+domain: vance.io
+layout:
+- go.kubebuilder.io/v3
+projectName: vance
+repo: github.com/linkall-labs/vance
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: vance.io
+  kind: Connector
+  path: github.com/linkall-labs/vance/api/v1alpha1
+  version: v1alpha1
+version: "3"
