@@ -1184,7 +1184,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: controller:latest
+        image: docker.io/vancehub/vance:1.0.0
         livenessProbe:
           httpGet:
             path: /healthz
