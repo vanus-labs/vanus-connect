@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-test
+  namespace: default
+  labels:
+    app: s3-test
+spec:
+  selector:
+    matchLabels:
+      app: s3-test
+  template:
+    metadata:
+      labels:
+        app: s3-test
+    spec:
+      containers:
+        - name: s3-test
+          image: vancehub/s3-source:1.0.0
+          imagePullPolicy: IfNotPresent

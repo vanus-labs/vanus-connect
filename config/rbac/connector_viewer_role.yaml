@@ -1,0 +1,20 @@
+# permissions for end users to view connectors.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: connector-viewer-role
+rules:
+- apiGroups:
+  - vance.io
+  resources:
+  - connectors
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - vance.io
+  resources:
+  - connectors/status
+  verbs:
+  - get

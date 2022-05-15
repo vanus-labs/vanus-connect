@@ -1,0 +1,4 @@
+{
+  "rabbitmq-auth": [["host"]],
+  "rabbitmq2-auth": [["a","b","hello_world"],["c","d"],["e","f"]]
+}
