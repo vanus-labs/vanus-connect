@@ -19,8 +19,8 @@ package controllers
 import (
 	"context"
 	"github.com/go-logr/logr"
-	vance "github.com/linkall-labs/vance/api/v1alpha1"
-	"github.com/linkall-labs/vance/pkg/config"
+	vance "github.com/linkall-labs/vance/operator/api/v1alpha1"
+	"github.com/linkall-labs/vance/operator/pkg/config"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
