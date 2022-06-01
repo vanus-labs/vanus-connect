@@ -11,6 +11,7 @@ require (
 	github.com/go-logr/logr v1.2.2
 	github.com/google/uuid v1.1.2
 	github.com/linkall-labs/cdk-go v0.0.0
+	gopkg.in/yaml.v3 v3.0.0
 )
 
 replace github.com/linkall-labs/cdk-go v0.0.0 => ../cdk-go
