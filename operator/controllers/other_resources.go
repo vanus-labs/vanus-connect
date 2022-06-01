@@ -6,8 +6,8 @@ import (
 	"github.com/go-logr/logr"
 	kedahttp "github.com/kedacore/http-add-on/operator/api/v1alpha1"
 	keda "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
-	vance "github.com/linkall-labs/vance/api/v1alpha1"
-	"github.com/linkall-labs/vance/pkg/k8s"
+	vance "github.com/linkall-labs/vance/operator/api/v1alpha1"
+	k8s2 "github.com/linkall-labs/vance/operator/pkg/k8s"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8serrs "k8s.io/apimachinery/pkg/api/errors"
@@ -67,7 +67,7 @@ func createOrUpdateHttpScaledObject(
 		return err
 	}
 
-	httpso := k8s.CreateHttpScaledObject(
+	httpso := k8s2.CreateHttpScaledObject(
 		connector.Namespace, connector.Name,
 		host,
 		svcPort)
@@ -105,7 +105,7 @@ func createOrUpdateService(
 		logger.Error(err, err.Error())
 		return err
 	}
-	service := k8s.CreateLBService(connector.Namespace, connector.Name,
+	service := k8s2.CreateLBService(connector.Namespace, connector.Name,
 		port)
 	if err := controllerutil.SetControllerReference(connector, service, r.Scheme); err != nil {
 		logger.Error(err, "Set service ControllerReference error")
@@ -125,7 +125,7 @@ func createOrUpdateDeployment(
 		"deployment name", connector.Name,
 		"deployment namespace", connector.Namespace)
 	logger.Info(" Start creating or updating a Deployment ")
-	deployment := k8s.CreateBaseDeployment(connector.Namespace, connector.Name)
+	deployment := k8s2.CreateBaseDeployment(connector.Namespace, connector.Name)
 	if err := controllerutil.SetControllerReference(connector, deployment, r.Scheme); err != nil {
 		logger.Error(err, "Set deployment ControllerReference error")
 		return err

@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	keda "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
-	vance "github.com/linkall-labs/vance/api/v1alpha1"
-	"github.com/linkall-labs/vance/pkg/k8s"
-	"github.com/linkall-labs/vance/pkg/util"
+	vance "github.com/linkall-labs/vance/operator/api/v1alpha1"
+	k8s2 "github.com/linkall-labs/vance/operator/pkg/k8s"
+	"github.com/linkall-labs/vance/operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -23,7 +23,7 @@ func createOrUpdateScaledObject(
 		"ScaledObject name", soName,
 		"ScaledObject namespace", connector.Namespace)
 	logger.Info(" Start creating or updating a ScaledObject ")
-	so := k8s.CreateScaledObject(
+	so := k8s2.CreateScaledObject(
 		connector.Namespace, soName, connector.Name,
 		string(connector.Spec.ConnectorType),
 	)
@@ -67,7 +67,7 @@ func createOrUpdateScaledObject(
 		}
 		// create a TriggerAuthentication if provided secret is valid
 		taName := resourceName(connector.Name, vance.TAResType)
-		ta := k8s.CreateTriggerAuthentication(connector.Namespace, taName)
+		ta := k8s2.CreateTriggerAuthentication(connector.Namespace, taName)
 		logger.Info("scalerConfData", "map len", len(desiredAuth))
 		for i, v := range desiredAuth {
 			logger.Info("scalerConfMap", "value", v)

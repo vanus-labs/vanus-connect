@@ -20,14 +20,14 @@ import (
 	"flag"
 	kedahttp "github.com/kedacore/http-add-on/operator/api/v1alpha1"
 	kedav1alpha1 "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	cloudvancev1alpha1 "github.com/linkall-labs/vance/operator/api/v1alpha1"
+	"github.com/linkall-labs/vance/operator/controllers"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	cloudvancev1alpha1 "github.com/linkall-labs/vance/api/v1alpha1"
-	"github.com/linkall-labs/vance/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
