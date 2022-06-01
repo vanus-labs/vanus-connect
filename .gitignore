@@ -23,3 +23,15 @@ testbin/*
 *.swp
 *.swo
 *~
+
+# macOS
+.DS_Store
+
+# JetBrains
+.idea/
+*.iml
+
+# java
+target/
+# dep
+cdk-go
