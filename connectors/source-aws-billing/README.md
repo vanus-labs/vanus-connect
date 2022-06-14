@@ -17,12 +17,12 @@ For example, output a CloudEvent looks like:
 {
   "specversion": "1.0",
   "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
-  "source": "cloud.billing.aws",
+  "source": "cloud.aws.billing",
   "type": "aws.service.daily",
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:05:55.777689Z",
   "data": {
-    "vanceSource": "cloud.billing.aws",
+    "vanceSource": "cloud.aws.billing",
     "vanceType": "aws.service.daily",
     "date": "2022-06-13",
     "service": "Amazon Elastic Compute Cloud - Compute",
@@ -76,7 +76,7 @@ $ go build -o bin/source cmd/main.go
 ### Running
 
 ```shell
-$ ./bin/source VANCE_CONFIG_PATH=./config.json
+$ export VANCE_CONFIG_PATH=./config.json && ./bin/source
 ```
 
 [vc]: https://github.com/JieDing/vance-docs/blob/main/docs/concept.md

@@ -34,7 +34,7 @@ import (
 
 const (
 	EventType   = "alicloud.account_billing.daily"
-	EventSource = "cloud.billing.alicloud"
+	EventSource = "cloud.alicloud.billing"
 )
 
 type AlicloudBillingSource struct {

@@ -33,7 +33,7 @@ import (
 
 const (
 	EventType   = "aws.service.daily"
-	EventSource = "cloud.billing.aws"
+	EventSource = "cloud.aws.billing"
 )
 
 type AwsBillingSource struct {
