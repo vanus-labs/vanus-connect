@@ -32,16 +32,17 @@ For example, output a CloudEvent looks like:
 }
 ```
 
-## Vance Connector Configs
+## Source Configs
 
-The AWS Billing source use Vance cdk develop, so users can specify config by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when run the connector. 
+Users can specify their configs by either setting environments variables or mount a config.json to
+`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
 
-Configuration
+### Config Fields of the AWS Billing Source
+
 
 | name              | requirement | description                                                                   |
 |-------------------|-------------|-------------------------------------------------------------------------------|
-| vance_sink        | required    | target URL will send CloudEvents to                                           |
+| v_target          | required    | target URL will send CloudEvents to                                           |
 | access_key_id     | required    | the aws account accessKeyID                                                   |
 | secret_access_Key | required    | the aws account secretAccessKey                                               | 
 | endpoint          | optional    | the aws cost explorer api endpoint,default https://ce.us-east-1.amazonaws.com |
@@ -63,20 +64,21 @@ $ cd connectors/source-aws-billing
 $ go build -o bin/source cmd/main.go
 ```
 
-### Add and modify config
+### Add and modify config.json
 
 ```json
 {
   "access_key_id": "xxxxxx",
   "secret_access_key":"xxxxxx",
-  "vance_sink": "http://localhost:8080"
+  "v_target": "http://localhost:8080"
 }
 ```
 
 ### Running
 
 ```shell
-$ export VANCE_CONFIG_PATH=./config.json && ./bin/source
+$ ./bin/source
 ```
 
-[vc]: https://github.com/JieDing/vance-docs/blob/main/docs/concept.md
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
