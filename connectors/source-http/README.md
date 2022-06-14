@@ -4,11 +4,11 @@
 
 A [Vance Connector][vc] which transforms HTTP requests to CloudEvents and deliver them to the target URL.
 
-## User guidelines
+## User Guidelines
 
-### Connector introduction
+### Connector Introduction
 
-The HTTP-Source is a [Vance Connector][vc] which aims to generate CloudEvents in a way that wraps all headers and body of the 
+The HTTP Source is a [Vance Connector][vc] which aims to generate CloudEvents in a way that wraps all headers and body of the 
 original request into the `data` field of a new CloudEvent.
 
 For example, if an original request looks like:
@@ -55,10 +55,10 @@ This POST HTTP request will be transformed into a CloudEvent looks like:
 Users can specify their configs by either setting environments variables or mount a config.json to
 `/vance/config/config.json` when they run the connector.
 
-### Set environments variables for HTTP-Source
+### Set environments variables for HTTP Source
 
 ```
-//use V_TARGET to specify the target URL HTTP-Source will send CloudEvents to
+//use V_TARGET to specify the target URL HTTP Source will send CloudEvents to
 --env "V_TARGET"="http://localhost:8081"
 
 //use V_PORT to specify the port HTTP Source is listening on
@@ -71,8 +71,8 @@ Users can specify their configs by either setting environments variables or moun
 
 ```json
 {
-  //use V_TARGET to specify the target URI HTTP-Source will send CloudEvents to.
-  //use V_PORT to specify the port HTTP-Source is listening on.
+  //use V_TARGET to specify the target URI HTTP Source will send CloudEvents to.
+  //use V_PORT to specify the port HTTP Source is listening on.
   //JSON standard does not allow comments. Remember to delete these comments when you copy configs.
   "v_target": "http://localhost:8081",
   "v_port": "8080"
@@ -81,11 +81,11 @@ Users can specify their configs by either setting environments variables or moun
 
 ⚠️ **NOTE: json keys MUST be lowercase** ⚠️
 
-## HTTP Source image
+## HTTP Source Image
 
 > docker.io/vancehub/source-http
 
-## Local development
+## Local Development
 
 You can run the source codes of the HTTP Source locally as well.
 
