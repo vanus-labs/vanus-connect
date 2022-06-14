@@ -41,36 +41,17 @@ The HTTP Sink will POST an HTTP request looks like:
 > }
 ```
 
-## Vance Connector Configs
+## HTTP Source Configs
 
 Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector.
+`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
 
-### Set environments variables for HTTP Sink
+### Config Fields of the HTTP Source
 
-```
-//use V_TARGET to specify the target URI HTTP Sink will send CloudEvents to
---env "V_TARGET"="http://localhost:8081"
-
-//use V_PORT to specify the port HTTP Sink is listening on
---env "V_PORT"="8080"
-```
-
-⚠️ **NOTE: ENV keys MUST be uppercase** ⚠️
-
-### Set config.json and mount it on `/vance/config/config.json`
-
-```json
-{
-  //use V_TARGET to specify the target URI HTTP Sink will send CloudEvents to.
-  //use V_PORT to specify the port HTTP Sink is listening on.
-  //JSON standard does not allow comments. Remember to delete these comments when you copy configs.
-  "v_target": "http://localhost:8081",
-  "v_port": "8080"
-}
-```
-
-⚠️ **NOTE: json keys MUST be lowercase** ⚠️
+| Configs | Description               |  Example               |
+| :---------- | :------------ |:------------------------------ |
+| v_target   | v_target is used to specify the target URL HTTP Sink will send data to | "http://localhost:8081" |
+| v_port   | v_port is used to specify the port HTTP Sink is listening on | "8080" |
 
 ## HTTP Source Image
 
@@ -94,3 +75,4 @@ $ mvn exec:java -Dexec.mainClass="com.linkall.sink.http.Entrance"
 ```
 
 [vc]: https://github.com/JieDing/vance-docs/blob/main/docs/concept.md
+[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
