@@ -12,30 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sink_elasticsearch
+package internal
 
-import (
-	"github.com/linkall-labs/cdk-go/config"
-	"strings"
-)
-
-type Config struct {
-	Addresses  []string `json:"addresses"`
-	Username   string   `json:"username"`
-	Password   string   `json:"password"`
-	SkipVerify bool     `json:"skipVerify"`
-
-	IndexName string `json:"indexName"`
-}
-
-func getConfig() Config {
-	c := config.Accessor
-	conf := Config{
-		Addresses:  strings.Split(c.Get("addresses"), ","),
-		Username:   c.Get("username"),
-		Password:   c.Get("password"),
-		IndexName:  c.Get("indexName"),
-		SkipVerify: true,
-	}
-	return conf
+type BillingData struct {
+	VanceSource string  `json:"vanceSource"`
+	VanceType   string  `json:"vanceType"`
+	Date        string  `json:"date"`
+	Service     string  `json:"service"`
+	Amount      *string `json:"amount"`
+	Unit        *string `json:"unit"`
 }

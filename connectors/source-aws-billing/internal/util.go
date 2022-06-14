@@ -12,18 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alicloud_billing
+package internal
 
 import "time"
 
 const (
-	monthTimeLayout = "2006-01"
-	dayTimeLayout   = "2006-01-02"
+	dayTimeLayout = "2006-01-02"
 )
-
-func FormatTimeMonth(t time.Time) string {
-	return t.Format(monthTimeLayout)
-}
 
 func FormatTimeDay(t time.Time) string {
 	return t.Format(dayTimeLayout)

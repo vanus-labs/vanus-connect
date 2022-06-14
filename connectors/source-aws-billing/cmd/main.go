@@ -16,9 +16,9 @@ package main
 
 import (
 	"github.com/linkall-labs/cdk-go/connector"
-	"github.com/linkall-labs/source-aws-billing/aws_billing"
+	"github.com/linkall-labs/source-aws-billing/internal"
 )
 
 func main() {
-	connector.RunSource("AwsBillingSource", aws_billing.NewAwsBillingSource)
+	connector.RunSource("AwsBillingSource", internal.NewAwsBillingSource)
 }
