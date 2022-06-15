@@ -13,7 +13,7 @@ The data group by aws service
 
 For example, output a CloudEvent looks like:
 
-``` json
+```json
 {
   "specversion": "1.0",
   "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
