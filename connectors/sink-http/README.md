@@ -41,25 +41,25 @@ The HTTP Sink will POST an HTTP request looks like:
 > }
 ```
 
-## HTTP Source Configs
+## HTTP Sink Configs
 
 Users can specify their configs by either setting environments variables or mount a config.json to
 `/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
 
-### Config Fields of the HTTP Source
+### Config Fields of the HTTP Sink
 
-| Configs | Description               |  Example               |
-| :---------- | :------------ |:------------------------------ |
-| v_target   | v_target is used to specify the target URL HTTP Sink will send data to | "http://localhost:8081" |
-| v_port   | v_port is used to specify the port HTTP Sink is listening on | "8080" |
+| Configs   | Description                                                            | Example                 |
+|:----------|:-----------------------------------------------------------------------|:------------------------|
+| v_target  | v_target is used to specify the target URL HTTP Sink will send data to | "http://localhost:8081" |
+| v_port    | v_port is used to specify the port HTTP Sink is listening on           | "8080"                  |
 
-## HTTP Source Image
+## HTTP Sink Image
 
 > docker.io/vancehub/sink-http
 
 ## Local Development
 
-You can run the source codes of the HTTP Source locally as well.
+You can run the sink codes of the HTTP Sink locally as well.
 
 ### Building via Maven
 
@@ -74,5 +74,5 @@ $ mvn clean package
 $ mvn exec:java -Dexec.mainClass="com.linkall.sink.http.Entrance"
 ```
 
-[vc]: https://github.com/JieDing/vance-docs/blob/main/docs/concept.md
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md

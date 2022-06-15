@@ -16,9 +16,9 @@ package main
 
 import (
 	"github.com/linkall-labs/cdk-go/connector"
-	"github.com/linkall-labs/sink-elasticsearch/sink_elasticsearch"
+	"github.com/linkall-labs/sink-elasticsearch/internal"
 )
 
 func main() {
-	connector.RunSink("ElasticsearchSink", sink_elasticsearch.NewElasticsearchSink)
+	connector.RunSink("ElasticsearchSink", internal.NewElasticsearchSink)
 }

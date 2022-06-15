@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_billing
+package internal
 
 import (
 	"context"
@@ -33,7 +33,7 @@ import (
 
 const (
 	EventType   = "aws.service.daily"
-	EventSource = "cloud.billing.aws"
+	EventSource = "cloud.aws.billing"
 )
 
 type AwsBillingSource struct {

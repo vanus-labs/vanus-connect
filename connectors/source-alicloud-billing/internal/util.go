@@ -12,12 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alicloud_billing
+package internal
 
-import bssopenapi "github.com/alibabacloud-go/bssopenapi-20171214/v2/client"
+import "time"
 
-type BillingData struct {
-	VanceSource string `json:"VanceSource"`
-	VanceType   string `json:"VanceType"`
-	bssopenapi.QueryAccountBillResponseBodyDataItemsItem
+const (
+	monthTimeLayout = "2006-01"
+	dayTimeLayout   = "2006-01-02"
+)
+
+func FormatTimeMonth(t time.Time) string {
+	return t.Format(monthTimeLayout)
+}
+
+func FormatTimeDay(t time.Time) string {
+	return t.Format(dayTimeLayout)
 }
