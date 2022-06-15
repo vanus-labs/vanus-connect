@@ -60,7 +60,7 @@ Users can specify their configs by either setting environments variables or moun
 
 | name       | requirement | description                                                                        |
 |------------|-------------|------------------------------------------------------------------------------------|
-| v_port     | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8081 |
+| v_port     | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8080 |
 | address    | required    | elasticsearch cluster address, multi split by ","                                  | 
 | index_name | required    | elasticsearch index name which to be write                                         | 
 | username   | optional    | elasticsearch cluster username                                                     |

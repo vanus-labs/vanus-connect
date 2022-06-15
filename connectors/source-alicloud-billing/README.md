@@ -13,7 +13,7 @@ The data group by product
 
 For example, output a CloudEvent looks like:
 
-``` json
+```json
 {
   "specversion": "1.0",
   "id": "bd64e9e0-cd46-43f1-95fa-2008b6b49e85",
