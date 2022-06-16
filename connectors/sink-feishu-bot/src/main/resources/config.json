@@ -1,5 +1,5 @@
 {
-  "v_target": "https://open.feishu.cn/open-apis/bot/v2/hook/56205abf-4f63-4049-a26d-a8bfea370d64",
+  "v_target": "$(BOT_WEBHOOK_ADDRESS)",
   "v_port": "8080",
-  "feishu_secret": "QY5tWyqhwwgxOYu0WbODK"
+  "feishu_secret": "$(BOT_SECRET)"
 }
