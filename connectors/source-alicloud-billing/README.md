@@ -68,7 +68,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## HTTP Source Image
 
-> public.ecr.aws/vanus/connector/alicloudbill
+> docker.io/vancehub/source-aws-billing
 
 ## Local Development
 
@@ -81,7 +81,7 @@ $ cd connectors/source-alicloud-billing
 $ go build -o bin/source cmd/main.go
 ```
 
-### Add and modify config
+### Add and modify config.json
 
 ```json
 {

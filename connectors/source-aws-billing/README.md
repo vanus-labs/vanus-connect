@@ -51,7 +51,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## HTTP Source Image
 
-> public.ecr.aws/vanus/connector/awsbill
+> docker.io/vancehub/source-aws-billing
 
 ## Local Development
 

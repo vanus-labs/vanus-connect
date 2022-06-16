@@ -69,7 +69,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## Elasticsearch Sink Image
 
-> public.ecr.aws/vanus/connector/essink
+> docker.io/vancehub/sink-elasticsearch
 
 ## Local Development
 
@@ -82,7 +82,7 @@ $ cd connectors/sink-elastisearch
 $ go build -o bin/sink cmd/main.go
 ```
 
-### Add and modify config
+### Add and modify config.json
 
 ```json
 {
