@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_billing
+package internal
+
+import bssopenapi "github.com/alibabacloud-go/bssopenapi-20171214/v2/client"
 
 type BillingData struct {
-	VanceSource string  `json:"vanceSource"`
-	VanceType   string  `json:"vanceType"`
-	Date        string  `json:"date"`
-	Service     string  `json:"service"`
-	Amount      *string `json:"amount"`
-	Unit        *string `json:"unit"`
+	VanceSource string `json:"VanceSource"`
+	VanceType   string `json:"VanceType"`
+	bssopenapi.QueryAccountBillResponseBodyDataItemsItem
 }

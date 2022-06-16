@@ -12,14 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_billing
+package internal
 
-import "time"
-
-const (
-	dayTimeLayout = "2006-01-02"
+import (
+	"github.com/linkall-labs/cdk-go/config"
+	"strings"
 )
 
-func FormatTimeDay(t time.Time) string {
-	return t.Format(dayTimeLayout)
+type Config struct {
+	Addresses  []string `json:"address"`
+	Username   string   `json:"username"`
+	Password   string   `json:"password"`
+	SkipVerify bool
+
+	IndexName string `json:"index_name"`
+}
+
+func getConfig() Config {
+	c := config.Accessor
+	conf := Config{
+		Addresses:  strings.Split(c.Get("address"), ","),
+		Username:   c.Get("username"),
+		Password:   c.Get("password"),
+		IndexName:  c.Get("index_name"),
+		SkipVerify: true,
+	}
+	return conf
 }

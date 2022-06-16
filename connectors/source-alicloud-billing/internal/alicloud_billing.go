@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alicloud_billing
+package internal
 
 import (
 	"context"
@@ -34,7 +34,7 @@ import (
 
 const (
 	EventType   = "alicloud.account_billing.daily"
-	EventSource = "cloud.billing.alicloud"
+	EventSource = "cloud.alicloud.billing"
 )
 
 type AlicloudBillingSource struct {

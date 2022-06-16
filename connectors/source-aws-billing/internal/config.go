@@ -12,35 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package alicloud_billing
+package internal
 
 import (
 	"context"
-	"strconv"
-
 	"github.com/linkall-labs/cdk-go/config"
 	"github.com/linkall-labs/cdk-go/log"
+	"strconv"
 )
 
 type Config struct {
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
 	Endpoint        string `json:"endpoint"`
-	PullHour        int    `json:"pullHour"`
+	PullHour        int    `json:"pull_hour"`
 }
 
 func getConfig(ctx context.Context) Config {
 	c := config.Accessor
 	conf := Config{
-		AccessKeyID:     c.Get("accessKeyID"),
-		SecretAccessKey: c.Get("secretAccessKey"),
+		AccessKeyID:     c.Get("access_key_id"),
+		SecretAccessKey: c.Get("secret_access_key"),
 		Endpoint:        c.Get("endpoint"),
 	}
 	if conf.Endpoint == "" {
-		conf.Endpoint = "business.aliyuncs.com"
+		conf.Endpoint = "https://ce.us-east-1.amazonaws.com"
 	}
-	if c.Get("pullHour") != "" {
-		pullHour, err := strconv.Atoi(c.Get("pullHour"))
+	if c.Get("pull_hour") != "" {
+		pullHour, err := strconv.Atoi(c.Get("pull_hour"))
 		if err != nil {
 			log.FromContext(ctx).Info("pull hour parse to int error", "error", err)
 		} else {

@@ -57,10 +57,10 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the HTTP Source
 
-| Configs | Description               |  Example               |
-| :---------- | :------------ |:------------------------------ |
-| v_target   | v_target is used to specify the target URL HTTP Source will send CloudEvents to | "http://localhost:8081" |
-| v_port   | v_port is used to specify the port HTTP Source is listening on | "8080" |
+| Configs   | Description                                                                     | Example                 |
+|:----------|:--------------------------------------------------------------------------------|:------------------------|
+| v_target  | v_target is used to specify the target URL HTTP Source will send CloudEvents to | "http://localhost:8081" |
+| v_port    | v_port is used to specify the port HTTP Source is listening on                  | "8080"                  |
 
 ## HTTP Source Image
 
@@ -86,5 +86,5 @@ $ mvn exec:java -Dexec.mainClass="com.linkall.source.http.Entrance"
 ⚠️ NOTE: For better local development and test, the connector can also read configs from `main/resources/config.json`. So, you don't need to 
 declare any environment variables or mount a config file to `/vance/config/config.json`.
 
-[vc]: https://github.com/JieDing/vance-docs/blob/main/docs/concept.md
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
