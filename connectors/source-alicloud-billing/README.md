@@ -1,17 +1,11 @@
 # AliCloud Billing Source
 
-## Overview
-
-A [Vance Connector][vc] which transforms AliCloud billing to CloudEvents and deliver them to the target URL.
-
-## User Guidelines
-
-### Connector Introduction
+## Introduction
 
 The AliCloud Billing Source is a [Vance Connector][vc] which use [AliCloud billing][alibill] api pull yesterday billing data by fix time. 
 The data group by product
 
-For example, output a CloudEvent looks like:
+For example,billing data output a CloudEvent looks like:
 
 ```json
 {
@@ -50,25 +44,25 @@ For example, output a CloudEvent looks like:
 }
 ```
 
-## Source Configs
+## AliCloud Billing Source Configs
 
 Users can specify their configs by either setting environments variables or mount a config.json to
 `/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
 
-### Config Fields
+### Config Fields of AliCloud Billing Source
 
-| name              | requirement | description                                                           |
-|-------------------|-------------|-----------------------------------------------------------------------|
-| v_target          | required    | target URL will send CloudEvents to                                   |
-| access_key_id     | required    | the AliCloud account accessKeyID                                      |
-| secret_access_Key | required    | the AliCloud account secretAccessKey                                  | 
-| endpoint          | optional    | the AliCloud business api endpoint,default business.aliyuncs.com      |
-| pull_hour         | optional    | AliCloud billing source pull billing data time(unit hour),default 2   |
+| name              | requirement | description                                                         |
+|-------------------|-------------|---------------------------------------------------------------------|
+| v_target          | required    | target URL will send CloudEvents to                                 |
+| access_key_id     | required    | the AliCloud account [accessKeyID][accessKey]                       |
+| secret_access_Key | required    | the AliCloud account [secretAccessKey][accessKey]                   | 
+| endpoint          | optional    | the AliCloud business api endpoint,default business.aliyuncs.com    |
+| pull_hour         | optional    | AliCloud billing source pull billing data time(unit hour),default 2 |
 
 
-## HTTP Source Image
+## AliCloud Billing Source Image
 
-> docker.io/vancehub/source-aws-billing
+> docker.io/vancehub/source-alicloud-billing
 
 ## Local Development
 
@@ -81,22 +75,13 @@ $ cd connectors/source-alicloud-billing
 $ go build -o bin/source cmd/main.go
 ```
 
-### Add and modify config.json
-
-```json
-{
-  "access_key_id": "xxxxxx",
-  "secret_access_key":"xxxxxx",
-  "v_target": "http://localhost:8080"
-}
-```
-
 ### Running
 
 ```shell
-$ ./bin/source
+$ bin/source
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
 [alibill]: https://help.aliyun.com/document_detail/142608.html
+[accessKey]: https://help.aliyun.com/document_detail/38738.html
