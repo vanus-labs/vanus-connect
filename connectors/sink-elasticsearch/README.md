@@ -1,8 +1,6 @@
 # Elasticsearch Sink
 
-## User Guidelines
-
-### Connector Introduction
+### Introduction
 
 The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to [Elasticsearch][es] cluster
