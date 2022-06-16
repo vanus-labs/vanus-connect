@@ -1,17 +1,11 @@
 # AWS Billing Source
 
-## Overview
+## Introduction
 
-A [Vance Connector][vc] which transforms aws billing to CloudEvents and deliver them to the target URL.
-
-## User Guidelines
-
-### Connector Introduction
-
-The AWS Billing Source is a [Vance Connector][vc] which use aws cost explorer api pull yesterday billing data by fix time. 
+The AWS Billing Source is a [Vance Connector][vc] which use [AWS Cost Explorer][awsbill] api pull yesterday billing data by fix time. 
 The data group by aws service
 
-For example, output a CloudEvent looks like:
+For example,billing data output a CloudEvent looks like:
 
 ```json
 {
@@ -32,7 +26,7 @@ For example, output a CloudEvent looks like:
 }
 ```
 
-## Source Configs
+## AWS Billing Source Configs
 
 Users can specify their configs by either setting environments variables or mount a config.json to
 `/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
@@ -43,13 +37,13 @@ Users can specify their configs by either setting environments variables or moun
 | name              | requirement | description                                                                   |
 |-------------------|-------------|-------------------------------------------------------------------------------|
 | v_target          | required    | target URL will send CloudEvents to                                           |
-| access_key_id     | required    | the aws account accessKeyID                                                   |
-| secret_access_Key | required    | the aws account secretAccessKey                                               | 
+| access_key_id     | required    | the aws account [accessKeyID][accessKey]                                      |
+| secret_access_Key | required    | the aws account [secretAccessKey][accessKey]                                  | 
 | endpoint          | optional    | the aws cost explorer api endpoint,default https://ce.us-east-1.amazonaws.com |
 | pull_hour         | optional    | aws billing source pull billing data time(unit hour),default 2                |
 
 
-## HTTP Source Image
+## AWS Billing Source Image
 
 > docker.io/vancehub/source-aws-billing
 
@@ -64,21 +58,13 @@ $ cd connectors/source-aws-billing
 $ go build -o bin/source cmd/main.go
 ```
 
-### Add and modify config.json
-
-```json
-{
-  "access_key_id": "xxxxxx",
-  "secret_access_key":"xxxxxx",
-  "v_target": "http://localhost:8080"
-}
-```
-
 ### Running
 
 ```shell
-$ ./bin/source
+$ bin/source
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
+[awsbill]: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
