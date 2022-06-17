@@ -2,8 +2,7 @@
 
 ## Introduction
 
-The AliCloud Billing Source is a [Vance Connector][vc] which use [AliCloud billing][alibill] api pull yesterday billing data by fix time. 
-The data group by product
+The AliCloud Billing Source is a [Vance Connector][vc] which use [AliCloud billing][alibill] api pull yesterday billing data by fix time.The data group by product
 
 For example,billing data output a CloudEvent looks like:
 
@@ -55,10 +54,9 @@ Users can specify their configs by either setting environments variables or moun
 |-------------------|-------------|---------------------------------------------------------------------|
 | v_target          | required    | target URL will send CloudEvents to                                 |
 | access_key_id     | required    | the AliCloud account [accessKeyID][accessKey]                       |
-| secret_access_Key | required    | the AliCloud account [secretAccessKey][accessKey]                   | 
+| secret_access_Key | required    | the AliCloud account [secretAccessKey][accessKey]                   |
 | endpoint          | optional    | the AliCloud business api endpoint,default business.aliyuncs.com    |
 | pull_hour         | optional    | AliCloud billing source pull billing data time(unit hour),default 2 |
-
 
 ## AliCloud Billing Source Image
 
@@ -71,14 +69,14 @@ You can run the source codes of the AliCloud Billing Source locally as well.
 ### Building
 
 ```shell
-$ cd connectors/source-alicloud-billing
-$ go build -o bin/source cmd/main.go
+cd connectors/source-alicloud-billing
+go build -o bin/source cmd/main.go
 ```
 
 ### Running
 
 ```shell
-$ bin/source
+bin/source
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

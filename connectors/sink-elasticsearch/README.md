@@ -2,8 +2,7 @@
 
 ## Introduction
 
-The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and deliver these extracted `data` to [Elasticsearch][es] cluster
+The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster
 
 For example, if the incoming CloudEvent looks like:
 
@@ -51,11 +50,10 @@ Users can specify their configs by either setting environments variables or moun
 | name       | requirement | description                                                                        |
 |------------|-------------|------------------------------------------------------------------------------------|
 | v_port     | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8080 |
-| address    | required    | elasticsearch cluster address, multi split by ","                                  | 
-| index_name | required    | elasticsearch index name                                                           | 
+| address    | required    | elasticsearch cluster address, multi split by ","                                  |
+| index_name | required    | elasticsearch index name                                                           |
 | username   | optional    | elasticsearch cluster username                                                     |
 | password   | optional    | elasticsearch cluster password                                                     |
-
 
 ## Elasticsearch Sink Image
 
@@ -68,14 +66,14 @@ You can run the sink codes of the Elasticsearch Sink locally as well.
 ### Building
 
 ```shell
-$ cd connectors/sink-elastisearch
-$ go build -o bin/sink cmd/main.go
+cd connectors/sink-elastisearch
+go build -o bin/sink cmd/main.go
 ```
 
 ### Running
 
 ```shell
-$ bin/sink
+bin/sink
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
