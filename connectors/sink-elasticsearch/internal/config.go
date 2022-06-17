@@ -15,8 +15,9 @@
 package internal
 
 import (
-	"github.com/linkall-labs/cdk-go/config"
 	"strings"
+
+	"github.com/linkall-labs/cdk-go/config"
 )
 
 type Config struct {

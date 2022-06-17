@@ -19,11 +19,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/elastic/go-elasticsearch/v7"
 	"io/ioutil"
 	"net/http"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/go-logr/logr"
 	"github.com/linkall-labs/cdk-go/connector"

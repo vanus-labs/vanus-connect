@@ -19,9 +19,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/linkall-labs/cdk-go/connector"
-	"github.com/linkall-labs/cdk-go/log"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer"
@@ -29,6 +26,8 @@ import (
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
+	"github.com/linkall-labs/cdk-go/connector"
+	"github.com/linkall-labs/cdk-go/log"
 )
 
 const (
