@@ -17,12 +17,8 @@ package internal
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"sync"
 	"time"
-
-	"github.com/linkall-labs/cdk-go/connector"
-	"github.com/linkall-labs/cdk-go/log"
 
 	bssopenapi "github.com/alibabacloud-go/bssopenapi-20171214/v2/client"
 	openapi "github.com/alibabacloud-go/darabonba-openapi/client"
@@ -30,6 +26,9 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-logr/logr"
+	"github.com/google/uuid"
+	"github.com/linkall-labs/cdk-go/connector"
+	"github.com/linkall-labs/cdk-go/log"
 )
 
 const (
