@@ -1,0 +1,6 @@
+{
+  "address": "https://localhost:9200",
+  "username":"elastic",
+  "password": "elastic",
+  "index_name": "vance_test"
+}
