@@ -1,9 +1,9 @@
 package com.linkall.sink.http;
 
-import com.linkall.common.json.JsonMapper;
-import com.linkall.core.Sink;
-import com.linkall.core.http.HttpClient;
-import com.linkall.core.http.HttpServer;
+import com.linkall.vance.common.json.JsonMapper;
+import com.linkall.vance.core.Sink;
+import com.linkall.vance.core.http.HttpClient;
+import com.linkall.vance.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
