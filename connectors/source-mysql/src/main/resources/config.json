@@ -1,0 +1,9 @@
+{
+  "v_target": "http://localhost:18080",
+  "v_store_file": "/tmp/mysql/offset",
+  "host": "${DB_HOST}",
+  "port": "3306",
+  "username": "root",
+  "password": "${DB_PASSWORD}",
+  "database": "linkall"
+}
