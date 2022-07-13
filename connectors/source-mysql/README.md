@@ -52,7 +52,7 @@ The row record will be transformed into a CloudEvent looks like:
 Users can specify their configs by either setting environments variables or mount a config.json to
 `/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
 
-### Config Fields of the AWS Billing Source
+### Config Fields of the Mysql Source
 
 | name          | requirement | description                                                                                                |
 |---------------|-------------|------------------------------------------------------------------------------------------------------------|
@@ -72,7 +72,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## Local Development
 
-You can run the source codes of the AWS Billing Source locally as well.
+You can run the source codes of the MySql Source locally as well.
 
 ### Building via Maven
 
