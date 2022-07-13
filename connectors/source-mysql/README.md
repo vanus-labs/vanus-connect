@@ -13,6 +13,7 @@ For example,MySql database vance has table vance_test Look:
 | id          | int          | NO   | PRI | NULL    | auto_increment |
 | name        | varchar(100) | NO   |     | NULL    |                |
 | description | varchar(100) | NO   |     | NULL    |                |
+| date        | date         | YES  |     | NULL    |                |
 +-------------+--------------+------+-----+---------+----------------+
 ```
 
@@ -40,7 +41,8 @@ The row record will be transformed into a CloudEvent looks like:
   "data" : {
     "id":18,
     "name":"xdl",
-    "description":"Development Manager"
+    "description":"Development Manager",
+    "date": "2022-07-06"
   }
 }
 ```
@@ -52,15 +54,17 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the AWS Billing Source
 
-| name         | requirement | description                         |
-|--------------|-------------|-------------------------------------|
-| v_target     | required    | target URL will send CloudEvents to |
-| v_store_file | required    | kv store file name                  |
-| host         | required    | db host                             |
-| port         | required    | db port                             |
-| username     | required    | db username                         |
-| password     | required    | db password                         |
-| database     | required    | db database name                    |
+| name          | requirement | description                                                                                                |
+|---------------|-------------|------------------------------------------------------------------------------------------------------------|
+| v_target      | required    | target URL will send CloudEvents to                                                                        |
+| v_store_file  | required    | kv store file name                                                                                         |
+| host          | required    | db host                                                                                                    |
+| port          | required    | db port                                                                                                    |
+| username      | required    | db username                                                                                                |
+| password      | required    | db password                                                                                                |
+| database      | required    | db database name                                                                                           |
+| include_table | optional    | comma-separated list of include table name                                                                 |
+| exclude_table | optional    | comma-separated list of exclude table name, no need add system table only no config include_table will use |
 
 ## MySql Source Image
 

@@ -13,10 +13,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class MySqlSource implements Source {
   private static final Logger LOGGER = LoggerFactory.getLogger(MySqlSource.class);
@@ -33,7 +36,9 @@ public class MySqlSource implements Source {
             EnvUtil.getEnvOrConfig("port"),
             EnvUtil.getEnvOrConfig("username"),
             EnvUtil.getEnvOrConfig("password"),
-            EnvUtil.getEnvOrConfig("database"));
+            EnvUtil.getEnvOrConfig("database"),
+            EnvUtil.getEnvOrConfig("include_table"),
+            EnvUtil.getEnvOrConfig("exclude_table"));
   }
 
   @Override
@@ -97,9 +102,16 @@ public class MySqlSource implements Source {
     props.setProperty("binary.handling.mode", "base64");
 
     // table selection
-    props.setProperty("table.exclude.list", getExcludedInternalTables());
+    if (config.getIncludeTables() != null && config.getIncludeTables().length > 0) {
+      props.setProperty(
+          "table.include.list", tableFormat(Arrays.stream(config.getIncludeTables())));
+    } else {
+      props.setProperty(
+          "table.exclude.list", tableFormat(getExcludedTables(config.getExcludeTables()).stream()));
+    }
     props.setProperty("database.include.list", config.getDatabase());
 
+    // convert
     props.setProperty("converters", "boolean, datetime");
     props.setProperty(
         "boolean.type", "io.debezium.connector.mysql.converters.TinyIntOneToBooleanConverter");
@@ -108,8 +120,19 @@ public class MySqlSource implements Source {
     return props;
   }
 
-  public String getExcludedInternalTables() {
-    return Arrays.asList("information_schema", "mysql", "performance_schema", "sys").stream()
+  public Set<String> getExcludedTables(String[] excludeTables) {
+    Set<String> exclude =
+        new HashSet<>(Arrays.asList("information_schema", "mysql", "performance_schema", "sys"));
+    if (excludeTables != null) {
+      for (String name : excludeTables) {
+        exclude.add(name);
+      }
+    }
+    return exclude;
+  }
+
+  public String tableFormat(Stream<String> table) {
+    return table
         .map(stream -> config.getDatabase() + "." + stream)
         .collect(Collectors.joining(","));
   }
