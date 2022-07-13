@@ -18,8 +18,9 @@ import java.util.stream.Collectors;
 
 public class KvStoreOffsetBackingStore extends MemoryOffsetBackingStore {
   public static final String OFFSET_STORAGE_KV_STORE_KEY_CONFIG = "offset.storage.kv.key";
-  private static final Logger logger = LoggerFactory.getLogger(KvStoreOffsetBackingStore.class);
   private static final String DEFAULT_KEY_NAME = "vance_debezium_mysql_offset";
+
+  private static final Logger logger = LoggerFactory.getLogger(KvStoreOffsetBackingStore.class);
   private final ObjectMapper objectMapper = new ObjectMapper();
   private final KVStore store;
   private String keyName;

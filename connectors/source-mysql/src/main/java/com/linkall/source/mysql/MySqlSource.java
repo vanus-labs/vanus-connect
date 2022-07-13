@@ -101,7 +101,8 @@ public class MySqlSource implements Source {
     props.setProperty("database.include.list", config.getDatabase());
 
     props.setProperty("converters", "boolean, datetime");
-    props.setProperty("boolean.type", "io.debezium.connector.mysql.converters.TinyIntOneToBooleanConverter");
+    props.setProperty(
+        "boolean.type", "io.debezium.connector.mysql.converters.TinyIntOneToBooleanConverter");
     props.setProperty("datetime.type", "com.linkall.source.mysql.MySqlDateTimeConverter");
 
     return props;
