@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class DebeziumSource implements Source{
+public abstract class DebeziumSource implements Source {
   private static final Logger LOGGER = LoggerFactory.getLogger(DebeziumSource.class);
   private DebeziumEngine<ChangeEvent<SourceRecord, SourceRecord>> engine;
   private Executor executor;
@@ -52,7 +52,11 @@ public abstract class DebeziumSource implements Source{
             .notifying(consumer)
             .using(
                 (success, message, error) -> {
-                  LOGGER.info("Debezium engine shutdown.");
+                  LOGGER.info(
+                      "Debezium engine shutdown,success: {},message: {},error:{}",
+                      success,
+                      message,
+                      error);
                 })
             .build();
     executor = Executors.newSingleThreadExecutor();

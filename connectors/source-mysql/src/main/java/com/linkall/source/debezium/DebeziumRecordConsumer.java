@@ -39,7 +39,7 @@ public class DebeziumRecordConsumer
       throws InterruptedException {
     CountDownLatch latch = new CountDownLatch(records.size());
     for (ChangeEvent<SourceRecord, SourceRecord> record : records) {
-      LOGGER.info("Received event '{}'", record);
+      LOGGER.debug("Received event '{}'", record);
       if (record.value() == null) {
         latch.countDown();
         continue;
@@ -55,7 +55,7 @@ public class DebeziumRecordConsumer
             } else if (ar.result().statusCode() == HTTP_OK
                 || ar.result().statusCode() == HTTP_NO_CONTENT
                 || ar.result().statusCode() == HTTP_ACCEPTED) {
-              LOGGER.info("Success to send cloudEvent：{}", ceEvent);
+              LOGGER.debug("Success to send cloudEvent：{}", ceEvent.getId());
             } else {
               LOGGER.warn(
                   "Failed to send record: {},statusCode: {}, body: {}",
