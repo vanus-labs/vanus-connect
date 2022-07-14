@@ -1,4 +1,4 @@
-package com.linkall.source.mysql;
+package com.linkall.source.debezium;
 
 import com.linkall.vance.common.env.EnvUtil;
 import com.linkall.vance.core.Adapter1;

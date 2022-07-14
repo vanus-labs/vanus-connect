@@ -16,68 +16,39 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 public class MySqlAdapter implements Adapter1<SourceRecord> {
   private static final String EXTENSION_NAME_PREFIX = "vancedebezium";
+  private static final String TX_ATTRIBUTE_PREFIX = "tx";
+
   private final JsonConverter jsonDataConverter = new JsonConverter();
-  private final List<String> dataFields =
-      Arrays.asList(Envelope.FieldName.AFTER, Envelope.FieldName.BEFORE);
-  private final CloudEventBuilder eventBuilder;
 
   public MySqlAdapter() {
     Map<String, String> ceJsonConfig = new HashMap<>();
     ceJsonConfig.put(JsonConverterConfig.SCHEMAS_ENABLE_CONFIG, "false");
     jsonDataConverter.configure(ceJsonConfig, false);
-    eventBuilder = CloudEventBuilder.v1().withSource(URI.create("vance.debezium.mysql"));
-  }
-
-  static String adjustExtensionName(String original) {
-    StringBuilder sb = new StringBuilder(EXTENSION_NAME_PREFIX);
-
-    char c;
-    for (int i = 0; i != original.length(); ++i) {
-      c = original.charAt(i);
-      if (isExtensionNameValidChar(c)) {
-        sb.append(c);
-      }
-    }
-
-    return sb.toString();
-  }
-
-  private static boolean isExtensionNameValidChar(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
   }
 
   @Override
   public CloudEvent adapt(SourceRecord record) {
     Struct struct = (Struct) record.value();
     Struct source = struct.getStruct(Envelope.FieldName.SOURCE);
+    CloudEventBuilder eventBuilder = CloudEventBuilder.v1();
     eventBuilder
         .withId(ceId(source))
+        .withSource(source())
         .withType(ceType(source))
-        .withExtension(
-            adjustExtensionName(Envelope.FieldName.OPERATION),
-            (String) struct.get(Envelope.FieldName.OPERATION))
         .withTime(ceTime(struct));
-    setExtension(eventBuilder, source, MySqlAdapter::adjustExtensionName);
-    Object dataValue = null;
-    Schema dataSchema = null;
-    for (String fieldName : dataFields) {
-      dataValue = struct.get(fieldName);
-      dataSchema = struct.schema().field(Envelope.FieldName.AFTER).schema();
-      if (dataValue != null) {
-        break;
-      }
-    }
-    byte[] data = jsonDataConverter.fromConnectData("debezium", dataSchema, dataValue);
-    eventBuilder.withData("application/json", data);
+    eventBuilder.withData("application/json", data(struct));
+    extension(eventBuilder, struct);
     return eventBuilder.build();
+  }
+
+  private URI source() {
+    return URI.create("vance.debezium.mysql");
   }
 
   private String ceId(Struct source) {
@@ -102,8 +73,35 @@ public class MySqlAdapter implements Adapter1<SourceRecord> {
         Instant.ofEpochMilli(struct.getInt64(Envelope.FieldName.TIMESTAMP)), ZoneOffset.UTC);
   }
 
+  private byte[] data(Struct struct) {
+    String fieldName = Envelope.FieldName.AFTER;
+    Object dataValue = struct.get(fieldName);
+    if (dataValue == null) {
+      fieldName = Envelope.FieldName.BEFORE;
+      dataValue = struct.get(fieldName);
+    }
+    Schema dataSchema = struct.schema().field(fieldName).schema();
+    byte[] data = jsonDataConverter.fromConnectData("debezium", dataSchema, dataValue);
+    return data;
+  }
+
+  private void extension(CloudEventBuilder eventBuilder, Struct struct) {
+    // source
+    Struct source = struct.getStruct(Envelope.FieldName.SOURCE);
+    setExtension(eventBuilder, source, MySqlAdapter::adjustExtensionName);
+    // op
+    eventBuilder.withExtension(
+        adjustExtensionName(Envelope.FieldName.OPERATION),
+        (String) struct.get(Envelope.FieldName.OPERATION));
+    // transaction
+    Struct transaction = struct.getStruct(Envelope.FieldName.TRANSACTION);
+    if (transaction != null) {
+      setExtension(eventBuilder, transaction, MySqlAdapter::txExtensionName);
+    }
+  }
+
   private void setExtension(
-      CloudEventBuilder eventBuilder, Struct struct, Function<String, String> modifyName) {
+      CloudEventBuilder eventBuilder, Struct struct, Function<String, String> nameFunc) {
     for (Field field : struct.schema().fields()) {
       Object value = struct.get(field);
       if (value == null) {
@@ -111,10 +109,10 @@ public class MySqlAdapter implements Adapter1<SourceRecord> {
       }
       switch (field.schema().type()) {
         case STRING:
-          eventBuilder.withExtension(modifyName.apply(field.name()), (String) value);
+          eventBuilder.withExtension(nameFunc.apply(field.name()), (String) value);
           break;
         case BOOLEAN:
-          eventBuilder.withExtension(modifyName.apply(field.name()), (Boolean) value);
+          eventBuilder.withExtension(nameFunc.apply(field.name()), (Boolean) value);
           break;
         case INT64:
         case INT32:
@@ -122,9 +120,30 @@ public class MySqlAdapter implements Adapter1<SourceRecord> {
         case INT8:
         case FLOAT64:
         case FLOAT32:
-          eventBuilder.withExtension(modifyName.apply(field.name()), (Number) value);
+          eventBuilder.withExtension(nameFunc.apply(field.name()), (Number) value);
           break;
       }
     }
+  }
+
+  private static String txExtensionName(String name) {
+    return adjustExtensionName(TX_ATTRIBUTE_PREFIX + name);
+  }
+
+  private static String adjustExtensionName(String original) {
+    StringBuilder sb = new StringBuilder(EXTENSION_NAME_PREFIX);
+
+    char c;
+    for (int i = 0; i != original.length(); ++i) {
+      c = original.charAt(i);
+      if (isExtensionNameValidChar(c)) {
+        sb.append(c);
+      }
+    }
+    return sb.toString();
+  }
+
+  private static boolean isExtensionNameValidChar(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
   }
 }

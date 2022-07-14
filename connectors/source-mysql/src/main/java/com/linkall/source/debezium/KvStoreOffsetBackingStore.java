@@ -1,4 +1,4 @@
-package com.linkall.source.mysql;
+package com.linkall.source.debezium;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 public class KvStoreOffsetBackingStore extends MemoryOffsetBackingStore {
   public static final String OFFSET_STORAGE_KV_STORE_KEY_CONFIG = "offset.storage.kv.key";
-  private static final String DEFAULT_KEY_NAME = "vance_debezium_mysql_offset";
+  private static final String DEFAULT_KEY_NAME = "vance_debezium_offset";
 
   private static final Logger logger = LoggerFactory.getLogger(KvStoreOffsetBackingStore.class);
   private final ObjectMapper objectMapper = new ObjectMapper();

@@ -1,15 +1,18 @@
-package com.linkall.source.mysql;
+package com.linkall.source.debezium;
 
-public class MySqlConfig {
+import java.util.HashSet;
+import java.util.Set;
+
+public class DbConfig {
   private String host;
   private String port;
   private String username;
   private String password;
   private String database;
-  private String[] includeTables;
-  private String[] excludeTables;
+  private Set<String> includeTables;
+  private Set<String> excludeTables;
 
-  public MySqlConfig(
+  public DbConfig(
       String host,
       String port,
       String username,
@@ -22,11 +25,17 @@ public class MySqlConfig {
     this.username = username;
     this.password = password;
     this.database = database;
+    includeTables = new HashSet<>();
+    excludeTables = new HashSet<>();
     if (includeTable != null) {
-      includeTables = includeTable.split(",");
+      for (String tableName : includeTable.split(",")) {
+        includeTables.add(tableName);
+      }
     }
     if (excludeTable != null) {
-      excludeTables = excludeTable.split(",");
+      for (String tableName : excludeTable.split(",")) {
+        excludeTables.add(tableName);
+      }
     }
   }
 
@@ -70,19 +79,19 @@ public class MySqlConfig {
     this.database = database;
   }
 
-  public String[] getIncludeTables() {
+  public Set<String> getIncludeTables() {
     return includeTables;
   }
 
-  public void setIncludeTables(String[] includeTables) {
+  public void setIncludeTables(Set<String> includeTables) {
     this.includeTables = includeTables;
   }
 
-  public String[] getExcludeTables() {
+  public Set<String> getExcludeTables() {
     return excludeTables;
   }
 
-  public void setExcludeTables(String[] excludeTables) {
+  public void setExcludeTables(Set<String> excludeTables) {
     this.excludeTables = excludeTables;
   }
 }
