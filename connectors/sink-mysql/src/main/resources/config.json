@@ -1,0 +1,9 @@
+{
+  "host": "${DB_HOST}",
+  "port": "3306",
+  "username": "root",
+  "password": "${DB_PASSWORD}",
+  "database": "linkall",
+  "table_name": "test",
+  "insert_mode": "upsert"
+}
