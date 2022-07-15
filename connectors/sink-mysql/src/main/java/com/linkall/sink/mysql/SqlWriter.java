@@ -58,12 +58,12 @@ public class SqlWriter {
             LOGGER.warn("sql writer flush has error", e);
           }
         },
-        10,
-        5,
-        TimeUnit.SECONDS);
+        10*1000,
+        sqlConfig.getCommitInterval(),
+        TimeUnit.MILLISECONDS);
   }
 
-  public void add(JsonObject data) throws SQLException {
+  public synchronized void add(JsonObject data) throws SQLException {
     sqlExecutor.addToBatch(data);
     batchSize++;
     if (batchSize >= commitSize) {

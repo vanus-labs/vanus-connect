@@ -52,16 +52,17 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the MySql Sink
 
-| name        | requirement | description                                                                |
-|-------------|-------------|----------------------------------------------------------------------------|
-| v_port      | optional    | v_port is used to specify the port MySql Sink is listening on,default 8080 |
-| host        | required    | db host                                                                    |
-| port        | required    | db port                                                                    |
-| username    | required    | db username                                                                |
-| password    | required    | db password                                                                |
-| database    | required    | db database name                                                           |
-| table_name  | required    | db table name                                                              |
-| insert_mode | optional    | insert mode: insert or upsert ,default insert                              |
+| name             | requirement | description                                                                |
+|------------------|-------------|----------------------------------------------------------------------------|
+| v_port           | optional    | v_port is used to specify the port MySql Sink is listening on,default 8080 |
+| host             | required    | db host                                                                    |
+| port             | required    | db port                                                                    |
+| username         | required    | db username                                                                |
+| password         | required    | db password                                                                |
+| database         | required    | db database name                                                           |
+| table_name       | required    | db table name                                                              |
+| insert_mode      | optional    | insert mode: insert or upsert, default insert                              |
+| commit_interval  | optional    | batch data commit to db interval, unit is millisecond default 1000         |
 
 ## MySql Sink Image
 

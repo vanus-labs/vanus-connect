@@ -25,7 +25,8 @@ public class MySqlSink implements Sink {
             EnvUtil.getEnvOrConfig("password"),
             EnvUtil.getEnvOrConfig("database"),
             EnvUtil.getEnvOrConfig("table_name"),
-            EnvUtil.getEnvOrConfig("insert_mode"));
+            EnvUtil.getEnvOrConfig("insert_mode"),
+            EnvUtil.getEnvOrConfig("commit_interval"));
   }
 
   @Override

@@ -1,6 +1,11 @@
 package com.linkall.sink.mysql;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MySqlConfig {
+  private static final Logger LOGGER = LoggerFactory.getLogger(MySqlConfig.class);
+
   public enum InsertMode {
     INSERT,
     UPSERT,
@@ -22,6 +27,7 @@ public class MySqlConfig {
   private String database;
   private String tableName;
   private InsertMode insertMode;
+  private long commitInterval;
 
   public MySqlConfig(
       String host,
@@ -30,7 +36,8 @@ public class MySqlConfig {
       String password,
       String database,
       String tableName,
-      String insertMode) {
+      String insertMode,
+      String commitInterval) {
     this.host = host;
     this.port = port;
     this.username = username;
@@ -38,6 +45,16 @@ public class MySqlConfig {
     this.database = database;
     this.tableName = tableName;
     this.insertMode = getInsertMode(insertMode);
+    if (commitInterval != null && commitInterval.isEmpty()) {
+      try {
+        this.commitInterval = Long.parseLong(commitInterval);
+      } catch (NumberFormatException e) {
+        LOGGER.info("commit interval {} is not valid,will use default 1000", commitInterval);
+      }
+    }
+    if (this.commitInterval <= 0) {
+      this.commitInterval = 1000;
+    }
   }
 
   public String getHost() {
@@ -94,5 +111,13 @@ public class MySqlConfig {
 
   public void setInsertMode(InsertMode insertMode) {
     this.insertMode = insertMode;
+  }
+
+  public long getCommitInterval() {
+    return commitInterval;
+  }
+
+  public void setCommitInterval(long commitInterval) {
+    this.commitInterval = commitInterval;
   }
 }
