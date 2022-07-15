@@ -54,7 +54,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        com.linkall.sink.http.Entrance
+                                        com.linkall.sink.mysql.Entrance
                                     </mainClass>
                                 </manifest>
                             </archive>
