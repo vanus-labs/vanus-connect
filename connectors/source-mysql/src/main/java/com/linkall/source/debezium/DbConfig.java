@@ -11,6 +11,7 @@ public class DbConfig {
   private String database;
   private Set<String> includeTables;
   private Set<String> excludeTables;
+  private String storeOffsetKey;
 
   public DbConfig(
       String host,
@@ -19,12 +20,14 @@ public class DbConfig {
       String password,
       String database,
       String includeTable,
-      String excludeTable) {
+      String excludeTable,
+      String storeOffsetKey) {
     this.host = host;
     this.port = port;
     this.username = username;
     this.password = password;
     this.database = database;
+    this.storeOffsetKey = storeOffsetKey;
     includeTables = new HashSet<>();
     excludeTables = new HashSet<>();
     if (includeTable != null) {
@@ -93,5 +96,13 @@ public class DbConfig {
 
   public void setExcludeTables(Set<String> excludeTables) {
     this.excludeTables = excludeTables;
+  }
+
+  public String getStoreOffsetKey() {
+    return storeOffsetKey;
+  }
+
+  public void setStoreOffsetKey(String storeOffsetKey) {
+    this.storeOffsetKey = storeOffsetKey;
   }
 }

@@ -2,7 +2,8 @@
 
 ## Introduction
 
-The MySql Source is a [Vance Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data in a MySql database and then monitor and record all subsequent row-level changes to that data.
+The MySql Source is a [Vance Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data in a
+MySql database and then monitor and record all subsequent row-level changes to that data.
 
 For example,MySql database vance has table vance_test Look:
 
@@ -21,27 +22,27 @@ The row record will be transformed into a CloudEvent looks like:
 
 ```json
 {
-  "id" : "vance.vance_test:binlog.000010:2515",
-  "source" : "vance.debezium.mysql",
-  "specversion" : "1.0",
-  "type" : "debezium.mysql.vance.vance_test",
-  "time" : "2022-07-08T03:17:03.139Z",
-  "datacontenttype" : "application/json",
-  "vancedebeziumop" : "r",
-  "vancedebeziumversion" : "1.9.4.Final",
-  "vancedebeziumconnector" : "mysql",
-  "vancedebeziumname" : "vance",
-  "vancedebeziumtsms" : "1657250223138",
-  "vancedebeziumsnapshot" : "true",
-  "vancedebeziumdb" : "vance",
-  "vancedebeziumtable" : "vance_test",
-  "vancedebeziumpos" : "2515",
+  "id": "vance.vance_test:binlog.000010:2515",
+  "source": "vance.debezium.mysql",
+  "specversion": "1.0",
+  "type": "debezium.mysql.vance.vance_test",
+  "time": "2022-07-08T03:17:03.139Z",
+  "datacontenttype": "application/json",
+  "vancedebeziumop": "r",
+  "vancedebeziumversion": "1.9.4.Final",
+  "vancedebeziumconnector": "mysql",
+  "vancedebeziumname": "vance",
+  "vancedebeziumtsms": "1657250223138",
+  "vancedebeziumsnapshot": "true",
+  "vancedebeziumdb": "vance",
+  "vancedebeziumtable": "vance_test",
+  "vancedebeziumpos": "2515",
   "vancedebeziumfile": "binlog.000010",
   "vancedebeziumrow": "0",
-  "data" : {
-    "id":18,
-    "name":"xdl",
-    "description":"Development Manager",
+  "data": {
+    "id": 18,
+    "name": "xdl",
+    "description": "Development Manager",
     "date": "2022-07-06"
   }
 }
@@ -54,17 +55,20 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the Mysql Source
 
-| name          | requirement | description                                                                                                |
-|---------------|-------------|------------------------------------------------------------------------------------------------------------|
-| v_target      | required    | target URL will send CloudEvents to                                                                        |
-| v_store_file  | required    | kv store file name                                                                                         |
-| host          | required    | db host                                                                                                    |
-| port          | required    | db port                                                                                                    |
-| username      | required    | db username                                                                                                |
-| password      | required    | db password                                                                                                |
-| database      | required    | db database name                                                                                           |
-| include_table | optional    | comma-separated list of include table name                                                                 |
-| exclude_table | optional    | comma-separated list of exclude table name, no need add system table only no config include_table will use |
+| name               | requirement | description                                                                                                |
+|--------------------|-------------|------------------------------------------------------------------------------------------------------------|
+| v_target           | required    | target URL will send CloudEvents to                                                                        |
+| v_store_file       | required    | kv store file name                                                                                         |
+| host               | required    | db host                                                                                                    |
+| port               | required    | db port                                                                                                    |
+| username           | required    | db username                                                                                                |
+| password           | required    | db password                                                                                                |
+| database           | required    | db database name                                                                                           |
+| include_table      | optional    | comma-separated list of include table name                                                                 |
+| exclude_table      | optional    | comma-separated list of exclude table name, no need add system table only no config include_table will use |
+| store_offset_key   | optional    | offset store use key, default is vance_debezium_offset                                                     |
+| offset_binlog_file | optional    | binlog file name                                                                                           |
+| offset_binlog_pos  | optional    | binlog position                                                                                            |
 
 ## MySql Source Image
 

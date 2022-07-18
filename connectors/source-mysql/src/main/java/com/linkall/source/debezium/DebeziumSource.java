@@ -7,14 +7,15 @@ import io.debezium.embedded.Connect;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.spi.OffsetCommitPolicy;
+import org.apache.kafka.connect.json.JsonConverter;
+import org.apache.kafka.connect.json.JsonConverterConfig;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.apache.kafka.connect.storage.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -25,7 +26,7 @@ public abstract class DebeziumSource implements Source {
   private DebeziumEngine<ChangeEvent<SourceRecord, SourceRecord>> engine;
   private Executor executor;
   private final DebeziumEngine.ChangeConsumer<ChangeEvent<SourceRecord, SourceRecord>> consumer;
-  private final DbConfig config;
+  protected final DbConfig config;
 
   public DebeziumSource() {
     consumer = new DebeziumRecordConsumer((Adapter1<SourceRecord>) getAdapter());
@@ -37,10 +38,13 @@ public abstract class DebeziumSource implements Source {
             EnvUtil.getEnvOrConfig("password"),
             EnvUtil.getEnvOrConfig("database"),
             EnvUtil.getEnvOrConfig("include_table"),
-            EnvUtil.getEnvOrConfig("exclude_table"));
+            EnvUtil.getEnvOrConfig("exclude_table"),
+            EnvUtil.getEnvOrConfig("store_offset_key"));
   }
 
   public abstract String getConnectorClass();
+
+  public abstract Map<String, Object> getConfigOffset();
 
   public abstract Properties getDebeziumProperties();
 
@@ -77,7 +81,22 @@ public abstract class DebeziumSource implements Source {
 
     // offset
     props.setProperty("offset.storage", KvStoreOffsetBackingStore.class.getCanonicalName());
-    //        props.setProperty("offset.storage.file.filename", "/tmp/offset.dat");
+    if (config.getStoreOffsetKey() != null && !config.getStoreOffsetKey().isEmpty()) {
+      props.setProperty(
+          KvStoreOffsetBackingStore.OFFSET_STORAGE_KV_STORE_KEY_CONFIG, config.getStoreOffsetKey());
+    }
+    Map<String, Object> configOffset = getConfigOffset();
+    if (configOffset != null && configOffset.size() > 0) {
+      Converter valueConverter = new JsonConverter();
+      Map<String, Object> valueConfigs = new HashMap<>();
+      valueConfigs.put(JsonConverterConfig.SCHEMAS_ENABLE_CONFIG, false);
+      valueConverter.configure(valueConfigs, false);
+      byte[] offsetValue = valueConverter.fromConnectData(config.getDatabase(), null, configOffset);
+      props.setProperty(
+          KvStoreOffsetBackingStore.OFFSET_CONFIG_VALUE,
+          new String(offsetValue, StandardCharsets.UTF_8));
+    }
+
     props.setProperty("offset.flush.interval.ms", "1000");
 
     // history
