@@ -51,7 +51,7 @@ public class S3Source implements Source {
                 strRegion = SQSUtil.getRegion(sqsArn);
             }
         }
-        Region region = AwsHelper.getRegion(strRegion);
+        Region region = Region.of(strRegion);
 
         // get S3Client
         S3Client s3 = Objects.requireNonNull(
