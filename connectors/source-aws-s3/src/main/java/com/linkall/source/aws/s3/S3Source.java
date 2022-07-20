@@ -3,7 +3,7 @@ package com.linkall.source.aws.s3;
 import com.linkall.source.aws.utils.AwsHelper;
 import com.linkall.source.aws.utils.S3Util;
 import com.linkall.source.aws.utils.SQSUtil;
-import com.linkall.vance.common.env.ConfigUtil;
+import com.linkall.vance.common.config.ConfigUtil;
 import com.linkall.vance.common.json.JsonMapper;
 import com.linkall.vance.core.Adapter;
 import com.linkall.vance.core.Source;

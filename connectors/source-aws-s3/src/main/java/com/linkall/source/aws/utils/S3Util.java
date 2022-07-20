@@ -1,12 +1,11 @@
 package com.linkall.source.aws.utils;
 
-import com.linkall.vance.common.env.ConfigUtil;
+import com.linkall.vance.common.config.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.services.sqs.SqsClient;
 
 import java.io.File;
 import java.net.URL;

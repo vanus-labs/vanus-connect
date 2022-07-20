@@ -1,9 +1,8 @@
 package com.linkall.source.aws.utils;
 
-import com.linkall.vance.common.env.SecretUtil;
+import com.linkall.vance.common.config.SecretUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.regions.Region;
 
 public class AwsHelper {
     private static final Logger LOGGER = LoggerFactory.getLogger(AwsHelper.class);

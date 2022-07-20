@@ -22,7 +22,7 @@ public class S3Adapter implements Adapter1<JsonObject> {
         String timeStr = record.getString("eventTime");
         template.withTime(Time.parseTime("time", timeStr));
         template.withData(record.getJsonObject("s3").toBuffer().getBytes());
-        template.withExtension("keyname",record.getJsonObject("s3").getJsonObject("object").getString("key"));
+        template.withSubject(record.getJsonObject("s3").getJsonObject("object").getString("key"));
         return template.build();
     }
 }
