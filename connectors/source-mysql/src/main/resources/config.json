@@ -1,9 +1,8 @@
 {
-  "v_target": "http://localhost:18080",
-  "v_store_file": "/tmp/mysql/offset",
-  "host": "${DB_HOST}",
-  "port": "3306",
-  "username": "root",
-  "password": "${DB_PASSWORD}",
-  "database": "linkall"
+  "v_target": "http://localhost:8080",
+  "v_store_file": "/vance/source-mysql/offset.dat",
+  "include_table": "test",
+  "store_offset_key": "vance_mysql_test",
+  "offset_binlog_file": "binlog.000010",
+  "offset_binlog_pos": "44602"
 }

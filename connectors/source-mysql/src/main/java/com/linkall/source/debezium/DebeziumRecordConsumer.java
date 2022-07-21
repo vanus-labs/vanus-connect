@@ -1,6 +1,6 @@
 package com.linkall.source.debezium;
 
-import com.linkall.vance.common.env.EnvUtil;
+import com.linkall.vance.common.config.ConfigUtil;
 import com.linkall.vance.core.Adapter1;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.http.vertx.VertxMessageFactory;
@@ -46,7 +46,7 @@ public class DebeziumRecordConsumer
       }
       CloudEvent ceEvent = this.adapter.adapt(record.value());
       Future<HttpResponse<Buffer>> responseFuture =
-          VertxMessageFactory.createWriter(webClient.postAbs(EnvUtil.getVanceSink()))
+          VertxMessageFactory.createWriter(webClient.postAbs(ConfigUtil.getVanceSink()))
               .writeStructured(ceEvent, JsonFormat.CONTENT_TYPE);
       responseFuture.onComplete(
           ar -> {

@@ -26,11 +26,12 @@ public class MySqlDateTimeConverter implements CustomConverter<SchemaBuilder, Re
     timestampZoneId = ZoneId.of(zoneString);
   }
 
-  /**
-   * | mysql | debezium | binlog | |-----------|-----------|---------------| | time | Duration |
-   * Duration | | date | LocalDate | LocalDate | | datetime | Timestamp | LocalDateTime | |
-   * timestamp | Timestamp | ZonedDateTime |
-   */
+  // | mysql     | debezium  | binlog        |
+  // |-----------|-----------|---------------|
+  // | time      | Duration  | Duration      |
+  // | date      | LocalDate | LocalDate     |
+  // | datetime  | Timestamp | LocalDateTime |
+  // | timestamp | Timestamp | ZonedDateTime |
   @Override
   public void converterFor(
       RelationalColumn column, ConverterRegistration<SchemaBuilder> registration) {

@@ -1,6 +1,7 @@
 package com.linkall.source.debezium;
 
-import com.linkall.vance.common.env.EnvUtil;
+import com.linkall.vance.common.config.ConfigUtil;
+import com.linkall.vance.common.config.SecretUtil;
 import com.linkall.vance.core.Adapter1;
 import com.linkall.vance.core.Source;
 import io.debezium.embedded.Connect;
@@ -32,14 +33,14 @@ public abstract class DebeziumSource implements Source {
     consumer = new DebeziumRecordConsumer((Adapter1<SourceRecord>) getAdapter());
     config =
         new DbConfig(
-            EnvUtil.getEnvOrConfig("host"),
-            EnvUtil.getEnvOrConfig("port"),
-            EnvUtil.getEnvOrConfig("username"),
-            EnvUtil.getEnvOrConfig("password"),
-            EnvUtil.getEnvOrConfig("database"),
-            EnvUtil.getEnvOrConfig("include_table"),
-            EnvUtil.getEnvOrConfig("exclude_table"),
-            EnvUtil.getEnvOrConfig("store_offset_key"));
+            SecretUtil.getString("host"),
+            SecretUtil.getString("port"),
+            SecretUtil.getString("username"),
+            SecretUtil.getString("password"),
+            SecretUtil.getString("dbName"),
+            ConfigUtil.getString("include_table"),
+            ConfigUtil.getString("exclude_table"),
+            ConfigUtil.getString("store_offset_key"));
   }
 
   public abstract String getConnectorClass();

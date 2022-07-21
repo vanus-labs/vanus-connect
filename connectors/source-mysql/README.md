@@ -55,20 +55,39 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the Mysql Source
 
+| name               | requirement | description                                                                                                                                    |
+|--------------------|-------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| v_target           | required    | target URL will send CloudEvents to                                                                                                            |
+| v_store_file       | required    | kv store file name                                                                                                                             |
+| include_table      | optional    | comma-separated list of include table name, not include database name                                                                          |
+| exclude_table      | optional    | comma-separated list of exclude table name, not include database name. <br/>no need add system table and only no config include_table will use |
+| store_offset_key   | optional    | offset store use key, default is vance_debezium_offset                                                                                         |
+| offset_binlog_file | optional    | binlog filename, increment sync start binlog file name if not set is full sync                                                                 |
+| offset_binlog_pos  | optional    | binlog position, use with config offset_binlog_file                                                                                            |
+
+## MySql Source Secrets
+
+Users should set their sensitive data Base64 encoded in a secret file. 
+And mount your local secret file to `/vance/secret/secret.json` when you run the connector.
+
+### Encode your sensitive data
+
+```shell
+$ echo -n ABCDEFG | base64
+QUJDREVGRw==
+```
+
+Replace 'ABCDEFG' with your sensitive data.
+
+### Secret Fields of the Mysql Source
+
 | name               | requirement | description                                                                                                |
 |--------------------|-------------|------------------------------------------------------------------------------------------------------------|
-| v_target           | required    | target URL will send CloudEvents to                                                                        |
-| v_store_file       | required    | kv store file name                                                                                         |
 | host               | required    | db host                                                                                                    |
 | port               | required    | db port                                                                                                    |
 | username           | required    | db username                                                                                                |
 | password           | required    | db password                                                                                                |
-| database           | required    | db database name                                                                                           |
-| include_table      | optional    | comma-separated list of include table name                                                                 |
-| exclude_table      | optional    | comma-separated list of exclude table name, no need add system table only no config include_table will use |
-| store_offset_key   | optional    | offset store use key, default is vance_debezium_offset                                                     |
-| offset_binlog_file | optional    | binlog file name                                                                                           |
-| offset_binlog_pos  | optional    | binlog position                                                                                            |
+| dbName             | required    | db database name                                                                                           |
 
 ## MySql Source Image
 
