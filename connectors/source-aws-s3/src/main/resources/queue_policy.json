@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Id": "sqs_policy",
+  "Statement": [
+    {
+      "Sid": "sqs_policy_sid",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "sqs:SendMessage",
+      "Resource": "XXXX",
+      "Condition": {
+        "ArnEquals": {
+          "aws:SourceArn": "XXXX"
+        }
+      }
+    }
+  ]
+}
