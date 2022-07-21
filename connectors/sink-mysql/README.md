@@ -55,14 +55,33 @@ Users can specify their configs by either setting environments variables or moun
 | name             | requirement | description                                                                |
 |------------------|-------------|----------------------------------------------------------------------------|
 | v_port           | optional    | v_port is used to specify the port MySql Sink is listening on,default 8080 |
-| host             | required    | db host                                                                    |
-| port             | required    | db port                                                                    |
-| username         | required    | db username                                                                |
-| password         | required    | db password                                                                |
-| database         | required    | db database name                                                           |
 | table_name       | required    | db table name                                                              |
 | insert_mode      | optional    | insert mode: insert or upsert, default insert                              |
 | commit_interval  | optional    | batch data commit to db interval, unit is millisecond default 1000         |
+
+## MySql Sink Secrets
+
+Users should set their sensitive data Base64 encoded in a secret file.
+And mount your local secret file to `/vance/secret/secret.json` when you run the connector.
+
+### Encode your sensitive data
+
+```shell
+$ echo -n ABCDEFG | base64
+QUJDREVGRw==
+```
+
+Replace 'ABCDEFG' with your sensitive data.
+
+### Secret Fields of the Mysql Sink
+
+| name               | requirement | description        |
+|--------------------|-------------|--------------------|
+| host               | required    | db host            |
+| port               | required    | db port            |
+| username           | required    | db username        |
+| password           | required    | db password        |
+| dbName             | required    | db database name   |
 
 ## MySql Sink Image
 

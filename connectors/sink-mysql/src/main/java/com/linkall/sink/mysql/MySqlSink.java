@@ -1,6 +1,7 @@
 package com.linkall.sink.mysql;
 
-import com.linkall.vance.common.env.EnvUtil;
+import com.linkall.vance.common.config.ConfigUtil;
+import com.linkall.vance.common.config.SecretUtil;
 import com.linkall.vance.core.Sink;
 import com.linkall.vance.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
@@ -19,14 +20,14 @@ public class MySqlSink implements Sink {
   public MySqlSink() {
     config =
         new MySqlConfig(
-            EnvUtil.getEnvOrConfig("host"),
-            EnvUtil.getEnvOrConfig("port"),
-            EnvUtil.getEnvOrConfig("username"),
-            EnvUtil.getEnvOrConfig("password"),
-            EnvUtil.getEnvOrConfig("database"),
-            EnvUtil.getEnvOrConfig("table_name"),
-            EnvUtil.getEnvOrConfig("insert_mode"),
-            EnvUtil.getEnvOrConfig("commit_interval"));
+            SecretUtil.getString("host"),
+            SecretUtil.getString("port"),
+            SecretUtil.getString("username"),
+            SecretUtil.getString("password"),
+            SecretUtil.getString("dbName"),
+            ConfigUtil.getString("table_name"),
+            ConfigUtil.getString("insert_mode"),
+            ConfigUtil.getString("commit_interval"));
   }
 
   @Override
