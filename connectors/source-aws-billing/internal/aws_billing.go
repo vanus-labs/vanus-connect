@@ -47,6 +47,7 @@ type AwsBillingSource struct {
 func NewAwsBillingSource(ctx context.Context, ceClient ce.Client) connector.Source {
 	config := getConfig(ctx)
 	return &AwsBillingSource{
+		config:   config,
 		client:   newCostExplorerClient(config),
 		ceClient: ceClient,
 		events:   make(chan ce.Event, 10),
