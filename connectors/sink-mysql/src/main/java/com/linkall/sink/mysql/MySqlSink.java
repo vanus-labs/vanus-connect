@@ -56,6 +56,19 @@ public class MySqlSink implements Sink {
             LOGGER.error("write data has error", e);
           }
         });
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  if (sqlWriter == null) {
+                    return;
+                  }
+                  try {
+                    sqlWriter.close();
+                  } catch (Exception e) {
+                    LOGGER.error("sql writer close error", e);
+                  }
+                }));
     server.listen();
   }
 

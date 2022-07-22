@@ -75,4 +75,10 @@ public class SqlWriter {
     sqlExecutor.executeBatch();
     batchSize = 0;
   }
+
+  public void close() throws Exception{
+    executorService.shutdown();
+    flush();
+    connectionProvider.close();
+  }
 }

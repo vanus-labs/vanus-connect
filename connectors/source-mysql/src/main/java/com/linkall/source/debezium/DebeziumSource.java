@@ -15,6 +15,7 @@ import org.apache.kafka.connect.storage.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Executor;
@@ -66,6 +67,16 @@ public abstract class DebeziumSource implements Source {
             .build();
     executor = Executors.newSingleThreadExecutor();
     executor.execute(engine);
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  try {
+                    engine.close();
+                  } catch (IOException e) {
+                    LOGGER.error("engine close error", e);
+                  }
+                }));
   }
 
   private Properties getProperties() {
