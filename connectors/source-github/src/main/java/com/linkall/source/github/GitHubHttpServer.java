@@ -27,11 +27,15 @@ public class GitHubHttpServer implements com.linkall.vance.core.http.HttpServer 
     private static Router router;
     private final HttpServer httpServer;
     private HttpResponseInfo handlerRI;
+    private String code;
 
     public GitHubHttpServer(){
         this.httpServer = vertx.createHttpServer();
         this.router = Router.router(vertx);
-        this.handlerRI = new HttpResponseInfo(200, "Receive success, deliver CloudEvents to" + ConfigUtil.getVanceSink() + "success", 500, "Receive success, deliver CloudEvents to" + ConfigUtil.getVanceSink() + "failure");
+        this.handlerRI = new HttpResponseInfo(200, "Receive success, deliver CloudEvents to"
+                + ConfigUtil.getVanceSink() + "success", 500, "Receive success, deliver CloudEvents to"
+                + ConfigUtil.getVanceSink() + "failure");
+        this.code = SecretUtil.getString("githubWebHookSecret");
     }
 
     public void init(){
@@ -105,7 +109,7 @@ public class GitHubHttpServer implements com.linkall.vance.core.http.HttpServer 
         int port = Integer.parseInt(ConfigUtil.getPort());
         this.httpServer.listen(port, (server) -> {
             if (server.succeeded()) {
-                LOGGER.info("HttpServer is listening on port: " + ((HttpServer)server.result()).actualPort());
+                LOGGER.info("GitHubHttpServer is listening on port: " + ((HttpServer)server.result()).actualPort());
             } else {
                 LOGGER.error(server.cause().getMessage());
             }
@@ -113,8 +117,6 @@ public class GitHubHttpServer implements com.linkall.vance.core.http.HttpServer 
         });
     }
     public boolean verifySignature(String signature, String bodyStr){
-        String code = SecretUtil.getString("githubWebHookSecret");
-
         String hex = "sha256=" + new HmacUtils(HmacAlgorithms.HMAC_SHA_256,code).hmacHex(bodyStr);
 
         if(!hex.equals(signature)){

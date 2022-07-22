@@ -18,6 +18,7 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
 
     @Override
     public CloudEvent adapt(HttpServerRequest req, Buffer buffer) {
+        template.withId(req.getHeader("X-GitHub-Delivery"));
         switch (req.getHeader("X-GitHub-Event")){
             case "star": adaptStar(req, buffer);
                 break;
@@ -107,12 +108,9 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 break;
             case "watch": adaptWatchEvent(req, buffer);
                 break;
-            default:;
+            default: adaptOtherEvent(req, buffer);
         }
         JsonObject data = new JsonObject();
-        JsonObject headers = new JsonObject();
-        req.headers().forEach((m)->headers.put(m.getKey(), m.getValue()));
-        data.put("headers", headers);
         String contentType = req.getHeader("content-type");
         if(null != contentType && contentType.equals("application/json")){
             JsonObject body = buffer.toJsonObject();
@@ -127,10 +125,14 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
         return template.build();
     }
 
-
+    private void adaptOtherEvent(HttpServerRequest req, Buffer buffer){
+        //解析时间
+        OffsetDateTime eventTime = getZeroTime(LocalDateTime.now());
+        template.withDataContentType("application/json")
+                .withTime(eventTime);
+    }
 
     private void adaptStar(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String html_url = repository.getString("url");
@@ -146,7 +148,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPush(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String html_url = repository.getString("url");
@@ -162,7 +163,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptIssues(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String html_url = repository.getString("url");
@@ -180,7 +180,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptCheckRun(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String html_url = repository.getString("url");
@@ -201,7 +200,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptCheckSuite(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String html_url = repository.getString("url");
@@ -218,7 +216,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptCommitComment(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject comment = payLoad.getJsonObject("comment");
         String source = comment.getString("url")+"/"+comment.getString("comment_id");
@@ -234,7 +231,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptContentReference(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -250,7 +246,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptCreate(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -265,7 +260,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptDelete(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -280,7 +274,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptDeployKey(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -300,7 +293,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 .withDataContentType("application/json");
     }
     private void adaptDeployment(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -317,7 +309,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptDeploymentStatus(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject deployment = payLoad.getJsonObject("deployment");
         String source = deployment.getString("url");
@@ -334,7 +325,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptFork(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -351,7 +341,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptGitHubAppAuthorization(HttpServerRequest req, Buffer buffer){
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject sender = payLoad.getJsonObject("sender");
         String source = sender.getString("url");
@@ -364,7 +353,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptGollum(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -380,7 +368,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptInstallation(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject installation = payLoad.getJsonObject("installation");
         JsonObject account = installation.getJsonObject("account");
@@ -397,7 +384,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptInstallationRepository(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject installation = payLoad.getJsonObject("installation");
         JsonObject account = installation.getJsonObject("account");
@@ -414,7 +400,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptIssueComment(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject issue = payLoad.getJsonObject("issue");
         String source = issue.getString("url");
@@ -430,7 +415,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptLabel(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -446,7 +430,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptMarketplacePurchase(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject sender = payLoad.getJsonObject("sender");
         String source = sender.getString("url").replace("/username", "");
@@ -462,7 +445,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptMember(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -478,7 +460,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptMemberShip(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject team = payLoad.getJsonObject("team");
         String source = team.getString("url");
@@ -495,7 +476,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptMeta(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -511,7 +491,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptMilestone(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -527,7 +506,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptOrganization(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject organization = payLoad.getJsonObject("organization");
         String source = organization.getString("url");
@@ -544,7 +522,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptOrgBlock(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject organization = payLoad.getJsonObject("organization");
         String source = organization.getString("url");
@@ -560,7 +537,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPageBuildEvent(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -575,7 +551,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptProjectCard(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -591,7 +566,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptProjectColumn(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -607,7 +581,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptProject(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -623,7 +596,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPublic(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         JsonObject owner = repository.getJsonObject("owner");
@@ -638,7 +610,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPullRequest(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -653,7 +624,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPullRequestReview(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject pull_request = payLoad.getJsonObject("pull_request");
         String source = pull_request.getString("url");
@@ -669,7 +639,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptPullRequestReviewComment(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject pull_request = payLoad.getJsonObject("pull_request");
         String source = pull_request.getString("url");
@@ -685,7 +654,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptRegistryPackage(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -701,7 +669,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptRelease(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -717,7 +684,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptRepository(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         JsonObject owner = repository.getJsonObject("owner");
@@ -733,7 +699,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptRepositoryImport(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         JsonObject owner = repository.getJsonObject("owner");
@@ -748,7 +713,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptRepositoryVulnerability(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -763,7 +727,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptSecurityAdvisoryEvent(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject security_advisory = payLoad.getJsonObject("security_advisory");
         String action = payLoad.getString("action");
@@ -778,7 +741,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptStatus(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -793,7 +755,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptTeam(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -808,7 +769,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptTeamAddEvent(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
@@ -822,7 +782,6 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
     }
 
     private void adaptWatchEvent(HttpServerRequest req, Buffer buffer) {
-        template.withId(req.getHeader("X-GitHub-Delivery"));
         JsonObject payLoad = buffer.toJsonObject();
         JsonObject repository = payLoad.getJsonObject("repository");
         String source = repository.getString("url");
