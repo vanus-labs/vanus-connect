@@ -33,8 +33,8 @@ public class S3Sink implements Sink {
     private static final AtomicInteger fileSize = new AtomicInteger(0);
     private String pathName;
     private String timeIntervalUnit;
-    private int flushSize = 1000;
-    private long scheduledInterval = 30;
+    private int flushSize;
+    private long scheduledInterval;
     private S3Client s3;
 
     @Override
@@ -47,9 +47,13 @@ public class S3Sink implements Sink {
 
         if(ConfigUtil.getString("flushSize")!=null){
             flushSize = Integer.parseInt(ConfigUtil.getString("flushSize"));
+        }else{
+            flushSize = 1000;
         }
         if(ConfigUtil.getString("scheduledInterval")!=null){
             scheduledInterval = Long.parseLong(ConfigUtil.getString("scheduledInterval"));
+        }else{
+            scheduledInterval = 60;
         }
 
         //crate path for file to be upload
@@ -108,6 +112,7 @@ public class S3Sink implements Sink {
         Runtime.getRuntime().addShutdownHook(new Thread(()->{
             pathName = checkAndGetPathName();
             uploadFile(bucketName);
+            s3.close();
             System.out.println("shut down");
         }));
     }
