@@ -1,0 +1,4 @@
+{
+  "v_target": "http://localhost:8080",
+  "sqs_arn": "arn:aws:sqs:us-west-2:843378899134:my-test-queue"
+}
