@@ -1,9 +1,10 @@
 ---
 layout: default
 title: CDKs
-nav_order: 5
+nav_order: 3
 description: "Connector-Deployment Kits (CDKs) are collections of packages to help you to build a new [Vance Connector][vc] in minutes."
 permalink: /cdks.md
+---
 
 # CDKs for Vance
 
