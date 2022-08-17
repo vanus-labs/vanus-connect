@@ -25,7 +25,7 @@ and more.
     <version>0.1.0</version>
 </dependency>
 ```
-for more information visit [CDK-java][javacdk]
+for more information visit [CDK-java][javacdk].
 
 ---
 ### CDK-Go
@@ -35,7 +35,7 @@ require (
   github.com/linkall-labs/cdk-go v0.1.0
 )
 ```
-for more information visit [CDK-Go][gocdk]
+for more information visit [CDK-Go][gocdk].
 
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
