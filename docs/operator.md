@@ -4,7 +4,7 @@ nav_order: 4
 ---
 ## Deploying Vance operator
 
-Use an all-in-one YAML file to simply [deploy Vance][deploy].
+Use an all-in-one YAML file to simply [deploy Vance operator][deploy].
 
 ## Getting started
 
