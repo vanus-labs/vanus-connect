@@ -47,7 +47,7 @@ Here are some connector examples developed by cdk-java.
 
 Use them as samples when you want to write a sink or source connector.
 
-[vc]: java-concept.md
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [api]: java-api.md
 [http]: java-http.md
 [sink-example]: https://github.com/linkall-labs/cdk-java/tree/main/examples/sink-example
