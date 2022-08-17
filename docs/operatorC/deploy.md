@@ -1,3 +1,9 @@
+
+---
+title: Vance Installation
+nav_exclude: true
+---
+
 # Vance Installation
 
 Vance is composed of a set of APIs implemented as Kubernetes Custom Resource Definitions (CRDs) and a controller.
