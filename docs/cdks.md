@@ -18,7 +18,7 @@ and more.
 
 ## Getting started
 ---
- # CDK-java
+ ### CDK-java
  To use the cdk-java, add following dependency to your pom.xml
  ```
 <dependency>
@@ -29,7 +29,7 @@ and more.
 ```
 for more information visit [CDK-java][javacdk]
 ---
-# CDK-Go
+### CDK-Go
 To use the cdk-go, add following dependency to your go.mod
 ```
 require (
