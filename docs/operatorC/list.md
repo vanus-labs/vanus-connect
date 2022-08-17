@@ -1,6 +1,6 @@
 ---
 title: List
-parent: connectors
+parent: ../connectors
 nav_order: 1
 ---
 
