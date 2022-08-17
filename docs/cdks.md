@@ -16,7 +16,6 @@ and more.
 ## Getting started
 
 ---
-
 ### CDK-java
  To use the cdk-java, add following dependency to your pom.xml
  ```
@@ -29,7 +28,6 @@ and more.
 for more information visit [CDK-java][javacdk]
 
 ---
-
 ### CDK-Go
 To use the cdk-go, add following dependency to your go.mod
 ```
@@ -39,7 +37,6 @@ require (
 ```
 for more information visit [CDK-Go][gocdk]
 
----
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 [javacdk]: https://linkall-labs.github.io/cdk-java/
