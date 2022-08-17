@@ -1,6 +1,7 @@
 ---
 title: Vance CDKs
 nav_order: 5
+has_children: true
 ---
 
 # CDKs for Vance
