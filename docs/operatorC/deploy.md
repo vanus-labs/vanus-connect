@@ -1,6 +1,6 @@
 
 ---
-title: Vance Installation
+title: Vance-Installation
 nav_exclude: true
 ---
 
