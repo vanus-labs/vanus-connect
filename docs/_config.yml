@@ -2,7 +2,7 @@
 # https://help.github.com/en/github/working-with-github-pages/testing-your-github-pages-site-locally-with-jekyll
 
 title: Vance
-baseurl: "/cdk-go"
+baseurl: "/vance"
 url: "https://linkall-labs.github.io"
 remote_theme: just-the-docs/just-the-docs
 plugins:
