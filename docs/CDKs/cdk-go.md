@@ -1,6 +1,7 @@
 ---
-title: List
+title: cdk-go
 parent: connectors
-nav_order: 1
+nav_order: 2
+has_children: true
 ---
 
