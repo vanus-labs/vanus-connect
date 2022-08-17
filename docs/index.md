@@ -1,11 +1,13 @@
+---
 layout: default
 title: Home
 nav_order: 1
-description: "Vance is a Kubernetes-based platform that manages a variety of out-of-box connectors."
+description: "The Java Connector-Development Kit (CDK) is a collection of Java packages to help you to build a new [Vance Connector][vc] in minutes."
 permalink: /
 ---
 
 # Vance
+{: .fs-9 }
 Vance is a Kubernetes-based data connection platform that natively supports the CloudEvents specifications. Vance constitutes three main modules: Connectors, an Operator, and CDKs. [GitHub Repository][vance]
 
 ## Connectors
