@@ -11,7 +11,7 @@ Use an all-in-one YAML file to simply [deploy Vance][deploy].
 - [QuickStart-1: RabbitMQ][sample-rabbitmq]
 - [QuickStart-2: HttpServer][sample-httpserver]
 
-Other connector samples for Vance list [here][samples].
+Other connector samples for Vance list(Now updated yet DeadLink) [here][samples].
 
 
 [deploy]: operatorC/deploy.md
