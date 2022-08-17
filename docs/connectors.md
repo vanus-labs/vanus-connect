@@ -1,5 +1,5 @@
 ---
-title: Vance CDKs
+title: Connectors
 nav_order: 3
 ---
 
