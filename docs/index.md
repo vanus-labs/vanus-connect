@@ -6,52 +6,23 @@ description: "The Java Connector-Development Kit (CDK) is a collection of Java p
 permalink: /
 ---
 
-# Java CDK for Vance
+# Vance
 {: .fs-9 }
+Vance is a Kubernetes-based data connection platform that natively supports the CloudEvents specifications. Vance constitutes three main modules: Connectors, an Operator, and CDKs. [GitHub Repository][vance]
 
-## Introduction
+## Connectors
+The Connectors module provides a large number of out-of-the-box, image-based connectors. Source-Connectors are responsible for obtaining data from the source, converting these data in different formats into a unified CloudEvent, and sending them to the target. Sink-Connectors are responsible for performing some general processing on the data in CloudEvents format (such as: Adding data to a MySQL database). Connectors enable their users to no longer focus on how to obtain or deal with data formats so they can focus on their business without any worries. [Connectors][con]
 
-The cdk aims to speed up the development of a vance connector by offering some utilities including:
-- HTTP implementations (either to handle general HTTP requests or CloudEvents)
-- Config implementation to load user-specific configs
-- The ability to interact with the Vance operator
+## Operator
+The Operator module enables Connectors to automatically scale according to certain conditions through the HPA feature of K8s, thereby achieving the effect of serverless pay-as-you-go. For example, the Operator can increase or decrease the number of pods according to the immediate HTTP traffic(heavy/low) to maximize the utilization of resources. These custom scaling conditions may be HTTP traffic, CPU/memory load, or custom scaling conditions currently supported by KEDA. [Operator][ope]
 
-## Getting started
+## CDKs
+The CDKs module enables developers to design connectors that meet the Connectors specification in the shortest time by providing class libraries and documents in various languages. [CDKs][cdks]
 
-### Using the cdk-java
+![alt text](images/Flowchart.jpg)
 
-To use the cdk-java, add following dependency to your pom.xml
 
-```
-<dependency>
-    <groupId>com.linkall</groupId>
-    <artifactId>cdk-java</artifactId>
-    <version>0.1.0</version>
-</dependency>
-```
-
-In order to know how to create a new Vance Connector, check out the [API Documentation][api].
-
-If you want to know more about the default HTTP implementation for handling requests or sending CloudEvents out, check out the 
-[HTTP implementations][http].
-
-Developers better have a basic familiarity with the [CloudEvents Specification][ce] and [CloudEvents java-sdk][ce-sdk] before they start writing a connector.
-
-### Connector Examples
-
-Here are some connector examples developed by cdk-java.
-
-| Connector         | Type          | Description |
-|:-------------|:------------------|:------|
-| [sink-example]    | sink | Use this example to write your first sink connector.  |
-| [source-example] | source   | Use this example to write your first source connector. |
-
-Use them as samples when you want to write a sink or source connector.
-
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[api]: https://linkall-labs.github.io/cdk-java/api.html
-[http]: https://linkall-labs.github.io/cdk-java/http.html
-[sink-example]: https://github.com/linkall-labs/cdk-java/tree/main/examples/sink-example
-[source-example]: https://github.com/linkall-labs/cdk-java/tree/main/examples/source-example
-[ce]: https://github.com/cloudevents/spec
-[ce-sdk]: https://github.com/cloudevents/sdk-java
+[vance]: https://github.com/linkall-labs/vance/
+[con]: /connectors.md
+[ope]: /operator.md
+[cdks]: /cdks.md
