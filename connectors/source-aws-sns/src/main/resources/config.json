@@ -1,7 +1,7 @@
 {
-  "TopicArn": "arn:aws:sns:us-west-2:843378899134:TestedTopic",
+  "topic_arn": "arn:aws:sns:us-west-2:843378899134:TestedTopic",
+  "endpoint": "http://xxxxx:8082",
+  "protocol": "http",
   "v_target": "http://localhost:8080",
-  "v_port": "8082",
-  "v_host": "http://xxxxx:8082",
-  "protocol": "http"
+  "v_port": "8082"
 }

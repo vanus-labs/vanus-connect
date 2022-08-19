@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.SnsException;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,14 +36,21 @@ public class SnsSource implements Source {
         AwsHelper.checkCredentials();
         SnsAdapter adapter = (SnsAdapter) getAdapter();
 
-        String snsTopicArn = ConfigUtil.getString("TopicArn");
+        String snsTopicArn = ConfigUtil.getString("topic_arn");
         String region = SNSUtil.getRegion(snsTopicArn);
-        String host = ConfigUtil.getString("v_host");
+        String host = ConfigUtil.getString("endpoint");
         String protocol = ConfigUtil.getString("protocol");
 
         SnsClient snsClient = SnsClient.builder().region(Region.of(region)).build();
 
-        SNSUtil.subHTTPS(snsClient, snsTopicArn, host, protocol);
+        String subscribeArn = "";
+        try {
+            subscribeArn =  SNSUtil.subHTTPS(snsClient, snsTopicArn, host, protocol);
+        }catch (SnsException e){
+            LOGGER.error(e.awsErrorDetails().errorMessage());
+            snsClient.close();
+            System.exit(1);
+        }
 
         HttpClient.setDeliverSuccessHandler(resp->{
             int num = eventNum.addAndGet(1);
@@ -67,7 +75,13 @@ public class SnsSource implements Source {
                     //confirm sub or unSub
                     LOGGER.info("verify signature successful");
                     if(messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")){
-                        SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
+                        try{
+                            SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
+                        }catch (SnsException e){
+                            LOGGER.error(e.awsErrorDetails().errorMessage());
+                            snsClient.close();
+                            System.exit(1);
+                        }
                     }
 
                     CloudEvent ce = adapter.adapt(request.request(), body);
@@ -91,10 +105,16 @@ public class SnsSource implements Source {
             }
         });
 
+        String finalSubscribeArn = subscribeArn;
         Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            SNSUtil.unSubHTTPS(snsClient);
+            try{
+                SNSUtil.unSubHTTPS(snsClient, finalSubscribeArn);
+            }catch (SnsException e){
+                LOGGER.error(e.awsErrorDetails().errorMessage());
+            }
             snsClient.close();
-            System.out.println("shut down!");
+
+            LOGGER.info("shut down!");
         }));
 
     }

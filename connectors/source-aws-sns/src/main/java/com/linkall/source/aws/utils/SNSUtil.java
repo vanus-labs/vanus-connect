@@ -1,6 +1,7 @@
 package com.linkall.source.aws.utils;
 
 import com.amazonaws.SdkClientException;
+import com.amazonaws.arn.Arn;
 import com.amazonaws.services.sns.message.SnsMessage;
 import com.amazonaws.services.sns.message.SnsMessageManager;
 import org.slf4j.Logger;
@@ -14,67 +15,46 @@ public class SNSUtil {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SNSUtil.class);
 
-    public static  String subscriptionArn;
-
     public static String getRegion(String snsTopicArn){
-        String[] arr = snsTopicArn.split(":");
-        return arr[3];
+        return Arn.fromString(snsTopicArn).getRegion();
     }
 
-    public static void subHTTPS(SnsClient snsClient, String topicArn, String url, String protocol) {
-        try {
-            SubscribeRequest request = SubscribeRequest.builder()
-                    .protocol(protocol)
-                    .endpoint(url)
-                    .returnSubscriptionArn(true)
-                    .topicArn(topicArn)
-                    .build();
+    public static String subHTTPS(SnsClient snsClient, String topicArn, String url, String protocol) throws SnsException {
+        String subscriptionArn = "";
+        SubscribeRequest request = SubscribeRequest.builder()
+                .protocol(protocol)
+                .endpoint(url)
+                .returnSubscriptionArn(true)
+                .topicArn(topicArn)
+                .build();
 
-            SubscribeResponse result = snsClient.subscribe(request);
-            LOGGER.info("Subscription ARN is " + result.subscriptionArn() + "\n\n Status is " + result.sdkHttpResponse().statusCode());
-            subscriptionArn = result.subscriptionArn();
-        } catch (SnsException e) {
-            LOGGER.error(e.awsErrorDetails().errorMessage());
-            System.exit(1);
-        }
+        SubscribeResponse result = snsClient.subscribe(request);
+        LOGGER.info("Subscription ARN is " + result.subscriptionArn() + "\n\n Status is " + result.sdkHttpResponse().statusCode());
+        subscriptionArn = result.subscriptionArn();
+        return subscriptionArn;
     }
 
-    public static void confirmSubHTTPS(SnsClient snsClient, String subscriptionToken, String topicArn ) {
-        try {
-            ConfirmSubscriptionRequest request = ConfirmSubscriptionRequest.builder()
-                    .token(subscriptionToken)
-                    .topicArn(topicArn)
-                    .build();
+    public static void confirmSubHTTPS(SnsClient snsClient, String subscriptionToken, String topicArn ) throws SnsException{
+        ConfirmSubscriptionRequest request = ConfirmSubscriptionRequest.builder()
+                .token(subscriptionToken)
+                .topicArn(topicArn)
+                .build();
 
-            ConfirmSubscriptionResponse result = snsClient.confirmSubscription(request);
-            LOGGER.info("\n\nStatus was " + result.sdkHttpResponse().statusCode() + "\n\nSubscription Arn: \n\n" + result.subscriptionArn());
-
-        } catch (SnsException e) {
-            LOGGER.error(e.awsErrorDetails().errorMessage());
-            System.exit(1);
-        }
+        ConfirmSubscriptionResponse result = snsClient.confirmSubscription(request);
+        LOGGER.info("\n\nStatus was " + result.sdkHttpResponse().statusCode() + "\n\nSubscription Arn: \n\n" + result.subscriptionArn());
     }
 
-    public static void unSubHTTPS(SnsClient snsClient){
-        unSubHTTPS(snsClient, subscriptionArn);
-    }
+    public static void unSubHTTPS(SnsClient snsClient, String subscriptionArn) throws SnsException{
 
-    public static void unSubHTTPS(SnsClient snsClient, String subscriptionArn) {
+        UnsubscribeRequest request = UnsubscribeRequest.builder()
+                .subscriptionArn(subscriptionArn)
+                .build();
 
-        try {
-            UnsubscribeRequest request = UnsubscribeRequest.builder()
-                    .subscriptionArn(subscriptionArn)
-                    .build();
+        UnsubscribeResponse result = snsClient.unsubscribe(request);
 
-            UnsubscribeResponse result = snsClient.unsubscribe(request);
+        LOGGER.info("\n\nStatus was " + result.sdkHttpResponse().statusCode()
+                + "\n\nSubscription was removed for " + request.subscriptionArn());
 
-            System.out.println("\n\nStatus was " + result.sdkHttpResponse().statusCode()
-                    + "\n\nSubscription was removed for " + request.subscriptionArn());
-
-        } catch (SnsException e) {
-            System.out.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
-        }
     }
 
     public static boolean verifySignatrue(InputStream message, String region){
@@ -84,7 +64,7 @@ public class SNSUtil {
             manager.parseMessage(message);
         }catch(SdkClientException e){
             e.printStackTrace();
-            LOGGER.error("The signature is not legal!");
+            LOGGER.error("The signature is not legal");
             verifyResult = false;
         }
         return verifyResult;
