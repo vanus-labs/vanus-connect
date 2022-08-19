@@ -1,1 +1,1 @@
-this is just a script test for ssh commit and push
+hello world
