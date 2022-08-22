@@ -14,12 +14,6 @@
 
 package com.linkall.connector.mongodb;
 
-import com.linkall.vance.core.Adapter1;
-import io.cloudevents.CloudEvent;
-
-public class MongoDBAdapter implements Adapter1 {
-    @Override
-    public CloudEvent adapt(Object data) {
-        return null;
-    }
+public enum OpType {
+    INSERT, UPDATE, DELETE;
 }

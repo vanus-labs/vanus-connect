@@ -16,6 +16,7 @@ package com.linkall.connector.mongodb;
 
 import com.linkall.vance.core.Adapter;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -35,18 +36,21 @@ public class MongoDBSource extends com.linkall.connector.mongodb.debezium.Source
 
     @Override
     public Map<String, Object> getConfigOffset() {
-        return null;
+        return new HashMap<>();
     }
 
     @Override
+    // https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-connector-properties
     public Properties getDebeziumProperties() {
         final Properties props = new Properties();
-        /* begin connector properties */
-        props.setProperty("database.hostname", "localhost");
-        props.setProperty("database.port", "27017");
-        props.setProperty("database.user", "admin");
-        props.setProperty("database.password", "admin");
-        props.setProperty("database.server.id", "85744");
+
+        props.setProperty("name", "test");
+        props.setProperty("mongodb.hosts", "44.242.140.28:27017");
+        props.setProperty("mongodb.name", "test");
+//        props.setProperty("mongodb.user", "admin");
+//        props.setProperty("mongodb.password", "admin");
+//        props.setProperty("mongodb.authsource", "admin");
+
         return props;
     }
 }

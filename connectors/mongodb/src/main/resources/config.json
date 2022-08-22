@@ -1,0 +1,6 @@
+{
+  "v_target": "http://localhost:8080",
+  "v_store_file": "/tmp/vance/source-mongodb/offset.data",
+  "include_table": "test",
+  "store_offset_key": "vance_mongodb_test"
+}

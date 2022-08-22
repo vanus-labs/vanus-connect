@@ -12,6 +12,8 @@
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <debezium.version>1.9.4.Final</debezium.version>
+        <junit-jupiter.version>5.5.2</junit-jupiter.version>
+        <fastjson.version>1.2.83</fastjson.version>
     </properties>
     <dependencies>
         <dependency>
@@ -28,6 +30,22 @@
             <groupId>io.debezium</groupId>
             <artifactId>debezium-embedded</artifactId>
             <version>${debezium.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>${fastjson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.9</version>
         </dependency>
     </dependencies>
     <build>

@@ -1,15 +1,26 @@
+// Copyright 2022 Linkall Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.linkall.connector.mongodb.debezium;
 
-import com.linkall.vance.common.config.ConfigUtil;
-import com.linkall.vance.common.config.SecretUtil;
 import com.linkall.vance.core.Adapter1;
-import io.debezium.embedded.Connect;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import io.debezium.engine.format.CloudEvents;
 import io.debezium.engine.spi.OffsetCommitPolicy;
 import org.apache.kafka.connect.json.JsonConverter;
 import org.apache.kafka.connect.json.JsonConverterConfig;
-import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,12 +36,12 @@ import java.util.stream.Stream;
 public abstract class Source implements com.linkall.vance.core.Source {
     private static final Logger LOGGER = LoggerFactory.getLogger(Source.class);
     protected final Config config;
-    private final DebeziumEngine.ChangeConsumer<ChangeEvent<SourceRecord, SourceRecord>> consumer;
-    private DebeziumEngine<ChangeEvent<SourceRecord, SourceRecord>> engine;
+    private final DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> consumer;
+    private DebeziumEngine<ChangeEvent<String, String>> engine;
     private Executor executor;
 
     public Source() {
-        consumer = new RecordConsumer((Adapter1<SourceRecord>) getAdapter());
+        consumer = new RecordConsumer((Adapter1<String>) getAdapter());
         config =
                 new Config(
                         "localhost",
@@ -51,7 +62,7 @@ public abstract class Source implements com.linkall.vance.core.Source {
 
     public void start() throws Exception {
         engine =
-                DebeziumEngine.create(Connect.class)
+                DebeziumEngine.create(CloudEvents.class)
                         .using(getProperties())
                         .using(OffsetCommitPolicy.always())
                         .notifying(consumer)
@@ -83,14 +94,31 @@ public abstract class Source implements com.linkall.vance.core.Source {
 
         // debezium engine configuration
         props.setProperty("connector.class", getConnectorClass());
+        props.setProperty("name", config.getDatabase());
+        props.setProperty("database.server.name", config.getDatabase());
+
+        // https://debezium.io/documentation/reference/1.9/connectors/mysql.html#mysql-property-binary-handling-mode
+        props.setProperty("binary.handling.mode", "base64");
+
         // snapshot config
         props.setProperty("snapshot.mode", "initial");
         // DO NOT include schema change, e.g. DDL
         props.setProperty("include.schema.changes", "false");
         // disable tombstones
         props.setProperty("tombstones.on.delete", "false");
+        props.setProperty("converter.schemas.enable", "false"); // don't include schema in message
+
+        // https://debezium.io/documentation/reference/stable/integrations/cloudevents.html
+        props.setProperty("converter", "io.debezium.converters.CloudEventsConverter");
+        props.setProperty("converter.serializer.type", "json");
+        props.setProperty("converter.data.serializer.type", "json");
+
+        // history
+        props.setProperty("database.history", "io.debezium.relational.history.FileDatabaseHistory");
+        props.setProperty("database.history.file.filename", "/tmp/mongodb/history.data");
 
         // offset
+        props.setProperty("offset.flush.interval.ms", "1000");
         props.setProperty("offset.storage", OffsetStore.class.getCanonicalName());
         if (config.getStoreOffsetKey() != null && !config.getStoreOffsetKey().isEmpty()) {
             props.setProperty(
@@ -107,30 +135,6 @@ public abstract class Source implements com.linkall.vance.core.Source {
                     OffsetStore.OFFSET_CONFIG_VALUE,
                     new String(offsetValue, StandardCharsets.UTF_8));
         }
-
-        props.setProperty("offset.flush.interval.ms", "1000");
-
-        // history
-        props.setProperty("database.history", "io.debezium.relational.history.FileDatabaseHistory");
-        props.setProperty("database.history.file.filename", "/tmp/mysql/history.data");
-
-        // https://debezium.io/documentation/reference/configuration/avro.html
-        props.setProperty("key.converter.schemas.enable", "false");
-        props.setProperty("value.converter.schemas.enable", "false");
-
-        // debezium names
-        props.setProperty("name", config.getDatabase());
-        props.setProperty("database.server.name", config.getDatabase());
-
-        // db connection configuration
-        props.setProperty("database.hostname", config.getHost());
-        props.setProperty("database.port", config.getPort());
-        props.setProperty("database.user", config.getUsername());
-        props.setProperty("database.dbname", config.getDatabase());
-        props.setProperty("database.password", config.getPassword());
-
-        // https://debezium.io/documentation/reference/1.9/connectors/mysql.html#mysql-property-binary-handling-mode
-        props.setProperty("binary.handling.mode", "base64");
 
         // table selection
         props.setProperty("database.include.list", config.getDatabase());
@@ -152,7 +156,7 @@ public abstract class Source implements com.linkall.vance.core.Source {
     }
 
     public Set<String> getSystemExcludedTables() {
-        return new HashSet<>(Arrays.asList("information_schema", "mysql", "performance_schema", "sys"));
+        return new HashSet<>(Arrays.asList("information_schema", "mongodb", "performance_schema", "sys"));
     }
 
     public String tableFormat(Stream<String> table) {

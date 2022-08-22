@@ -14,5 +14,13 @@
 
 package com.linkall.connector.mongodb;
 
-public class Server {
+import com.linkall.vance.core.Adapter1;
+import io.cloudevents.CloudEvent;
+
+public class MongoDBAdapter implements Adapter1 {
+    @Override
+    public CloudEvent adapt(Object data) {
+        return MongoChangeEvent.parse((String) data).getCloudEvent();
+    }
 }
+
