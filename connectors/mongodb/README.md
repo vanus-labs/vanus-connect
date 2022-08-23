@@ -34,10 +34,10 @@ the original `ChangeEvent` can be found in [official document](https://www.mongo
 | field                  | description                                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | id                     | the bson`_id` will be set as the id                                                                               |
-| source                 | mongodb.${relicaset_name}.${db_name}.${collection_name}                                                           |
-| type                   | ${db_name}.${collection_name}                                                                                     |
+| source                 | mongodb.\${relicaset_name}.\${db_name}.\${collection_name}                                                        |
+| type                   | \${db_name}.\${collection_name}                                                                                   |
 | time                   | the time of this event generated with RFC3339 encoding                                                            |
-| data                   | the body of `ChangeEvent`                                                                                           |
+| data                   | the body of`ChangeEvent`                                                                                          |
 | data.full              | the full document of each bson, not empty when operation is`insert` and `update`, mapping to`insert.fullDocument` |
 | data.changed           | the data changed when updating, mapping to`update.updateDescription`                                              |
 | data.changed.updated   | mapping to`update.updateDescription.updatedFields`                                                                |
@@ -127,13 +127,15 @@ the original `ChangeEvent` can be found in [official document](https://www.mongo
 ```
 
 ### Unrecognized Event
-Although we do our best to deal with different events, but it's not easy to make sure that all raw data are parsed to a 
-structured format because we just only can deal the raw we knew. So, if there is error happened when we try to parse raw
-data, we will see the event is an unrecognized event and set `vancemongodbrecognized` to false instead of discard in 
-order to guaranty no data loss. 
 
-User should put event with `vancemongodbrecognized=false` to the `deadLetter` in the further step. we're appreciated 
-that you can create an issue to feedback us about the unrecognized event, we will fix it as soon as possible. 
+Although we do our best to deal with different events, but it's not easy to make sure that all raw data are parsed to a
+structured format because we just only can deal the raw we knew. So, if there is error happened when we try to parse raw
+data, we will see the event is an unrecognized event and set `vancemongodbrecognized` to false instead of discard in
+order to guaranty no data loss.
+
+User should put event with `vancemongodbrecognized=false` to the `deadLetter` in the further step. we're appreciated
+that you can create an issue to feedback us about the unrecognized event, we will fix it as soon as possible.
+
 ```json
 {
   "specversion":"1.0",
