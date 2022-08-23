@@ -1,8 +1,8 @@
 # MongoDB Connector
 
-## Quickstart
+## How to use
 
-### Docker
+### quickstart
 
 ```bash
 docker run -it --rm public.ecr.aws/vanus/connector/mongodb:latest /run/start.sh \
@@ -11,8 +11,20 @@ docker run -it --rm public.ecr.aws/vanus/connector/mongodb:latest /run/start.sh 
   --env MONGODB_NAME=xxx \
   --env MONGODB_AUTHSOURCE=xxx
 ```
+### vance
+```bash
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/mongo-connector/connectors/mongodb/mongodb.yml
+```
+
+### k8s
+```bash
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/mongo-connector/connectors/mongodb/mongodb-bare.yml
+```
 
 ## Schema
+```
+
+```
 
 The event schema that the mongodb source output looks like follows.
 
@@ -34,7 +46,7 @@ The event schema that the mongodb source output looks like follows.
       "version": "v0.3.0"
     }
   },
-  "vancemongodbformatted": true,
+  "vancemongodbrecognized": true,
   "vancemongodbversion": "1.9.4.Final",
   "vancemongodbsnapshot": "false",
   "vancemongodbname": "test",
@@ -66,7 +78,7 @@ The event schema that the mongodb source output looks like follows.
       }
     }
   },
-  "vancemongodbformatted": true,
+  "vancemongodbrecognized": true,
   "vancemongodbversion": "1.9.4.Final",
   "vancemongodbsnapshot": "false",
   "vancemongodbname": "test",
@@ -87,7 +99,7 @@ The event schema that the mongodb source output looks like follows.
   "time": "2022-08-23T08:09:24Z",
   "data": {},
   "vancemongodbord": "1",
-  "vancemongodbformatted": true,
+  "vancemongodbrecognized": true,
   "vancemongodbversion": "1.9.4.Final",
   "vancemongodbsnapshot": "false",
   "vancemongodbname": "test",
@@ -113,59 +125,4 @@ The event schema that the mongodb source output looks like follows.
 ```
 
 ## Acknowledgement
-
-### k8s
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: mongodb-connector
-  labels:
-    app: mongodb-connector
-spec:
-  selector:
-    matchLabels:
-      app: mongodb-connector
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: mongodb-connector
-    spec:
-      containers:
-        - name: mongodb-connector
-          image: public.ecr.aws/vanus/connector/mongodb:latest
-          imagePullPolicy: Always
-          command: [ "sh", "-c", "/var/mongodb/start.sh" ]
-          resources:
-            requests:
-              cpu: 100m
-              memory: 1000Mi
-          env:
-            - name: MONGODB_HOSTS
-              value: "localhost:27017"
-            - name: MONGODB_NAME
-              value: "admin"
-            - name: MONGODB_AUTHSOURCE
-              value: "admin"
-            - name: DB_INCLUDE_LIST
-              value: "test"
-          volumeMounts:
-            - name: secret
-              mountPath: "/var/mongodb/secret.json"
-              readOnly: true
-        volumes:
-          - name: secret
-            secret:
-              secretName: mongodb-secret
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: mongodb-secret
-type: Opaque
-data:
-  user: admin
-  password: admin
-```
+The MongoDB Connector built on top of by [debezium](https://github.com/debezium/debezium)

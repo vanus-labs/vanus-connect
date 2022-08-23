@@ -35,3 +35,6 @@ testbin/*
 target/
 # dep
 cdk-go
+
+# jetbrains
+.idea
