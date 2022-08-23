@@ -22,6 +22,7 @@ import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.core.data.BytesCloudEventData;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,37 +51,39 @@ class MongoChangeEvent {
     private final HashMap<String, Object> fullFields = new HashMap<>();
     private final HashMap<String, Object> updatedFields = new HashMap<>();
     private final HashMap<String, Object> deletedFields = new HashMap<>();
+    private Map<String, Object> metadata = new HashMap<>();
     private String objectID;
-    private OpType type;
-    private Map<String, Object> metadata;
+    private String type;
     private boolean isValidate = true;
-    private String rawData;
+    private String rawKey;
+    private String rawValue;
 
     public static MongoChangeEvent parse(String key, String value) {
         MongoChangeEvent event = new MongoChangeEvent();
-        JSONObject obj = JSON.parseObject(value);
-        event.rawData = value;
-        event.metadata = obj.getJSONObject("source").getInnerMap();
-        JSONObject id = JSON.parseObject(key);
-        if (id.containsKey("id")) {
-            event.objectID = id.getJSONObject("id").get("$oid").toString();
-        } else {
-            event.isValidate = false;
-            return event;
-        }
+        event.rawKey = key;
+        event.rawValue = value;
         try {
+            JSONObject obj = JSON.parseObject(value);
+            event.metadata = obj.getJSONObject("source").getInnerMap();
+            JSONObject id = JSON.parseObject(key);
+            if (id.containsKey("id")) {
+                event.objectID = id.getJSONObject("id").get("$oid").toString();
+            } else {
+                event.isValidate = false;
+                return event;
+            }
             switch (obj.getString("op")) {
                 case "c":
-                    event.type = OpType.INSERT;
+                    event.type = "insert";
                     processFullFields(obj.getString("after"), event);
                     break;
                 case "u":
-                    event.type = OpType.UPDATE;
+                    event.type = "update";
                     processFullFields(obj.getString("after"), event);
                     processUpdateFields(obj.getString("updateDescription"), event);
                     break;
                 case "d":
-                    event.type = OpType.DELETE;
+                    event.type = "delete";
                     break;
                 default:
                     event.isValidate = false;
@@ -89,6 +92,9 @@ class MongoChangeEvent {
         } catch (Exception e) {
             LOGGER.warn("parse event data failed: {}", e.getMessage());
             event.isValidate = false;
+            if (Strings.isBlank(event.type)) {
+                event.type = "unknown";
+            }
         }
         return event;
     }
@@ -107,7 +113,6 @@ class MongoChangeEvent {
             String val = entry.getValue().toString();
             if (!key.equals("_id")) {
                 event.fullFields.put(key, val);
-            } else {
             }
         }
     }
@@ -147,16 +152,18 @@ class MongoChangeEvent {
 
     public CloudEvent getCloudEvent() {
         CloudEventBuilder builder = CloudEventBuilder.v1();
-        String type = this.metadata.get("db") + "." + this.metadata.get("collection");
-        String sourcePrefix = this.metadata.get("connector") + "." + this.metadata.get("rs");
         builder.withDataContentType("application/json")
-                .withId(this.objectID)
-                .withType(type)
-                .withSource(URI.create(sourcePrefix + "." + type))
-                .withTime(OffsetDateTime.ofInstant(Instant.ofEpochMilli((Long) this.metadata.get("ts_ms")), ZoneOffset.UTC));
+                .withId(!Strings.isBlank(this.objectID) ? this.objectID : "unknown");
+        String type = this.metadata.getOrDefault("db", "unknown") + "." +
+                this.metadata.getOrDefault("collection", "unknown");
+        String sourcePrefix = this.metadata.getOrDefault("connector", "unknown") + "."
+                + this.metadata.getOrDefault("rs", "unknown");
+        builder.withType(type).withSource(URI.create(sourcePrefix + "." + type));
+        if (this.metadata.get("ts_ms") != null) {
+            builder.withTime(OffsetDateTime.ofInstant(Instant.ofEpochMilli((Long) this.metadata.get("ts_ms")), ZoneOffset.UTC));
+        }
 
         Map<String, Object> data = new HashMap<>();
-        data.put("id", this.objectID);
         if (this.isValidate) {
             if (this.fullFields.size() > 0) {
                 data.put("full", this.fullFields);
@@ -164,10 +171,11 @@ class MongoChangeEvent {
             if (this.updatedFields.size() > 0) {
                 data.put("changed", this.updatedFields);
             }
+            data.put("id", this.objectID);
         } else {
-            data.put("raw", this.rawData);
+            data.put("rawKey", this.rawKey);
+            data.put("rawValue", this.rawValue);
         }
-
         builder.withData(BytesCloudEventData.wrap(JSON.toJSONBytes(data)));
         for (Map.Entry<String, Object> entry : this.metadata.entrySet()) {
             if (!MongoChangeEvent.keyFilter.contains(entry.getKey())) {
@@ -178,11 +186,12 @@ class MongoChangeEvent {
             }
         }
 
-        builder.withExtension(EXTENSION_NAME_PREFIX + "formatted", this.isValidate);
+        builder.withExtension(EXTENSION_NAME_PREFIX + "operation", this.type);
+        builder.withExtension(EXTENSION_NAME_PREFIX + "recognized", this.isValidate);
         return builder.build();
     }
 
-    public OpType getType() {
+    public String getType() {
         return type;
     }
 
@@ -204,6 +213,14 @@ class MongoChangeEvent {
 
     public HashMap<String, Object> getDeletedFields() {
         return deletedFields;
+    }
+
+    public String getRawKey() {
+        return rawKey;
+    }
+
+    public String getRawValue() {
+        return rawValue;
     }
 }
 

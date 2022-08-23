@@ -15,6 +15,7 @@
 package com.linkall.connector.mongodb;
 
 import com.alibaba.fastjson.JSON;
+import com.linkall.connector.mongodb.debezium.DebeziumSource;
 import com.linkall.vance.core.Adapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MongoDBSource extends com.linkall.connector.mongodb.debezium.Source implements com.linkall.vance.core.Source {
+public class MongoDBSource extends DebeziumSource implements com.linkall.vance.core.Source {
     private static final Logger LOGGER = LoggerFactory.getLogger(MongoDBSource.class);
 
     private static final String DEBEZIUM_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";

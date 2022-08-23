@@ -1,7 +1,7 @@
 package com.linkall.connector.mongodb.debezium;
 
 import com.linkall.vance.common.config.ConfigUtil;
-import com.linkall.vance.core.Adapter1;
+import com.linkall.vance.core.Adapter2;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.http.vertx.VertxMessageFactory;
 import io.cloudevents.jackson.JsonFormat;
@@ -23,10 +23,10 @@ import static java.net.HttpURLConnection.*;
 public class RecordConsumer
         implements DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(RecordConsumer.class);
-    private final Adapter1<String> adapter;
+    private final Adapter2<String, String> adapter;
     private final WebClient webClient;
 
-    public RecordConsumer(Adapter1<String> adapter) {
+    public RecordConsumer(Adapter2<String, String> adapter) {
         this.adapter = adapter;
         webClient = WebClient.create(Vertx.vertx());
     }
@@ -43,7 +43,7 @@ public class RecordConsumer
                     continue;
                 }
                 // TODO add to dead letter & exception
-                CloudEvent ceEvent = this.adapter.adapt(record.value());
+                CloudEvent ceEvent = this.adapter.adapt(record.key(), record.value());
                 Future<HttpResponse<Buffer>> responseFuture =
                         VertxMessageFactory.createWriter(webClient.postAbs(ConfigUtil.getVanceSink()))
                                 .writeStructured(ceEvent, JsonFormat.CONTENT_TYPE);

@@ -14,7 +14,7 @@
 
 package com.linkall.connector.mongodb.debezium;
 
-import com.linkall.vance.core.Adapter1;
+import com.linkall.vance.core.Adapter2;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
 import io.debezium.engine.format.Json;
@@ -33,14 +33,14 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-public abstract class Source implements com.linkall.vance.core.Source {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Source.class);
+public abstract class DebeziumSource implements com.linkall.vance.core.Source {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DebeziumSource.class);
     private final DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> consumer;
     private DebeziumEngine<ChangeEvent<String, String>> engine;
     private Executor executor;
 
-    public Source() {
-        consumer = new RecordConsumer((Adapter1<String>) getAdapter());
+    public DebeziumSource() {
+        consumer = new RecordConsumer((Adapter2<String, String>) getAdapter());
     }
 
     public abstract String getConnectorClass();
