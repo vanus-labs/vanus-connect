@@ -171,7 +171,6 @@ class MongoChangeEvent {
             if (this.updatedFields.size() > 0) {
                 data.put("changed", this.updatedFields);
             }
-            data.put("id", this.objectID);
         } else {
             data.put("rawKey", this.rawKey);
             data.put("rawValue", this.rawValue);

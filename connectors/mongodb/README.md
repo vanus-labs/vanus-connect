@@ -27,7 +27,6 @@ The event schema that the mongodb source output looks like follows.
   "datacontenttype": "application/json",
   "time": "2022-08-23T07:44:27Z",
   "data": {
-    "id": "6304855bccaea8fcf8a159f2",
     "full": {
       "download": "1234",
       "connector": "mongodb",
@@ -55,7 +54,6 @@ The event schema that the mongodb source output looks like follows.
   "datacontenttype": "application/json",
   "time": "2022-08-23T08:08:05Z",
   "data": {
-    "id": "6304855bccaea8fcf8a159f2",
     "full": {
       "download": "1240",
       "connector": "mongodb",
@@ -87,9 +85,7 @@ The event schema that the mongodb source output looks like follows.
   "type": "test.source",
   "datacontenttype": "application/json",
   "time": "2022-08-23T08:09:24Z",
-  "data": {
-    "id": "6304855bccaea8fcf8a159f2"
-  },
+  "data": {},
   "vancemongodbord": "1",
   "vancemongodbformatted": true,
   "vancemongodbversion": "1.9.4.Final",
@@ -102,16 +98,18 @@ The event schema that the mongodb source output looks like follows.
 ### Unrecognized Event
 
 ```json
-    "specversion":"1.0",
-"id": "unknown",
-"source": "unknown",
-"type": "unknown",
-"datacontenttype": "application/json",
-"time":"unknown",
-"data": {
-"rawKey": "xxxxx",
-"rawValue": "xxxx",
-},
+{
+  "specversion":"1.0",
+  "id": "unknown",
+  "source": "unknown",
+  "type": "unknown",
+  "datacontenttype": "application/json",
+  "time":"unknown",
+  "data": {
+    "rawKey": "xxxxx",
+    "rawValue": "xxxx"
+  }
+}
 ```
 
 ## Acknowledgement

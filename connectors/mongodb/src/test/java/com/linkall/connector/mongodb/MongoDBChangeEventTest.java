@@ -109,8 +109,7 @@ public class MongoDBChangeEventTest {
         assertEquals("test.source", ce.getType());
         assertEquals("application/json", ce.getDataContentType());
         Map<String, Object> data = JSON.parseObject(ce.getData().toBytes(), Map.class);
-        assertEquals(1, data.size());
-        assertEquals("63044b3fccaea8fcf8a159ef", data.get("id"));
+        assertEquals(0, data.size());
         assertEquals(6, ce.getExtensionNames().size());
     }
 
