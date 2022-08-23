@@ -33,9 +33,9 @@ the original `ChangeEvent` can be found in [official document](https://www.mongo
 
 | field                  | description                                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| id                     | the bson`_id` will be set as the id                                                                               |
-| source                 | mongodb.{relicaset_name}.{db_name}.{collection_name}                                                              |
-| type                   | {db_name}.{collection_name}                                                                                       |
+| id                     | the bson `_id` will be set as the id                                                                               |
+| source                 | `mongodb.{relicaset_name}.{db_name}.{collection_name}`                                                          |
+| type                   | `{db_name}.{collection_name}`                                                                                       |
 | time                   | the time of this event generated with RFC3339 encoding                                                            |
 | data                   | the body of`ChangeEvent`                                                                                          |
 | data.full              | the full document of each bson, not empty when operation is`insert` and `update`, mapping to`insert.fullDocument` |
