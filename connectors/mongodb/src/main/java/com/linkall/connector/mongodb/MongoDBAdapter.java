@@ -14,13 +14,13 @@
 
 package com.linkall.connector.mongodb;
 
-import com.linkall.vance.core.Adapter1;
+import com.linkall.vance.core.Adapter2;
 import io.cloudevents.CloudEvent;
 
-public class MongoDBAdapter implements Adapter1 {
+public class MongoDBAdapter implements Adapter2 {
     @Override
-    public CloudEvent adapt(Object data) {
-        return MongoChangeEvent.parse((String) data).getCloudEvent();
+    public CloudEvent adapt(Object key, Object val) {
+        return MongoChangeEvent.parse((String) key, (String) val).getCloudEvent();
     }
 }
 
