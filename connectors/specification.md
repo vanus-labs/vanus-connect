@@ -1,10 +1,9 @@
 # The Specification of Connector developing
 
 ## Project Layout
-Each connector SHOULD follow the [templates](templates) directory's structure to make sure the necessary files have been
-added.
+Each connector SHOULD follow the [templates](templates) directory's structure to make sure the necessary files will be added.
 
-For the consistent developer's experience, each connector's README.md SHOULD be created according to [README.md](templates/README.md)
+For the consistent developer's experience, each connector's README.md SHOULD be created according to [README-template.md](templates/README.md)
 
 ## Developer Experience
 
@@ -45,15 +44,15 @@ of the sink directly. Which means sink will check the input event struct, if it 
 and if isn't, sink should respond an error to requester.
 
 ## Configuration
-each connector will have to config files:
-- config.json: including all properties of connector needs, except the secret information.
-- secret.json: any sensitive property。
+each connector will have 2 config files:
+- **config.json**: including all properties of connector needs, except the secret information.
+- **secret.json**: any sensitive property。
 
 ## Deploy
-each connector should provide 3 methods to deploy:
-- docker: how to run connector in a docker engine.
-- k8s: how to run connector in k8s cluster.
-- vsctl: the connector should be integrated with vance operator, and it can be run by `vsctl` command.
+each connector should provide 3 methods to run:
+- **docker**: how to run connector in a docker engine.
+- **k8s**: how to run connector in k8s cluster.
+- **vsctl**: the connector should be integrated with vance operator, and it can be run by `vsctl` command.
 
 These already included in [templates](templates/README.md), whose 'how to use' section has been displayed it.
 
@@ -61,9 +60,9 @@ These already included in [templates](templates/README.md), whose 'how to use' s
 
 ### RDD
 
-If you want to create a new connector, you MUST finish the `README.md` firstly. We call this the RDD(README Drive Development).
+If you want to create a new connector, you MUST finish the `README.md` firstly. We call this the **RDD(README Drive Development)**.
 
-The reason is that `README.md` is first thing that the users will know what this connector is and how to use it.
+The reason is that `README.md` is the first thing that the users will know what this connector is and how to use it.
 There are many sections that users will care about in [README-template.md](templates/README.md), so we can think as a real
 user and pay attention in details by writing readme doc.
 
