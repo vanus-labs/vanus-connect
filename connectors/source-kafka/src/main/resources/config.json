@@ -1,0 +1,8 @@
+{
+  "v_target": "http://localhost:8081",
+  "KAFKA_SERVER_URL": "localhost",
+  "KAFKA_SERVER_PORT": "9092",
+  "CLIENT_ID": "Source",
+  "topicList": "topic1"
+}
+
