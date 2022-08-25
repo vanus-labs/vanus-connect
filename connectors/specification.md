@@ -1,0 +1,76 @@
+# The Specification of Connector developing
+
+## Project Layout
+Each connector SHOULD follow the [templates](templates) directory's structure to make sure the necessary files have been
+added.
+
+For the consistent developer's experience, each connector's README.md SHOULD be created according to [README.md](templates/README.md)
+
+## Developer Experience
+
+This section gives some restrictions in order to make all connectors have a consistent style whatever any aspect, which can
+ensure developers have better experience in learning, understanding, and developing.
+
+### Language
+Because the connectors aim to be serverless application, So, each connector's programming SHOULD prefer to Golang in 
+order to meet the minimum package size and maximum speed of starting application, unless there is the special consideration, 
+like library and eco-system.
+
+the source and sink SHOULD use the same language to reduce redundant code. it might be worth putting them in one connector. 
+
+### Naming
+
+#### Java
+- package: `com.linkall.connector.{connector_name}.*`
+
+#### Golang
+- module: `github.com/linkall-labs/connector/{connector_name}`
+
+### Error
+TODO
+
+### Log
+TODO
+
+### Testing
+Because connectors really are stateless application, so the unit testing is pretty important to connectors. Thus, each 
+connector's ut coverage should be greater than 80%.
+
+### Observability
+TODO
+
+## Schema
+The event schema of source output and sink output should be consistent, which means the source output can be the input
+of the sink directly. Which means sink will check the input event struct, if it same as the source's produced, 
+and if isn't, sink should respond an error to requester.
+
+## Configuration
+each connector will have to config files:
+- config.json: including all properties of connector needs, except the secret information.
+- secret.json: any sensitive property。
+
+## Deploy
+each connector should provide 3 methods to deploy:
+- docker: how to run connector in a docker engine.
+- k8s: how to run connector in k8s cluster.
+- vsctl: the connector should be integrated with vance operator, and it can be run by `vsctl` command.
+
+These already included in [templates](templates/README.md), whose 'how to use' section has been displayed it.
+
+## How to create a new connector
+
+### RDD
+
+If you want to create a new connector, you MUST finish the `README.md` firstly. We call this the RDD(README Drive Development).
+
+The reason is that `README.md` is first thing that the users will know what this connector is and how to use it.
+There are many sections that users will care about in [README-template.md](templates/README.md), so we can think as a real
+user and pay attention in details by writing readme doc.
+
+When the readme doc is finished, the connector's design also almost be finished.
+
+### Proposal
+
+When you finished the `README.md`, you can create a PR to submit your file. if the README would be accepted, follow the
+[developer instruction](#) to start developing if you want. If you don't want to implement it by yourself, the vance community
+will make it implemented.

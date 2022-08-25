@@ -1,6 +1,15 @@
 {
   "v_target": "http://localhost:8080",
   "v_store_file": "/tmp/vance/source-mongodb/offset.data",
-  "include_table": "test",
-  "store_offset_key": "vance_mongodb_test"
+  "name": "test",
+  "db_hosts": "127.0.0.1:27017",
+  "db_name": "replica-set01",
+  "database": {
+    "include": [],
+    "exclude": []
+  },
+  "collection": {
+    "include": [],
+    "exclude": []
+  }
 }

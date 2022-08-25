@@ -17,26 +17,50 @@ package com.linkall.connector.mongodb;
 import com.alibaba.fastjson.JSON;
 import com.linkall.connector.mongodb.debezium.DebeziumSource;
 import com.linkall.vance.core.Adapter;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class MongoDBSource extends DebeziumSource implements com.linkall.vance.core.Source {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MongoDBSource.class);
 
     private static final String DEBEZIUM_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
-    private static final String CONNECTOR_NAME = System.getProperty("CONNECTOR_NAME", "test");
-    private static final String MONGODB_NAME = System.getProperty("MONGODB_NAME", "test");
-    private static final String MONGODB_HOSTS = System.getProperty("MONGODB_HOSTS", "");
-    private static final String DB_INCLUDE_LIST = System.getProperty("DB_INCLUDE_LIST", "");
-    private static String secretFile = System.getProperty("SECRET_FILE", "secret.json");
+
+    private String connectorName;
+    private Map<String, Object> config;
+    private Map<String, String> secret;
+
+    public MongoDBSource() throws IOException {
+        super();
+        String home = System.getenv("MONGODB_CONNECTOR_HOME");
+        if (Strings.isBlank(home)) {
+            home = "/etc/vance/mongodb";
+        }
+        Path cp = Paths.get(home, "config.json");
+        if (!cp.toFile().exists()) {
+            throw new FileNotFoundException("the config.json not found in [ " + cp.toAbsolutePath().toString() + " ]");
+        }
+        byte[] data = Files.readAllBytes(cp);
+        config = JSON.parseObject(data, Map.class);
+
+        Path sp = Paths.get(home, "secret.json");
+        if (sp.toFile().exists()) {
+            data = Files.readAllBytes(sp);
+            secret = JSON.parseObject(data, Map.class);
+        }
+        connectorName = config.get("name").toString();
+    }
 
     @Override
     public Adapter getAdapter() {
@@ -50,7 +74,7 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
 
     @Override
     public String getDatabase() {
-        return CONNECTOR_NAME;
+        return connectorName;
     }
 
     @Override
@@ -65,50 +89,51 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
 
     @Override
     // https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-connector-properties
-    public Properties getDebeziumProperties() throws IOException {
+    public Properties getDebeziumProperties() {
         final Properties props = new Properties();
-        props.setProperty("name", CONNECTOR_NAME);
-        props.setProperty("database.server.name", CONNECTOR_NAME);
-//        props.setProperty("mongodb.hosts", MONGODB_HOSTS);
-        props.setProperty("mongodb.hosts", "44.242.140.28:27017");
-        props.setProperty("mongodb.name", MONGODB_NAME);
-
-        // table selection
-        props.setProperty("database.include.list", DB_INCLUDE_LIST);
-//        if (!config.getIncludeTables().isEmpty()) {
-//            props.setProperty("table.include.list", tableFormat(config.getIncludeTables().stream()));
-//        } else {
-//            props.setProperty("table.exclude.list", tableFormat(getExcludedTables(config.getExcludeTables()).stream()));
-//        }
-        try {
-            Path p = Paths.get(secretFile);
-            if (p.toFile().exists()) {
-                byte[] data = Files.readAllBytes(Paths.get(secretFile));
-                Map<String, String> secret = JSON.parseObject(data, Map.class);
-//                props.setProperty("mongodb.user", secret.get("user"));
-//                props.setProperty("mongodb.password",secret.get("password"));
-//                props.setProperty("mongodb.authsource", "authsource");
-            }
-        } catch (IOException e) {
-            LOGGER.error("read secret failed, error: {}", e.getMessage());
-            throw e;
+        props.setProperty("name", connectorName);
+        props.setProperty("mongodb.hosts", config.get("db_hosts").toString());
+        props.setProperty("mongodb.name", config.get("db_name").toString());
+        props.setProperty("capture.mode", "change_streams_update_full");
+        if (secret.size() > 0) {
+            props.setProperty("mongodb.user", secret.get("user"));
+            props.setProperty("mongodb.password", secret.get("password"));
+            props.setProperty("mongodb.authsource", secret.getOrDefault("authsource", "admin"));
         }
-        return props;
-    }
 
-    public Set<String> getSystemExcludedTables() {
-        return new HashSet<>(Arrays.asList("information_schema", "mongodb", "performance_schema", "sys"));
+        if (config.get("database") != null) {
+            Map<String, String[]> db = (Map<String, String[]>) config.get("database");
+            if (db.get("include").length > 0 && db.get("exclude").length > 0) {
+                throw new IllegalArgumentException("the database.include and database.exclude can't be set together");
+            }
+            if (db.get("include").length > 0) {
+                props.setProperty("database.include.list", tableFormat(Arrays.stream(db.get("include"))));
+            }
+
+            if (db.get("exclude").length > 0) {
+                props.setProperty("database.exclude.list", tableFormat(Arrays.stream(db.get("exclude"))));
+            }
+        }
+        if (config.get("collection") != null) {
+            Map<String, String[]> collection = (Map<String, String[]>) config.get("collection");
+            if (collection.get("include").length > 0 && collection.get("exclude").length > 0) {
+                throw new IllegalArgumentException("the collection.include and collection.exclude can't be set together");
+            }
+            if (collection.get("include").length > 0) {
+                props.setProperty("collection.include.list", tableFormat(Arrays.stream(collection.get("include"))));
+            }
+
+            if (collection.get("exclude").length > 0) {
+                props.setProperty("collection.exclude.list", tableFormat(Arrays.stream(collection.get("exclude"))));
+            }
+        }
+
+        return props;
     }
 
     public String tableFormat(Stream<String> table) {
         return table
                 .map(stream -> this.getDatabase() + "." + stream)
                 .collect(Collectors.joining(","));
-    }
-
-    public Set<String> getExcludedTables(Set<String> excludeTables) {
-        Set<String> exclude = new HashSet<>(getSystemExcludedTables());
-        exclude.addAll(excludeTables);
-        return exclude;
     }
 }
