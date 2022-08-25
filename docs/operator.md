@@ -14,7 +14,7 @@ Use an all-in-one YAML file to simply [deploy Vance operator][deploy].
 <!-- Other connector samples for Vance list(Not updated yet DeadLink) [here][samples]. -->
 
 
-[deploy]: operatorC/deploy.md
-[samples]: operatorC/samples.md
-[sample-rabbitmq]: operatorC/rabbitmq.md
-[sample-httpserver]: operatorC/httpserver.md
+[deploy]: operatorChildren/deploy.md
+[samples]: operatorChildren/samples.md
+[sample-rabbitmq]: operatorChildren/rabbitmq.md
+[sample-httpserver]: operatorChildren/httpserver.md
