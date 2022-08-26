@@ -15,18 +15,18 @@
 package com.linkall.connector.mongodb;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import io.cloudevents.CloudEvent;
 import org.junit.jupiter.api.Test;
 
-import java.util.Map;
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MongoDBChangeEventTest {
+public class MongoDBAdapterTest {
 
     @Test
-    public void TestCreateEvent() {
+    public void TestCreateEvent() throws IOException {
         String id = "{\"id\":\"{\\\"$oid\\\": \\\"62ff236a99b4cfeac7ed54c6\\\"}\"}";
         String createEvent = "{\"after\":\"{\\\"_id\\\": {\\\"$oid\\\": \\\"62ff236a99b4cfeac7ed54c6\\\"}," +
                 "\\\"a\\\": \\\"a\\\"}\",\"patch\":null,\"filter\":null,\"updateDescription\":null," +
@@ -35,24 +35,21 @@ public class MongoDBChangeEventTest {
                 "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
                 "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"c\",\"ts_ms\":1661223842688," +
                 "\"transaction\":null}";
-        MongoChangeEvent event = MongoChangeEvent.parse(id, createEvent);
-        assertEquals("insert", event.getType());
-        assertEquals("62ff236a99b4cfeac7ed54c6", event.getObjectID());
-        assertTrue(event.isValidate());
-        CloudEvent ce = event.getCloudEvent();
+        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, createEvent));
         assertEquals("62ff236a99b4cfeac7ed54c6", ce.getId());
         assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
         assertEquals("test.source", ce.getType());
         assertEquals("application/json", ce.getDataContentType());
-        Map<String, Object> data = JSON.parseObject(ce.getData().toBytes(), Map.class);
-        Map<String, Object> full = (Map<String, Object>) data.get("full");
-        assertEquals("62ff236a99b4cfeac7ed54c6", full.get("_id"));
-        assertEquals("a", full.get("a"));
+        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
+        JSONObject document = obj.getJSONObject("insert").getJSONObject("document");
+        assertEquals("62ff236a99b4cfeac7ed54c6", document.getJSONObject("_id").get("$oid"));
+        assertEquals("a", document.get("a"));
         assertEquals(6, ce.getExtensionNames().size());
+        assertEquals("INSERT", ce.getExtension("vancemongodboperation"));
     }
 
     @Test
-    public void TestUpdateEvent() {
+    public void TestUpdateEvent() throws IOException {
         String id = "{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
         String updateEvent = "{\"after\":\"{\\\"_id\\\": {\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}," +
                 "\\\"b\\\": \\\"1213\\\"}\",\"patch\":null,\"filter\":null," +
@@ -62,33 +59,28 @@ public class MongoDBChangeEventTest {
                 "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
                 "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"u\",\"ts_ms\":1661225902776," +
                 "\"transaction\":null}";
-        MongoChangeEvent event = MongoChangeEvent.parse(id, updateEvent);
-        assertEquals("update", event.getType());
-        assertEquals("63044b3fccaea8fcf8a159ef", event.getObjectID());
-        assertEquals(2, event.getFullFields().size());
-        assertEquals(1, event.getUpdatedFields().size());
-        assertEquals(0, event.getDeletedFields().size());
-        assertTrue(event.isValidate());
-        CloudEvent ce = event.getCloudEvent();
+
+        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, updateEvent));
         assertEquals("63044b3fccaea8fcf8a159ef", ce.getId());
         assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
         assertEquals("test.source", ce.getType());
         assertEquals("application/json", ce.getDataContentType());
-        Map<String, Object> data = JSON.parseObject(ce.getData().toBytes(), Map.class);
-        Map<String, Object> full = (Map<String, Object>) data.get("full");
-        assertEquals(2, full.size());
-        assertEquals("63044b3fccaea8fcf8a159ef", full.get("_id"));
-        assertEquals("1213", full.get("b"));
-        Map<String, Object> changed = (Map<String, Object>) data.get("changed");
-        assertEquals(1, changed.size());
-        Map<String, Object> updated = (Map<String, Object>) changed.get("updated");
-        assertEquals(1, updated.size());
-        assertEquals("1213", updated.get("b"));
+        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
+        JSONObject document = obj.getJSONObject("insert").getJSONObject("document");
+        assertEquals(2, document.size());
+        assertEquals("63044b3fccaea8fcf8a159ef", document.getJSONObject("_id").get("$oid"));
+        assertEquals("1213", document.get("b"));
+        JSONObject update = obj.getJSONObject("update").getJSONObject("updateDescription");
+        assertEquals(3, update.size());
+        JSONObject updatedFields = update.getJSONObject("updatedFields");
+        assertEquals(1, updatedFields.size());
+        assertEquals("1213", updatedFields.get("b"));
         assertEquals(6, ce.getExtensionNames().size());
+        assertEquals("UPDATE", ce.getExtension("vancemongodboperation"));
     }
 
     @Test
-    void TestDeletedEvent() {
+    void TestDeletedEvent() throws IOException {
         String id = "{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
         String deleted = "{\"after\":null,\"patch\":null,\"filter\":null,\"updateDescription\":null," +
                 "\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\",\"name\":\"test\"," +
@@ -96,25 +88,19 @@ public class MongoDBChangeEventTest {
                 "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
                 "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"d\",\"ts_ms\":1661232012563," +
                 "\"transaction\":null}";
-        MongoChangeEvent event = MongoChangeEvent.parse(id, deleted);
-        assertEquals("delete", event.getType());
-        assertEquals("63044b3fccaea8fcf8a159ef", event.getObjectID());
-        assertEquals(0, event.getFullFields().size());
-        assertEquals(0, event.getUpdatedFields().size());
-        assertEquals(0, event.getDeletedFields().size());
-        assertTrue(event.isValidate());
-        CloudEvent ce = event.getCloudEvent();
+        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, deleted));
         assertEquals("63044b3fccaea8fcf8a159ef", ce.getId());
         assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
         assertEquals("test.source", ce.getType());
         assertEquals("application/json", ce.getDataContentType());
-        Map<String, Object> data = JSON.parseObject(ce.getData().toBytes(), Map.class);
-        assertEquals(0, data.size());
+        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
+        assertEquals(3, obj.size());
         assertEquals(6, ce.getExtensionNames().size());
+        assertEquals("DELETE", ce.getExtension("vancemongodboperation"));
     }
 
     @Test
-    void TestUnrecognizedEvent() {
+    void TestUnrecognizedEvent() throws IOException {
         String id = "1{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
         String unknown = "1{\"after\":null,\"patch\":null,\"filter\":null,\"updateDescription\":null," +
                 "\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\",\"name\":\"test\"," +
@@ -122,21 +108,17 @@ public class MongoDBChangeEventTest {
                 "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
                 "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"d\",\"ts_ms\":1661232012563," +
                 "\"transaction\":null}";
-        MongoChangeEvent event = MongoChangeEvent.parse(id, unknown);
-        assertEquals("unknown", event.getType());
-        assertEquals(id, event.getRawKey());
-        assertEquals(unknown, event.getRawValue());
-        CloudEvent ce = event.getCloudEvent();
+        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, unknown));
         assertEquals("unknown", ce.getId());
         assertEquals("unknown.unknown.unknown.unknown", ce.getSource().toString());
         assertEquals("unknown.unknown", ce.getType());
         assertEquals("application/json", ce.getDataContentType());
-        Map<String, Object> data = JSON.parseObject(ce.getData().toBytes(), Map.class);
-        assertEquals(2, data.size());
-        assertEquals(id, data.get("rawKey"));
-        assertEquals(unknown, data.get("rawValue"));
+        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
+        assertEquals(2, obj.size());
+        assertEquals(id, obj.getJSONObject("raw").get("key"));
+        assertEquals(unknown, obj.getJSONObject("raw").get("value"));
         assertEquals(2, ce.getExtensionNames().size());
         assertEquals(false, ce.getExtension("vancemongodbrecognized"));
-        assertEquals("unknown", ce.getExtension("vancemongodboperation"));
+        assertEquals("UNKNOWN", ce.getExtension("vancemongodboperation"));
     }
 }
