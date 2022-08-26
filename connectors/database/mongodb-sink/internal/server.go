@@ -60,8 +60,7 @@ func (s *sink) StartReceive(ctx context.Context) error {
 
 func (s *sink) receive(ctx context.Context, event v2.Event) protocol.Result {
 	e := &proto.Event{}
-	err := jsonpb.Unmarshal(bytes.NewReader(event.Data()), e)
-	println(err)
+	_ = jsonpb.Unmarshal(bytes.NewReader(event.Data()), e)
 	d, _ := event.MarshalJSON()
 	println(string(d))
 	return cehttp.NewResult(200, "")

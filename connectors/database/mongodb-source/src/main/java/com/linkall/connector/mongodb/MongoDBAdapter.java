@@ -92,6 +92,7 @@ public class MongoDBAdapter implements Adapter2 {
                             ),
                             builder.getUpdateBuilder().getUpdateDescriptionBuilder().getRemovedFieldsBuilder());
                 case "c":
+                    // TODO don't use this for update
                     if (builder.getOp() == Database.Operation.UNKNOWN) {
                         builder.setOp(Database.Operation.INSERT);
                     }
