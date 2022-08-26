@@ -14,11 +14,10 @@
 
 syntax = "proto3";
 
-package linkall.connectors.database;
+package linkall.connectors.proto.database;
 
-option java_package = "com.linkall.connector.proto";
-
-import "google/protobuf/struct.proto";
+option java_package = "com.linkall.connector.proto.database";
+option go_package = "github.com/linkall-labs/connector/proto/database";
 
 enum Operation {
   UNKNOWN = 0;

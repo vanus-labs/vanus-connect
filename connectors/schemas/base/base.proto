@@ -16,7 +16,8 @@ syntax = "proto3";
 
 package linkall.connectors.base;
 
-option java_package = "com.linkall.connector.proto";
+option java_package = "com.linkall.connector.proto.base";
+option go_package = "github.com/linkall-labs/connector/proto/base";
 
 import "google/protobuf/struct.proto";
 

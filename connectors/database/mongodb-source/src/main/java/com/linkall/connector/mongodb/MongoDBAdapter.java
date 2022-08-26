@@ -120,6 +120,7 @@ public class MongoDBAdapter implements Adapter2 {
         String sourcePrefix = "unknown.unknown";
         String type = "unknown.unknown";
         builder.withId(ID).withType(type).withSource(URI.create(sourcePrefix + "." + type));
+        String data = "{\"raw\":{\"key\":\"" + event.getRaw().getKey() + "\",\"value\":\"" + event.getRaw().getValue() + "\"}}\n";
         try {
             builder.withDataContentType("application/json");
             Base.Metadata md = event.getMetadata();
@@ -144,19 +145,23 @@ public class MongoDBAdapter implements Adapter2 {
                                 ZoneOffset.UTC)
                 );
             }
-
-            String data = JsonFormat.printer().omittingInsignificantWhitespace().print(event);
+            Mongodb.Event.Builder b = event.toBuilder();
+            b.clearRaw();
+            event.toBuilder().clearRaw();
             ObjectMapper mapper = new ObjectMapper();
-            builder.withData(JsonCloudEventData.wrap(mapper.readTree(data)));
+            builder.withData(JsonCloudEventData.wrap(
+                    mapper.readTree(
+                            JsonFormat.printer().omittingInsignificantWhitespace().print(b.build())
+                    )
+            ));
             for (Map.Entry<String, Value> entry : md.getExtension().getFieldsMap().entrySet()) {
                 if (!MongoDBAdapter.keyFilter.contains(entry.getKey()) && entry.getValue() != null) {
-                    builder.withExtension(EXTENSION_NAME_PREFIX + entry.getKey(), entry.getValue().toString());
+                    builder.withExtension(EXTENSION_NAME_PREFIX + entry.getKey(), entry.getValue().getStringValue());
                 }
             }
 
             builder.withExtension(EXTENSION_NAME_PREFIX + "operation", event.getOp().toString());
         } catch (Exception e) {
-            String data = "{\"raw\":{\"key\":\"" + event.getRaw().getKey() + "\",\"value\":\"" + event.getRaw().getValue() + "\"}}\n";
             builder.withData(data.getBytes(StandardCharsets.UTF_8));
             e.printStackTrace();
         }

@@ -15,6 +15,8 @@
 package com.linkall.connector.mongodb;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.linkall.connector.mongodb.debezium.DebeziumSource;
 import com.linkall.vance.core.Adapter;
 import org.apache.logging.log4j.util.Strings;
@@ -93,43 +95,43 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
         props.setProperty("mongodb.hosts", config.get("db_hosts").toString());
         props.setProperty("mongodb.name", config.get("db_name").toString());
         props.setProperty("capture.mode", "change_streams_update_full");
-        if (secret.size() > 0) {
+        if (secret!=null&&secret.size() > 0) {
             props.setProperty("mongodb.user", secret.get("user"));
             props.setProperty("mongodb.password", secret.get("password"));
             props.setProperty("mongodb.authsource", secret.getOrDefault("authsource", "admin"));
         }
 
         if (config.get("database") != null) {
-            Map<String, String[]> db = (Map<String, String[]>) config.get("database");
-            if (db.get("include").length > 0 && db.get("exclude").length > 0) {
+            JSONObject db = (JSONObject) config.get("database");
+            if (db.getJSONArray("include").size() > 0 && db.getJSONArray("exclude").size() > 0) {
                 throw new IllegalArgumentException("the database.include and database.exclude can't be set together");
             }
-            if (db.get("include").length > 0) {
-                props.setProperty("database.include.list", tableFormat(Arrays.stream(db.get("include"))));
+            if (db.getJSONArray("include").size() > 0) {
+                props.setProperty("database.include.list", tableFormat(db.getJSONArray("include").stream()));
             }
 
-            if (db.get("exclude").length > 0) {
-                props.setProperty("database.exclude.list", tableFormat(Arrays.stream(db.get("exclude"))));
+            if (db.getJSONArray("exclude").size() > 0) {
+                props.setProperty("database.exclude.list", tableFormat(db.getJSONArray("exclude").stream()));
             }
         }
         if (config.get("collection") != null) {
-            Map<String, String[]> collection = (Map<String, String[]>) config.get("collection");
-            if (collection.get("include").length > 0 && collection.get("exclude").length > 0) {
+            JSONObject collection = (JSONObject) config.get("collection");
+            if (collection.getJSONArray("include").size() > 0 && collection.getJSONArray("exclude").size() > 0) {
                 throw new IllegalArgumentException("the collection.include and collection.exclude can't be set together");
             }
-            if (collection.get("include").length > 0) {
-                props.setProperty("collection.include.list", tableFormat(Arrays.stream(collection.get("include"))));
+            if (collection.getJSONArray("include").size() > 0) {
+                props.setProperty("collection.include.list", tableFormat(collection.getJSONArray("include").stream()));
             }
 
-            if (collection.get("exclude").length > 0) {
-                props.setProperty("collection.exclude.list", tableFormat(Arrays.stream(collection.get("exclude"))));
+            if (collection.getJSONArray("exclude").size() > 0) {
+                props.setProperty("collection.exclude.list", tableFormat(collection.getJSONArray("exclude").stream()));
             }
         }
 
         return props;
     }
 
-    public String tableFormat(Stream<String> table) {
+    public String tableFormat(Stream<Object> table) {
         return table
                 .map(stream -> this.getDatabase() + "." + stream)
                 .collect(Collectors.joining(","));
