@@ -22,6 +22,7 @@ import (
 	"github.com/linkall-labs/cdk-go/log"
 	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -81,9 +82,12 @@ func (s *sink) Init(cfgPath, secretPath string) error {
 
 	secret := &Secret{}
 	if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
-		return err
+		if !os.IsNotExist(err) {
+			return err
+		}
+	} else {
+		cfg.Secret = secret
 	}
-	cfg.Secret = secret
 
 	s.cfg = cfg
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
