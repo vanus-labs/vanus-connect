@@ -1,4 +1,4 @@
-FROM golang:1.18 as compiler
+FROM golang:1.18.5 as compiler
 
 ARG connector
 
@@ -18,10 +18,11 @@ COPY --from=compiler /tmp/vance/connectors/${connector}/run.sh /etc/vance/run.sh
 RUN chmod a+x /etc/vance/bin/${connector}
 RUN chmod a+x /etc/vance/run.sh
 
+ENV CONNECTOR=${connector}
 ENV EXECUTABLE_FILE=/etc/vance/bin/${connector}
-ENV CONNECTOR_HOME=/etc/vance/${connector}
-ENV CONNECTOR_CONFIG=/etc/vance/${connector}/config.yml
-ENV CONNECTOR_SECRET=/etc/vance/${connector}/secert.yml
+ENV CONNECTOR_HOME=/etc/vance/
+ENV CONNECTOR_CONFIG=/etc/vance/config.yml
+ENV CONNECTOR_SECRET=/etc/vance/secert.yml
 
 EXPOSE 8080
 
