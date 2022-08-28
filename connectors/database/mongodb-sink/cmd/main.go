@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/linkall-labs/connector/cdk-go"
+	"github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/connector/mongodb-sink/internal"
 )
 

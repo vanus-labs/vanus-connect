@@ -38,3 +38,6 @@ cdk-go
 
 # jetbrains
 .idea
+
+# go test resources
+**/test/resources/*

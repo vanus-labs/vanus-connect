@@ -19,6 +19,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/linkall-labs/cdk-go/log"
+	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +29,7 @@ import (
 	"github.com/cloudevents/sdk-go/v2/protocol"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/linkall-labs/connector/cdk-go/runtime"
+	"github.com/linkall-labs/cdk-go/runtime"
 	proto "github.com/linkall-labs/connector/mongodb-sink/proto/database"
 	"github.com/linkall-labs/connector/proto/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -42,15 +44,15 @@ const (
 )
 
 type Config struct {
-	Port    int      `json:"port"`
-	DBHosts []string `json:"db_hosts"`
-	Secret  Secret   `json:"-"`
+	Port    int      `json:"port" yaml:"port"`
+	DBHosts []string `json:"db_hosts" yaml:"db_hosts"`
+	Secret  *Secret  `json:"-" yaml:"-"`
 }
 
 type Secret struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	AuthSource string `json:"auth_source"`
+	Username   string `json:"username" yaml:"username"`
+	Password   string `json:"password" yaml:"password"`
+	AuthSource string `json:"authSource" yaml:"authSource"`
 }
 
 func (sc Secret) isSet() bool {
@@ -60,18 +62,36 @@ func (sc Secret) isSet() bool {
 type sink struct {
 	cfg      *Config
 	dbClient *mongo.Client
+	logger   log.Logger
 }
 
 func NewMongoSink() runtime.Sink {
 	return &sink{}
 }
 
+func (s *sink) SetLogger(logger log.Logger) {
+	s.logger = logger
+}
+
 func (s *sink) Init(cfgPath, secretPath string) error {
+	cfg := &Config{}
+	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
+		return err
+	}
+
+	secret := &Secret{}
+	if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
+		return err
+	}
+	cfg.Secret = secret
+
+	s.cfg = cfg
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	opts := options.Client()
 	opts.ApplyURI(fmt.Sprintf("mongodb://%s", strings.Join(s.cfg.DBHosts, ",")))
-	if s.cfg.Secret.isSet() {
+	opts.SetReplicaSet("replicaset-01")
+	if s.cfg.Secret != nil && s.cfg.Secret.isSet() {
 		opts.Auth = &options.Credential{
 			AuthSource:  s.cfg.Secret.AuthSource,
 			Username:    s.cfg.Secret.Username,
@@ -99,7 +119,7 @@ func (s *sink) Port() int {
 	return s.cfg.Port
 }
 
-func (s *sink) Handle(ctx context.Context, event *v2.Event) protocol.Result {
+func (s *sink) Handle(ctx context.Context, event v2.Event) protocol.Result {
 	extensions := event.Extensions()
 	dbName, exist := extensions[mongoSinkDatabase]
 	if !exist {
@@ -125,13 +145,15 @@ func (s *sink) Handle(ctx context.Context, event *v2.Event) protocol.Result {
 		return cehttp.NewResult(http.StatusBadRequest, err.Error())
 	}
 
+	_dbName := fmt.Sprintf("%s", dbName)
+	_collName := fmt.Sprintf("%s", collName)
 	switch e.Op {
 	case database.Operation_INSERT:
-		err = s.insert(ctx, fmt.Sprintf("%s", dbName), fmt.Sprintf("%s", collName), e)
+		err = s.insert(ctx, id, _dbName, _collName, e)
 	case database.Operation_UPDATE:
-		err = s.update(ctx, id, fmt.Sprintf("%s", dbName), fmt.Sprintf("%s", collName), e)
+		err = s.update(ctx, id, _dbName, _collName, e)
 	case database.Operation_DELETE:
-		err = s.delete(ctx, id, fmt.Sprintf("%s", dbName), fmt.Sprintf("%s", collName))
+		err = s.delete(ctx, id, _dbName, _collName)
 	default:
 		return cehttp.NewResult(http.StatusBadRequest, fmt.Sprintf("unsupported event operation: %s", e.Op))
 	}
@@ -142,8 +164,18 @@ func (s *sink) Handle(ctx context.Context, event *v2.Event) protocol.Result {
 	return cehttp.NewResult(http.StatusOK, "")
 }
 
-func (s *sink) insert(ctx context.Context, dbName, collName string, e *proto.Event) error {
-	_, err := s.dbClient.Database(dbName).Collection(collName).InsertOne(ctx, e.Insert.Document)
+func (s *sink) insert(ctx context.Context, id primitive.ObjectID, dbName, collName string, e *proto.Event) error {
+	m := make(map[string]interface{})
+	data, err := e.Insert.Document.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "_id")
+	m["_id"] = id
+	_, err = s.dbClient.Database(dbName).Collection(collName).InsertOne(ctx, m)
 	return err
 }
 
@@ -156,10 +188,13 @@ func (s *sink) update(ctx context.Context, id primitive.ObjectID, dbName, collNa
 	if err = json.Unmarshal(data, &updates); err != nil {
 		return fmt.Errorf("try to unmarhsall UpdatedFields data to map error: %s", err)
 	}
-
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cancel()
 	_, err = s.dbClient.Database(dbName).Collection(collName).UpdateOne(ctx,
 		bson.M{"_id": id},
-		updates)
+		bson.M{
+			"$set": updates,
+		})
 	return err
 }
 
