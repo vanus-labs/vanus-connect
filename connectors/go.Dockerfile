@@ -2,28 +2,30 @@ FROM golang:1.18.5 as compiler
 
 ARG connector
 
-COPY ./vance /tmp/vance
-COPY ./cdk-go /tmp/cdk-go
+COPY ./vance /build/vance
+COPY ./cdk-go /build/cdk-go
 
-RUN cd /tmp/vance/connectors/${connector} && \
-    go build -v -o /tmp/vance/bin/${connector} ./cmd/main.go
+RUN cd /build/vance/connectors/${connector} && \
+    go build -v -o /build/vance/bin/${connector} ./cmd/main.go
 
 FROM centos:8.4.2105
 
 ARG connector
 
-COPY --from=compiler /tmp/vance/bin/${connector} /etc/vance/bin/${connector}
-COPY --from=compiler /tmp/vance/connectors/${connector}/run.sh /etc/vance/run.sh
+WORKDIR /vance
 
-RUN chmod a+x /etc/vance/bin/${connector}
-RUN chmod a+x /etc/vance/run.sh
+COPY --from=compiler /build/vance/bin/${connector} /vance/bin/${connector}
+COPY --from=compiler /build/vance/connectors/${connector}/run.sh /vance/run.sh
+
+RUN chmod a+x /vance/bin/${connector}
+RUN chmod a+x /vance/run.sh
 
 ENV CONNECTOR=${connector}
-ENV EXECUTABLE_FILE=/etc/vance/bin/${connector}
-ENV CONNECTOR_HOME=/etc/vance/
-ENV CONNECTOR_CONFIG=/etc/vance/config.yml
-ENV CONNECTOR_SECRET=/etc/vance/secert.yml
+ENV EXECUTABLE_FILE=/vance/bin/${connector}
+ENV CONNECTOR_HOME=/vance
+ENV CONNECTOR_CONFIG=/vance/config/config.yml
+ENV CONNECTOR_SECRET=/vance/config/secert.yml
 
 EXPOSE 8080
 
-ENTRYPOINT ["/etc/vance/run.sh"]
+ENTRYPOINT ["/vance/run.sh"]
