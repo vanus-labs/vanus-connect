@@ -12,7 +12,7 @@ require (
 )
 
 replace (
-	github.com/linkall-labs/cdk-go => /Users/wenfeng/personal/workspace/linkall/cdk-go
+	github.com/linkall-labs/cdk-go => ../../../../cdk-go
 	github.com/linkall-labs/connector/proto => ../../schemas/pkg
 )
 
