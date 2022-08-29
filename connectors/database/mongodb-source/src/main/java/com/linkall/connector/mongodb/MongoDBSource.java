@@ -41,18 +41,23 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
 
     public MongoDBSource() throws IOException {
         super();
-        String home = System.getenv("MONGODB_CONNECTOR_HOME");
-        if (Strings.isBlank(home)) {
-            home = "/etc/vance/mongodb";
+        String configPath = System.getenv("CONNECTOR_CONFIG");
+        if (Strings.isBlank(configPath)) {
+            configPath = "/vance/config/config.json";
         }
-        Path cp = Paths.get(home, "config.json");
+        Path cp = Paths.get(configPath);
         if (!cp.toFile().exists()) {
             throw new FileNotFoundException("the config.json not found in [ " + cp.toAbsolutePath() + " ]");
         }
         byte[] data = Files.readAllBytes(cp);
         config = JSON.parseObject(data, Map.class);
 
-        Path sp = Paths.get(home, "secret.json");
+        String secretPath = System.getenv("CONNECTOR_SECRET");
+        if (Strings.isBlank(secretPath)) {
+            secretPath = "/vance/config/secret.json";
+        }
+
+        Path sp = Paths.get(secretPath);
         if (sp.toFile().exists()) {
             data = Files.readAllBytes(sp);
             secret = JSON.parseObject(data, Map.class);
