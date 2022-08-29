@@ -43,4 +43,4 @@ cdk-go
 **/test/resources/*
 
 # java proto file
-**/com/linkall/connector/proto/*
+**/src/proto

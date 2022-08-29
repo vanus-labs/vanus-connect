@@ -94,7 +94,7 @@
                 </executions>
                 <configuration>
                     <outputDirectory>
-                        ${project.basedir}/src/main/java
+                        ${project.basedir}/src/proto/java
                     </outputDirectory>
                     <protoSourceRoot>../../schemas</protoSourceRoot>
                     <includes>
