@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.linkall.connector.mongodb;
+package com.linkall.connector.source.mongodb;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.linkall.connector.mongodb.debezium.DebeziumSource;
 import com.linkall.vance.core.Adapter;
 import org.apache.logging.log4j.util.Strings;
 
@@ -31,8 +30,8 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MongoDBSource extends DebeziumSource implements com.linkall.vance.core.Source {
-
+public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSource
+        implements com.linkall.vance.core.Source {
     private static final String DEBEZIUM_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
 
     private final String connectorName;

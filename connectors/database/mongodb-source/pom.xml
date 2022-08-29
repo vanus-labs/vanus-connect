@@ -25,6 +25,11 @@
             <version>0.2.1</version>
         </dependency>
         <dependency>
+            <groupId>com.linkall</groupId>
+            <artifactId>cdk-database</artifactId>
+            <version>0.3.0</version>
+        </dependency>
+        <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-mongodb</artifactId>
             <version>${debezium.version}</version>
@@ -118,7 +123,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        com.linkall.connector.mongodb.Entrance
+                                        com.linkall.connector.source.mongodb.Entrance
                                     </mainClass>
                                 </manifest>
                             </archive>

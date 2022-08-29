@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.linkall.connector.mongodb.debezium;
+package com.linkall.connector.source.mongodb.debezium;
 
 import com.linkall.vance.core.Adapter2;
 import io.debezium.engine.ChangeEvent;

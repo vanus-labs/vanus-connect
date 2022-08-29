@@ -1,4 +1,4 @@
-package com.linkall.connector.mongodb.debezium;
+package com.linkall.connector.source.mongodb.debezium;
 
 import com.linkall.vance.common.config.ConfigUtil;
 import com.linkall.vance.core.Adapter2;
