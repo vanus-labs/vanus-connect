@@ -22,7 +22,6 @@ import (
 	"github.com/linkall-labs/cdk-go/log"
 	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -80,12 +79,11 @@ func (s *sink) Init(cfgPath, secretPath string) error {
 		return err
 	}
 
-	secret := &Secret{}
-	if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
-		if !os.IsNotExist(err) {
+	if runtime.IsSecretEnable() {
+		secret := &Secret{}
+		if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
 			return err
 		}
-	} else {
 		cfg.Secret = secret
 	}
 
