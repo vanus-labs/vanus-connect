@@ -17,15 +17,17 @@ WORKDIR /vance
 COPY --from=builder /build/vance/bin/${connector} /vance/bin/${connector}
 COPY --from=builder /build/vance/connectors/${connector}/run.sh /vance/run.sh
 
-RUN chmod a+x /vance/bin/${connector}
-RUN chmod a+x /vance/run.sh
-
 ENV CONNECTOR=${connector}
 ENV EXECUTABLE_FILE=/vance/bin/${connector}
 ENV CONNECTOR_HOME=/vance
 ENV CONNECTOR_CONFIG=/vance/config/config.yml
 ENV CONNECTOR_SECRET=/vance/secret/secert.yml
 ENV CONNECTOR_SECRET_ENABLE=false
+
+RUN echo '#!/bin/sh' >> /vance/run.sh
+RUN echo $EXECUTABLE_FILE >> /vance/run.sh
+RUN chmod a+x /vance/bin/${connector}
+RUN chmod a+x /vance/run.sh
 
 EXPOSE 8080
 

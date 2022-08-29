@@ -5,32 +5,29 @@ ARG connector
 COPY ./vance /build/vance
 COPY ./cdk-java /build/cdk-java
 
-RUN apt update
-RUN apt install libatomic1
+WORKDIR /build/vance/connectors/${connector}
 
-#
-#RUN cd /build/vance/connectors/${connector} && \
-#    go build -v -o /build/vance/bin/${connector} ./cmd/main.go
-#
-#FROM centos:8.4.2105
-#
-#ARG connector
-#
-#WORKDIR /vance
-#
-#COPY --from=builder /build/vance/bin/${connector} /vance/bin/${connector}
-#COPY --from=builder /build/vance/connectors/${connector}/run.sh /vance/run.sh
-#
-#RUN chmod a+x /vance/bin/${connector}
-#RUN chmod a+x /vance/run.sh
-#
-#ENV CONNECTOR=${connector}
-#ENV EXECUTABLE_FILE=/vance/bin/${connector}
-#ENV CONNECTOR_HOME=/vance
-#ENV CONNECTOR_CONFIG=/vance/config/config.yml
-#ENV CONNECTOR_SECRET=/vance/secret/secert.yml
-#ENV CONNECTOR_SECRET_ENABLE=false
-#
-#EXPOSE 8080
-#
-#ENTRYPOINT ["/vance/run.sh"]
+RUN apt-get -qq update
+RUN apt-get -qq install libatomic1
+RUN mvn clean package
+RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
+
+FROM openjdk:11
+
+ARG connector
+ARG version
+
+COPY --from=builder /build/executable.jar /vance/${connector}/${version}.jar
+
+ENV CONNECTOR=${connector}
+ENV CONNECTOR_VERSION=${version}
+ENV CONNECTOR_HOME=/vance
+ENV CONNECTOR_CONFIG=/vance/config/config.yml
+ENV CONNECTOR_SECRET=/vance/secret/secert.yml
+ENV CONNECTOR_SECRET_ENABLE=false
+
+RUN echo '#!/bin/sh' >> /vance/run.sh
+RUN echo 'java -jar /vance/${CONNECTOR}/${CONNECTOR_VERSION}.jar' >> /vance/run.sh
+RUN chmod a+x /vance/run.sh
+
+ENTRYPOINT ["/vance/run.sh"]
