@@ -63,9 +63,9 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vanus/config
+              mountPath: /vance/config
             - name: secret
-              mountPath: /vanus/config/secret
+              mountPath: /vance/config
       volumes:
         - name: secret
           secret:
