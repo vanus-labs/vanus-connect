@@ -11,10 +11,17 @@ Copy this template to your connector directory, and finish all section.
 ### quickstart
 
 ```bash
-docker run -it --rm public.ecr.aws/vanus/connector/xxx:latest /etc/vance/xxx/start.sh \
-  --volume /xxx/config.json /etc/vance/xxx/config.json \
-  --volume /xxx/secret.json /etc/vance/xxx/secret.json \
-  --env XXX_CONNECTOR_HOME=/etc/vance/xxx
+cat << EOF > config.yml
+# change this hosts to your mongodb's address
+db_hosts:
+  - xxx.xxx.xxx.xx:27017
+port: 8080
+EOF
+
+docker run -d \
+  -p 8080:8080 \
+  -v config.yml:/vance/config/config.yml \
+  --rm image.linkall.com/connector/mongo-sink:v0.2.1
 ```
 
 ### vance
