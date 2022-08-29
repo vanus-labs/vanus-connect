@@ -118,7 +118,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        com.linkall.source.mongo.Entrance
+                                        com.linkall.connector.mongodb.Entrance
                                     </mainClass>
                                 </manifest>
                             </archive>
