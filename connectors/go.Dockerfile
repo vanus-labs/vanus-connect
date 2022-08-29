@@ -1,4 +1,4 @@
-FROM golang:1.18.5 as compiler
+FROM golang:1.18.5 as builder
 
 ARG connector
 
@@ -14,8 +14,8 @@ ARG connector
 
 WORKDIR /vance
 
-COPY --from=compiler /build/vance/bin/${connector} /vance/bin/${connector}
-COPY --from=compiler /build/vance/connectors/${connector}/run.sh /vance/run.sh
+COPY --from=builder /build/vance/bin/${connector} /vance/bin/${connector}
+COPY --from=builder /build/vance/connectors/${connector}/run.sh /vance/run.sh
 
 RUN chmod a+x /vance/bin/${connector}
 RUN chmod a+x /vance/run.sh
