@@ -19,8 +19,8 @@ EOF
 
 ### run mongodb-sink
 
-it assumes that the mongodb instance doesn't need authentication. For how to use authentication see
-[secret](#secret)
+it assumes that the mongodb instance doesn't need authentication. For how to use authentication please see
+[secret](#secret) section.
 
 ```shell
 docker run -d \
@@ -31,6 +31,7 @@ docker run -d \
 ```
 
 ### insert document to mongodb
+About more details for how to understand, please see [Schema](#examples) and [Examples](#examples) section.
 
 ```shell
 curl --location --request POST 'http://127.0.0.1:8080' \
@@ -46,7 +47,7 @@ curl --location --request POST 'http://127.0.0.1:8080' \
         "op": "INSERT",
         "insert": {
             "document": {
-                "a": 1234.0
+                "a": 1234
             }
         }
     },
@@ -138,7 +139,6 @@ docker run -d \
   --name mongodb-sink \
   --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
 ```
-
 
 ## Schema
 
