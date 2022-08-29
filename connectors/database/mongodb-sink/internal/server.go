@@ -15,21 +15,18 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/linkall-labs/cdk-go/log"
-	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"net/http"
 	"strings"
 	"time"
 
-	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/protocol"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/golang/protobuf/jsonpb"
+	stdlib "github.com/golang/protobuf/proto"
+	"github.com/linkall-labs/cdk-go/log"
 	"github.com/linkall-labs/cdk-go/runtime"
+	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	proto "github.com/linkall-labs/connector/mongodb-sink/proto/database"
 	"github.com/linkall-labs/connector/proto/database"
 	"go.mongodb.org/mongo-driver/bson"
@@ -109,6 +106,41 @@ func (s *sink) Init(cfgPath, secretPath string) error {
 	return nil
 }
 
+func (s *sink) NewEvent() stdlib.Message {
+	return &proto.Event{}
+}
+
+func (s *sink) Validate(msg stdlib.Message) error {
+	event, ok := msg.(*proto.Event)
+	if !ok {
+		return fmt.Errorf("invalid event type")
+	}
+	if event.Op == database.Operation_INSERT && event.Insert == nil {
+		return fmt.Errorf("invalid insert event")
+	}
+
+	if event.Op == database.Operation_UPDATE && event.Update == nil {
+		return fmt.Errorf("invalid update event")
+	}
+
+	_, exist := event.Metadata.Extension.GetFields()[mongoSinkDatabase]
+	if !exist {
+		return fmt.Errorf("vancemongosinkdatabase is empty")
+	}
+
+	_, exist = event.Metadata.Extension.GetFields()[mongoSinkCollection]
+	if !exist {
+		return fmt.Errorf("vancemongosinkcollection is empty")
+	}
+
+	_, err := primitive.ObjectIDFromHex(event.Metadata.Id)
+	if err != nil {
+		return fmt.Errorf("invalid id %s, hex mongo id required", err)
+	}
+
+	return nil
+}
+
 func (s *sink) Destroy() error {
 	return nil
 }
@@ -121,49 +153,25 @@ func (s *sink) Port() int {
 	return s.cfg.Port
 }
 
-func (s *sink) Handle(ctx context.Context, event v2.Event) protocol.Result {
-	extensions := event.Extensions()
-	dbName, exist := extensions[mongoSinkDatabase]
-	if !exist {
-		return cehttp.NewResult(http.StatusBadRequest, "vancemongosinkdatabase is empty")
-	}
+func (s *sink) Handle(ctx context.Context, msg stdlib.Message) error {
+	event, _ := msg.(*proto.Event)
 
-	collName, exist := extensions[mongoSinkCollection]
-	if !exist {
-		return cehttp.NewResult(http.StatusBadRequest, "vancemongosinkcollection is empty")
-	}
-	id, err := primitive.ObjectIDFromHex(event.ID())
-	if err != nil {
-		return cehttp.NewResult(http.StatusBadRequest,
-			fmt.Sprintf("invalid id %s, hex mongo id required", err))
-	}
-
-	e := &proto.Event{}
-	if err := jsonpb.Unmarshal(bytes.NewReader(event.Data()), e); err != nil {
-		return cehttp.NewResult(http.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validate(e); err != nil {
-		return cehttp.NewResult(http.StatusBadRequest, err.Error())
-	}
-
-	_dbName := fmt.Sprintf("%s", dbName)
-	_collName := fmt.Sprintf("%s", collName)
-	switch e.Op {
+	id, _ := primitive.ObjectIDFromHex(event.Metadata.Id)
+	dbName := event.Metadata.Extension.GetFields()[mongoSinkDatabase].GetStringValue()
+	collName := event.Metadata.Extension.GetFields()[mongoSinkCollection].GetStringValue()
+	var err error
+	switch event.Op {
 	case database.Operation_INSERT:
-		err = s.insert(ctx, id, _dbName, _collName, e)
+		err = s.insert(ctx, id, dbName, collName, event)
 	case database.Operation_UPDATE:
-		err = s.update(ctx, id, _dbName, _collName, e)
+		err = s.update(ctx, id, dbName, collName, event)
 	case database.Operation_DELETE:
-		err = s.delete(ctx, id, _dbName, _collName)
+		err = s.delete(ctx, id, dbName, collName)
 	default:
-		return cehttp.NewResult(http.StatusBadRequest, fmt.Sprintf("unsupported event operation: %s", e.Op))
+		return cehttp.NewResult(http.StatusBadRequest, fmt.Sprintf("unsupported event operation: %s", event.Op))
 	}
 
-	if err != nil {
-		return cehttp.NewResult(http.StatusInternalServerError, err.Error())
-	}
-	return cehttp.NewResult(http.StatusOK, "")
+	return err
 }
 
 func (s *sink) insert(ctx context.Context, id primitive.ObjectID, dbName, collName string, e *proto.Event) error {
@@ -205,16 +213,4 @@ func (s *sink) delete(ctx context.Context, id primitive.ObjectID, dbName, collNa
 		"_id": id,
 	})
 	return err
-}
-
-func (s *sink) validate(event *proto.Event) error {
-	if event.Op == database.Operation_INSERT && event.Insert == nil {
-		return fmt.Errorf("invalid insert event")
-	}
-
-	if event.Op == database.Operation_UPDATE && event.Update == nil {
-		return fmt.Errorf("invalid update event")
-	}
-
-	return nil
 }

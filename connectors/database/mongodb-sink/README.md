@@ -64,7 +64,7 @@ docker stop mongodb-sink
 
 ## Deploy
 
-### using k8s
+### using k8s(recommended)
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/mongodb-sink.yml
