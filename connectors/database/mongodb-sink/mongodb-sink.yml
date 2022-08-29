@@ -55,8 +55,7 @@ spec:
     spec:
       containers:
         - name: connector-mongo-sink
-          image: busybox:latest
-          command: ["/bin/sh", "-c",  "sleep 10000000"]
+          image: public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
@@ -65,7 +64,8 @@ spec:
             - name: config
               mountPath: /vance/config
             - name: secret
-              mountPath: /vance/config
+              mountPath: /vance/secret
+          # env: see README for more about how to set env
       volumes:
         - name: secret
           secret:

@@ -24,7 +24,7 @@ ENV CONNECTOR=${connector}
 ENV EXECUTABLE_FILE=/vance/bin/${connector}
 ENV CONNECTOR_HOME=/vance
 ENV CONNECTOR_CONFIG=/vance/config/config.yml
-ENV CONNECTOR_SECRET=/vance/config/secert.yml
+ENV CONNECTOR_SECRET=/vance/secret/secert.yml
 ENV CONNECTOR_SECERT_ENABLE=false
 
 EXPOSE 8080
