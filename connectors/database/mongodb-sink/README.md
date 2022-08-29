@@ -95,12 +95,22 @@ the configuration of mongodb-sink based on [Connection String URI Format](https:
 | db_hosts | **YES** |    -    | the mongodb cluster hosts                       |
 | port     | **YES** |    -    | the port the mongodb-sink for listening request |
 
-example:
+- example
+
+create a `config.yml` that its content like follow, and mount it to container inside.
 
 ```yaml
 db_hosts:
   - 127.0.0.1:27017
 port: 8080
+```
+
+```shell
+docker run -d \
+  -p 8080:8080 \
+  -v ${PWD}:/vance/config \
+  --name mongodb-sink \
+  --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
 ```
 
 ### secret
@@ -112,7 +122,7 @@ port: 8080
 | password   | **YES** |    -    | the password to connect mongodb  |
 | authSource |    NO    |  admin  | the authSource to authentication |
 
-example:
+- example: create a `secert.yml` that its content like follow, and mount it to container inside.
 
 ```yaml
 username: "test"
@@ -120,14 +130,21 @@ password: "123456"
 authSource: "admin"
 ```
 
-The `user` and `password` are required only when MongoDB is configured to use authentication. This `authsoure` required
-only when MongoDB is configured to use authentication with another authentication database than admin.
+```shell
+docker run -d \
+  -p 8080:8080 \
+  -v ${PWD}:/vance/config \
+  --env CONNECTOR_SECRET_ENABLE=true 
+  --name mongodb-sink \
+  --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
+```
+
 
 ## Schema
 
 TODO
 
-## examples
+## Examples
 
 ### insert document
 
@@ -196,7 +213,7 @@ curl --location --request POST 'http://127.0.0.1:8080' \
     "datacontenttype": "application/json",
     "time": "2022-08-26T18:42:16Z",
     "data": {
-        "op": "DELETE"      
+        "op": "DELETE"    
     },
     "vancemongosinkdatabase":"test",
     "vancemongosinkcollection": "sink",  
