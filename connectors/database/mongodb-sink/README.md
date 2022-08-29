@@ -90,11 +90,10 @@ the configuration of mongodb-sink based on [Connection String URI Format](https:
 
 ### config
 
-
 | Name     | Required | Default | Description                                     |
-| :--------- | :--------: | :-------: | ------------------------------------------------- |
-| db_hosts | **YES** |    -    | the mongodb cluster hosts                       |
-| port     | **YES** |    -    | the port the mongodb-sink for listening request |
+|:---------|:--------:|:-------:|-------------------------------------------------|
+| db_hosts | **YES**  |    -    | the mongodb cluster hosts                       |
+| port     | **YES**  |    -    | the port the mongodb-sink for listening request |
 
 - example
 
@@ -116,11 +115,10 @@ docker run -d \
 
 ### secret
 
-
 | Name       | Required | Default | Description                      |
-| :----------- | :--------: | :-------: | ---------------------------------- |
-| username   | **YES** |    -    | the username to connect mongodb  |
-| password   | **YES** |    -    | the password to connect mongodb  |
+|:-----------|:--------:|:-------:|----------------------------------|
+| username   | **YES**  |    -    | the username to connect mongodb  |
+| password   | **YES**  |    -    | the password to connect mongodb  |
 | authSource |    NO    |  admin  | the authSource to authentication |
 
 - example: create a `secert.yml` that its content like follow, and mount it to container inside.

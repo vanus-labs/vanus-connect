@@ -142,7 +142,7 @@ func (s *sink) Validate(msg stdlib.Message) error {
 }
 
 func (s *sink) Destroy() error {
-	return nil
+	return s.dbClient.Disconnect(context.TODO())
 }
 
 func (s *sink) Name() string {

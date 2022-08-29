@@ -89,11 +89,13 @@
                     <execution>
                         <goals>
                             <goal>compile</goal>
-                            <goal>test-compile</goal>
                         </goals>
                     </execution>
                 </executions>
                 <configuration>
+                    <outputDirectory>
+                        ${project.basedir}/src/main/java
+                    </outputDirectory>
                     <protoSourceRoot>../../schemas</protoSourceRoot>
                     <includes>
                         <include>database/database.proto</include>
