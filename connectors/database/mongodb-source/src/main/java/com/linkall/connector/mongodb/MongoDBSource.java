@@ -15,7 +15,6 @@
 package com.linkall.connector.mongodb;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.linkall.connector.mongodb.debezium.DebeziumSource;
 import com.linkall.vance.core.Adapter;
@@ -26,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -37,8 +35,8 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
 
     private static final String DEBEZIUM_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
 
-    private String connectorName;
-    private Map<String, Object> config;
+    private final String connectorName;
+    private final Map<String, Object> config;
     private Map<String, String> secret;
 
     public MongoDBSource() throws IOException {
@@ -49,7 +47,7 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
         }
         Path cp = Paths.get(home, "config.json");
         if (!cp.toFile().exists()) {
-            throw new FileNotFoundException("the config.json not found in [ " + cp.toAbsolutePath().toString() + " ]");
+            throw new FileNotFoundException("the config.json not found in [ " + cp.toAbsolutePath() + " ]");
         }
         byte[] data = Files.readAllBytes(cp);
         config = JSON.parseObject(data, Map.class);
@@ -95,7 +93,7 @@ public class MongoDBSource extends DebeziumSource implements com.linkall.vance.c
         props.setProperty("mongodb.hosts", config.get("db_hosts").toString());
         props.setProperty("mongodb.name", config.get("db_name").toString());
         props.setProperty("capture.mode", "change_streams_update_full");
-        if (secret!=null&&secret.size() > 0) {
+        if (secret != null && secret.size() > 0) {
             props.setProperty("mongodb.user", secret.get("user"));
             props.setProperty("mongodb.password", secret.get("password"));
             props.setProperty("mongodb.authsource", secret.getOrDefault("authsource", "admin"));
