@@ -59,14 +59,20 @@ spec:
       containers:
         - name: connector-mongo-sink
           image: busybox:latest
+          cmd: ["sh", "-c",  "sleep 10000000"]
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
-            - name: connector-mongo-sink
+            - name: config
               mountPath: /vanus/config
+            - name: secret
+              mountPath: /vanus/config/secret
       volumes:
-        - name: connector-mongo-sink
+        - name: secret
+          secret:
+            secretName: connector-mongo-sink
+        - name: config
           configMap:
             name: connector-mongo-sink
