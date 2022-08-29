@@ -23,6 +23,7 @@ data:
     db_hosts:
       - 44.242.140.28:27017
     port: 8080
+
 ---
 apiVersion: v1
 kind: Secret
@@ -31,12 +32,8 @@ metadata:
   namespace: vanus
 type: Opaque
 data:
-  # echo "test" | base64
-  username: test
-  # echo "123456" | base64
-  password: MTIzNDU2Cg==
-  # echo "admin" | base64
-  authSource: YWRtaW4K
+  # cat secret.yml | base64
+  secert.yml: dXNlcm5hbWU6ICJ0ZXN0IgpwYXNzd29yZDogIjEyMzQ1NiIKYXV0aFNvdXJjZTogImFkbWluIg==
 immutable: true
 ---
 apiVersion: apps/v1
@@ -59,7 +56,7 @@ spec:
       containers:
         - name: connector-mongo-sink
           image: busybox:latest
-          cmd: ["sh", "-c",  "sleep 10000000"]
+          command: ["/bin/sh", "-c",  "sleep 10000000"]
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
