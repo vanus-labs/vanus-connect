@@ -1,37 +1,107 @@
-# MongoDB Connector
+# MongoDB Source Connector
 
 ## Introduction
 
-## How to use
+This connector  capturing mongodb change event by [debezium](https://github.com/debezium/debezium).
 
-### quickstart
+## Quickstart
 
-```bash
-docker run -it --rm public.ecr.aws/vanus/connector/mongodb:latest /etc/vance/mongodb/start.sh \
-  --volume /xxx/config.json /etc/vance/mongodb/config.json \
-  --volume /xxx/secret.json /etc/vance/mongodb/secret.json \
-  --env MONGODB_CONNECTOR_HOME=/etc/vance/mongodb
+### create config file
+
+```shell
+cat << EOF > config.yml
+# change this hosts to your mongodb's address
+{
+  "v_target": "http://localhost:8080",
+  "v_store_file": "/vance/tmp/offset.data",
+  "db_hosts":[
+    "44.242.140.28:27017"
+  ],
+  "port": 8080
+}
+EOF
 ```
 
-### vance
+For full configuration, you can see [config](#config) section.
 
-```bash
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/mongo-connector/connectors/mongodb/mongodb.yml
+### run mongodb-source
+
+it assumes that the mongodb instance doesn't need authentication. For how to use authentication please see
+[secret](#secret) section.
+
+```shell
+docker run -d \
+  -p 8080:8080 \
+  -v ${PWD}:/vance/config \
+  -v /tmp:/vance/tmp \
+  --name mongodb-source \
+  --rm public.ecr.aws/vanus/connector/mongodb-source:dev
 ```
 
-### k8s
+### capture a insert event
 
-Coming soon, it depends on Vance Operator, the experience of it will be like follow:
+if you insert a new document to your mongodb instance
 
-```bash
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/xxx/xxx.yml
-# or
-vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx/secret.json
+```shell
+db.mongo_source.insert({"test":"demo"})
+```
+
+and you will receive an event like this:
+
+```json
+{
+    "specversion":"1.0",
+    "id":"630e32fa020bac5f5f1dcb74",
+    "source":"mongodb.replicaset-01.test.mongo_source",
+    "type":"test.mongo_source",
+    "datacontenttype":"application/json",
+    "time":"2022-08-30T15:55:38Z",
+    "data":{
+        "metadata":{
+            "id":"630e32fa020bac5f5f1dcb74",
+            "recognized":true,
+            "extension":{
+                "ord":1,
+                "rs":"replicaset-01",
+                "collection":"mongo_source",
+                "version":"1.9.4.Final",
+                "connector":"mongodb",
+                "name":"replica-set01",
+                "ts_ms":1661874938000,
+                "snapshot":"false",
+                "db":"test"
+            }
+        },
+        "op":"INSERT",
+        "insert":{
+            "document":{
+                "_id":{
+                    "$oid":"630e32fa020bac5f5f1dcb74"
+                },
+                "test":"demo"
+            }
+        }
+    },
+    "vancemongodbversion":"1.9.4.Final",
+    "vancemongodboperation":"INSERT",
+    "vancemongodbrecognized":true,
+    "vancemongodbsnapshot":"false",
+    "vancemongodbname":"replica-set01",
+    "vancemongodbord":""
+}
+```
+
+please see [Schema](#schema) to understanding it.
+
+### clean resource
+
+```shell
+docker stop mongodb-source
 ```
 
 ## Configuration
 
-### config.json
+### config
 
 ```json
 {
@@ -52,90 +122,121 @@ vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx
 ```
 
 | Name               | Required |   default   | description                                                                                                                                                                                                                                                                                                                                                         |
-| :------------------- | :-----------: | :-----------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| v_target           |  required  |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
-| v_store_file       |  required  |      -      | KV store file name                                                                                                                                                                                                                                                                                                                                                  |
-| name               |  required  |      -      | Unique name for the connector. Attempting to register again with the same name will fail.                                                                                                                                                                                                                                                                           |
-| db_hosts           |  required  |      -      | The host addresses to use to connect to the MongoDB replica set                                                                                                                                                                                                                                                                                                     |
-| db_name            |  required  |      -      | A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector monitors.                                                                                                                                                                                                                                             |
-| database.include   |  optional  | empty array | Database names to be monitored; any database name not included in database.include is excluded from monitoring. By default all databases are monitored. Must not be used with database.exclude                                                                                                                                                                      |
-| database.exclude   |  optional  | empty array | Database names to be excluded from monitoring; any database name not included in database.exclude is monitored. Must not be used with database.include                                                                                                                                                                                                              |
-| collection.include |  optional  | empty array | Match fully-qualified namespaces for MongoDB collections to be monitored; any collection not included in collection.include is excluded from monitoring. Each identifier is of the form databaseName.collectionName. By default the connector will monitor all collections except those in the local and admin databases. Must not be used with collection.exclude. |
-| collection.exclude |  optional  | empty array | Match fully-qualified namespaces for MongoDB collections to be excluded from monitoring; any collection not included in collection.exclude is monitored. Each identifier is of the form databaseName.collectionName. Must not be used with collection.include                                                                                                       |
+|:-------------------|:--------:|:-----------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| v_target           | required |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
+| v_store_file       | required |      -      | KV store file name                                                                                                                                                                                                                                                                                                                                                  |
+| name               | required |      -      | Unique name for the connector. Attempting to register again with the same name will fail.                                                                                                                                                                                                                                                                           |
+| db_hosts           | required |      -      | The host addresses to use to connect to the MongoDB replica set                                                                                                                                                                                                                                                                                                     |
+| db_name            | required |      -      | A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector monitors.                                                                                                                                                                                                                                             |
+| database.include   | optional | empty array | Database names to be monitored; any database name not included in database.include is excluded from monitoring. By default all databases are monitored. Must not be used with database.exclude                                                                                                                                                                      |
+| database.exclude   | optional | empty array | Database names to be excluded from monitoring; any database name not included in database.exclude is monitored. Must not be used with database.include                                                                                                                                                                                                              |
+| collection.include | optional | empty array | Match fully-qualified namespaces for MongoDB collections to be monitored; any collection not included in collection.include is excluded from monitoring. Each identifier is of the form databaseName.collectionName. By default the connector will monitor all collections except those in the local and admin databases. Must not be used with collection.exclude. |
+| collection.exclude | optional | empty array | Match fully-qualified namespaces for MongoDB collections to be excluded from monitoring; any collection not included in collection.exclude is monitored. Each identifier is of the form databaseName.collectionName. Must not be used with collection.include                                                                                                       |
 
 Note: the `name` property can't be modified once it has been started.
 
 Excepting `v_target` and `v_store_file`, all item are listed are mapping
-to [debezium-mongo](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-example-configuration)
-, the properties are not listed are not supported now.
+to [debezium-mongo](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-example-configuration), the properties are not listed are not supported now.
 
-### secret.json
+### secret
+
+| Name       | Required | Default | Description                      |
+|:-----------|:--------:|:-------:|----------------------------------|
+| username   | **YES**  |    -    | the username to connect mongodb  |
+| password   | **YES**  |    -    | the password to connect mongodb  |
+| authSource |    NO    |  admin  | the authSource to authentication |
+
+The `user` and `password` are required only when MongoDB is configured to use authentication. This `authSource` required
+only when MongoDB is configured to use authentication with another authentication database than admin.
+
+- example: create a `secert.json` that its content like follow, and mount it to container inside.
 
 ```json
 {
-  "user": "admin",
-  "password": "admin",
-  "authsoure": "admin"
+  "username": "test",
+  "password": "123456",
+  "authSource": "admin"
 }
 ```
 
-| name      | requirement | description                                                     |
-| ----------- | ------------- | ----------------------------------------------------------------- |
-| user      | optional    | Name of the database user to be used when connecting to MongoDB |
-| password  | optional    | Password to be used when connecting to MongoDB                  |
-| authsoure | optional    | Database (authentication source) containing MongoDB credentials |
+and
 
-The `user` and `password` are required only when MongoDB is configured to use authentication. This `authsoure` required
-only when MongoDB is configured to use authentication with another authentication database than admin.
+```shell
+docker run -d \
+  -p 8080:8080 \
+  -v ${PWD}:/vance/config \
+  --env CONNECTOR_SECRET_ENABLE=true 
+  --name mongodb-source \
+  --rm public.ecr.aws/vanus/connector/mongodb-source:dev
+```
 
 ## Schema
 
 The output events' schema is a [CloudEvent](https://github.com/cloudevents/spec) format, and each field are explained
 follows.
 
-the original `ChangeEvent` can be found
-in [official document](https://www.mongodb.com/docs/manual/reference/change-events/)
+the original `ChangeEvent` can be found in [official document](https://www.mongodb.com/docs/manual/reference/change-events/)
 
-| field                  | description                                                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| id                     | the bson`_id` will be set as the id                                                                               |
-| source                 | `mongodb.{relicaset_name}.{db_name}.{collection_name}`                                                            |
-| type                   | `{db_name}.{collection_name}`                                                                                     |
-| time                   | the time of this event generated with RFC3339 encoding                                                            |
-| data                   | the body of`ChangeEvent`                                                                                          |
-| data.full              | the full document of each bson, not empty when operation is`insert` and `update`, mapping to`insert.fullDocument` |
-| data.changed           | the data changed when updating, mapping to`update.updateDescription`                                              |
-| data.changed.updated   | mapping to`update.updateDescription.updatedFields`                                                                |
-| data.changed.deleted   | mapping to`update.updateDescription.removedFields`                                                                |
-| data.changed.truncated | mapping to`update.updateDescription.trucatedArrays`                                                               |
-| vancemongodbrecognized | if this event was recognized with well-schema, there is a detail explanation in follow section                    |
-| vancemongodboperation  | the operation type of this event, it's enum in`insert, update, delete`                                            |
-| vancemongodb*          | other metadata from debezium may helpful                                                                          |
+| Field                  | Required | Description                                                                                                                                   |
+|------------------------|:--------:|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| id                     | **YES**  | the bson`_id` will be set as the id                                                                                                           |
+| source                 | **YES**  | `mongodb.{relicaset_name}.{db_name}.{collection_name}`                                                                                        |
+| type                   | **YES**  | `{db_name}.{collection_name}`                                                                                                                 |
+| time                   | **YES**  | the time of this event generated with RFC3339 encoding                                                                                        |
+| data                   | **YES**  | the body of`ChangeEvent`, it's defined as `Event` in [mongodb.proto](../../schemas/database/mongodb.proto)                                    |
+| data.metadata          | **YES**  | the metadata of this event, it's defined as`Metadata` in [base.proto](../../schemas/base/base.proto) , in the most cases users can be ignored |
+| data.op                | **YES**  | the event operation of this event, it's defined as`Operation` in  [database.proto](../../schemas/database/database.proto)                     |
+| data.raw               |    NO    | the raw data of this event, it's defined as "Raw" in[database.proto](../../schemas/database/database.proto)                                   |
+| data.insert            |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
+| data.update            |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
+| vancemongodbrecognized | **YES**  | if this event was recognized with well-schema, the further explanation in[Unrecognized Event](#unrecognized-event)                            |
+| vancemongodboperation  | **YES**  | the operation type of this event, it's enum in`insert, update, delete`                                                                        |
+| vancemongodb*          | **YES**  | other metadata from debezium may helpful                                                                                                      |
+
+`Required=YES` means it must appear in event, `NO` means it only appears in some conditional cases.
 
 ### Create Event
 
 ```json
 {
-  "specversion": "1.0",
-  "id": "6304855bccaea8fcf8a159f2",
-  "source": "mongodb.replicaset-01.test.source",
-  "type": "test.source",
-  "datacontenttype": "application/json",
-  "time": "2022-08-23T07:44:27Z",
-  "data": {
-    "full": {
-      "download": "1234",
-      "connector": "mongodb",
-      "_id": "6304855bccaea8fcf8a159f2",
-      "version": "v0.3.0"
+  "specversion":"1.0",
+  "id":"630e32fa020bac5f5f1dcb74",
+  "source":"mongodb.replicaset-01.test.mongo_source",
+  "type":"test.mongo_source",
+  "datacontenttype":"application/json",
+  "time":"2022-08-30T15:55:38Z",
+  "data":{
+    "metadata":{
+      "id":"630e32fa020bac5f5f1dcb74",
+      "recognized":true,
+      "extension":{
+        "ord":1,
+        "rs":"replicaset-01",
+        "collection":"mongo_source",
+        "version":"1.9.4.Final",
+        "connector":"mongodb",
+        "name":"replica-set01",
+        "ts_ms":1661874938000,
+        "snapshot":"false",
+        "db":"test"
+      }
+    },
+    "op":"INSERT",
+    "insert":{
+      "document":{
+        "_id":{
+          "$oid":"630e32fa020bac5f5f1dcb74"
+        },
+        "test":"demo"
+      }
     }
   },
-  "vancemongodbrecognized": true,
-  "vancemongodbversion": "1.9.4.Final",
-  "vancemongodbsnapshot": "false",
-  "vancemongodbname": "test",
-  "vancemongodbord": "1",
-  "vancemongodboperation": "insert"
+  "vancemongodbversion":"1.9.4.Final",
+  "vancemongodboperation":"INSERT",
+  "vancemongodbrecognized":true,
+  "vancemongodbsnapshot":"false",
+  "vancemongodbname":"replica-set01",
+  "vancemongodbord":""
 }
 ```
 
@@ -143,31 +244,53 @@ in [official document](https://www.mongodb.com/docs/manual/reference/change-even
 
 ```json
 {
-  "specversion": "1.0",
-  "id": "6304855bccaea8fcf8a159f2",
-  "source": "mongodb.replicaset-01.test.source",
-  "type": "test.source",
-  "datacontenttype": "application/json",
-  "time": "2022-08-23T08:08:05Z",
-  "data": {
-    "full": {
-      "download": "1240",
-      "connector": "mongodb",
-      "_id": "6304855bccaea8fcf8a159f2",
-      "version": "v0.3.0"
+  "specversion":"1.0",
+  "id":"630e3293020bac5f5f1dcb73",
+  "source":"mongodb.replicaset-01.test.mongo_source",
+  "type":"test.mongo_source",
+  "datacontenttype":"application/json",
+  "time":"2022-08-30T16:03:30Z",
+  "data":{
+    "metadata":{
+      "id":"630e3293020bac5f5f1dcb73",
+      "recognized":true,
+      "extension":{
+        "ord":1,
+        "rs":"replicaset-01",
+        "collection":"mongo_source",
+        "version":"1.9.4.Final",
+        "connector":"mongodb",
+        "name":"replica-set01",
+        "ts_ms":1661875410000,
+        "snapshot":"false",
+        "db":"test"
+      }
     },
-    "changed": {
-      "updated": {
-        "download": 1240
+    "op":"UPDATE",
+    "insert":{
+      "document":{
+        "_id":{
+          "$oid":"630e3293020bac5f5f1dcb73"
+        },
+        "test":"update"
+      }
+    },
+    "update":{
+      "updateDescription":{
+        "removedFields":[],
+        "truncatedArrays":[],
+        "updatedFields":{
+          "test":"update"
+        }
       }
     }
   },
-  "vancemongodbrecognized": true,
-  "vancemongodbversion": "1.9.4.Final",
-  "vancemongodbsnapshot": "false",
-  "vancemongodbname": "test",
-  "vancemongodbord": "1",
-  "vancemongodboperation": "update"
+  "vancemongodbrecognized":true,
+  "vancemongodbsnapshot":"false",
+  "vancemongodbname":"replica-set01",
+  "vancemongodbord":"",
+  "vancemongodbversion":"1.9.4.Final",
+  "vancemongodboperation":"UPDATE"
 }
 ```
 
@@ -175,19 +298,36 @@ in [official document](https://www.mongodb.com/docs/manual/reference/change-even
 
 ```json
 {
-  "specversion": "1.0",
-  "id": "6304855bccaea8fcf8a159f2",
-  "source": "mongodb.replicaset-01.test.source",
-  "type": "test.source",
-  "datacontenttype": "application/json",
-  "time": "2022-08-23T08:09:24Z",
-  "data": {},
-  "vancemongodbord": "1",
-  "vancemongodbrecognized": true,
-  "vancemongodbversion": "1.9.4.Final",
-  "vancemongodbsnapshot": "false",
-  "vancemongodbname": "test",
-  "vancemongodboperation": "delete"
+  "specversion":"1.0",
+  "id":"630e3293020bac5f5f1dcb73",
+  "source":"mongodb.replicaset-01.test.mongo_source",
+  "type":"test.mongo_source",
+  "datacontenttype":"application/json",
+  "time":"2022-08-30T16:04:35Z",
+  "data":{
+    "metadata":{
+      "id":"630e3293020bac5f5f1dcb73",
+      "recognized":true,
+      "extension":{
+        "ord":1,
+        "rs":"replicaset-01",
+        "collection":"mongo_source",
+        "version":"1.9.4.Final",
+        "connector":"mongodb",
+        "name":"replica-set01",
+        "ts_ms":1661875475000,
+        "snapshot":"false",
+        "db":"test"
+      }
+    },
+    "op":"DELETE"
+  },
+  "vancemongodbord":"",
+  "vancemongodbversion":"1.9.4.Final",
+  "vancemongodboperation":"DELETE",
+  "vancemongodbrecognized":true,
+  "vancemongodbsnapshot":"false",
+  "vancemongodbname":"replica-set01"
 }
 ```
 
@@ -210,8 +350,10 @@ that you can create an issue to feedback us about the unrecognized event, we wil
   "datacontenttype": "application/json",
   "time": "unknown",
   "data": {
-    "rawKey": "xxxxx",
-    "rawValue": "xxxx"
+    "raw": {
+      "key":"xxx",
+      "value": "xxxx"
+    }
   },
   "vancemongodbrecognized": false,
   "vancemongodboperation": "unknown"
@@ -221,7 +363,3 @@ that you can create an issue to feedback us about the unrecognized event, we wil
 ## example
 
 Use mongo-source to build a data pipeline to MySQL in minutes.
-
-## Acknowledgement
-
-The MongoDB Connector built on [debezium](https://github.com/debezium/debezium)

@@ -1,5 +1,5 @@
 {
-  "v_target": "http://localhost:8081",
+  "v_target": "http://localhost:8080",
   "v_store_file": "/tmp/vance/source-mongodb/offset.data",
   "name": "test",
   "db_hosts": "44.242.140.28:27017",

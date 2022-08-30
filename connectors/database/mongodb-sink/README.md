@@ -27,7 +27,7 @@ docker run -d \
   -p 8080:8080 \
   -v ${PWD}:/vance/config \
   --name mongodb-sink \
-  --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
+  --rm public.ecr.aws/vanus/connector/mongodb-sink:dev
 ```
 
 ### insert document to mongodb
@@ -121,6 +121,9 @@ docker run -d \
 | password   | **YES**  |    -    | the password to connect mongodb  |
 | authSource |    NO    |  admin  | the authSource to authentication |
 
+The `user` and `password` are required only when MongoDB is configured to use authentication. This `authSource` required
+only when MongoDB is configured to use authentication with another authentication database than admin.
+
 - example: create a `secert.yml` that its content like follow, and mount it to container inside.
 
 ```yaml
@@ -140,7 +143,28 @@ docker run -d \
 
 ## Schema
 
-TODO
+The input events' schema is a [CloudEvent](https://github.com/cloudevents/spec) format, and each field are explained
+follows.
+
+the original `ChangeEvent` can be found in [official document](https://www.mongodb.com/docs/manual/reference/change-events/)
+
+| Field                    | Required | Description                                                                                                                                   |
+|--------------------------|:--------:|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| id                       | **YES**  | the bson`_id` will be set as the id                                                                                                           |
+| source                   | **YES**  | `mongodb.{relicaset_name}.{db_name}.{collection_name}`                                                                                        |
+| type                     | **YES**  | `{db_name}.{collection_name}`                                                                                                                 |
+| time                     |    NO    | the time of this event generated with RFC3339 encoding                                                                                        |
+| data                     | **YES**  | the body of`ChangeEvent`, it's defined as `Event` in [mongodb.proto](../../schemas/database/mongodb.proto)                                    |
+| data.metadata            |    NO    | the metadata of this event, it's defined as`Metadata` in [base.proto](../../schemas/base/base.proto) , in the most cases users can be ignored |
+| data.op                  | **YES**  | the event operation of this event, it's defined as`Operation` in  [database.proto](../../schemas/database/database.proto)                     |
+| data.raw                 |    NO    | the raw data of this event, it's defined as "Raw" in[database.proto](../../schemas/database/database.proto)                                   |
+| data.insert              |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
+| data.update              |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
+| vancemongosinkdatabase   | **YES**  | which database the event into                                                                                                                 |
+| vancemongosinkcollection | **YES**  | which collection the event into                                                                                                               |
+
+
+`Required=YES` means it must appear in event, `NO` means it only appears in some conditional cases.
 
 ## Examples
 
