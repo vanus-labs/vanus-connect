@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This connector  capturing mongodb change event by [debezium](https://github.com/debezium/debezium).
+This connector capturing mongodb [ChangeEvent](https://www.mongodb.com/docs/manual/reference/change-events/)
 
 ## Quickstart
 
@@ -15,7 +15,7 @@ cat << EOF > config.yml
   "v_target": "http://localhost:8080",
   "v_store_file": "/vance/tmp/offset.data",
   "db_hosts":[
-    "44.242.140.28:27017"
+    "127.0.0.1:27017"
   ],
   "port": 8080
 }
@@ -121,13 +121,13 @@ docker stop mongodb-source
 }
 ```
 
-| Name               | Required |   default   | description                                                                                                                                                                                                                                                                                                                                                         |
+| Name               | Required |   Default   | Description                                                                                                                                                                                                                                                                                                                                                         |
 |:-------------------|:--------:|:-----------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| v_target           | required |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
-| v_store_file       | required |      -      | KV store file name                                                                                                                                                                                                                                                                                                                                                  |
-| name               | required |      -      | Unique name for the connector. Attempting to register again with the same name will fail.                                                                                                                                                                                                                                                                           |
-| db_hosts           | required |      -      | The host addresses to use to connect to the MongoDB replica set                                                                                                                                                                                                                                                                                                     |
-| db_name            | required |      -      | A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector monitors.                                                                                                                                                                                                                                             |
+| v_target           | **YES**  |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
+| v_store_file       | **YES**  |      -      | KV store file name                                                                                                                                                                                                                                                                                                                                                  |
+| name               | **YES**  |      -      | Unique name for the connector. Attempting to register again with the same name will fail.                                                                                                                                                                                                                                                                           |
+| db_hosts           | **YES**  |      -      | The host addresses to use to connect to the MongoDB replica set                                                                                                                                                                                                                                                                                                     |
+| db_name            | **YES**  |      -      | A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector monitors.                                                                                                                                                                                                                                             |
 | database.include   | optional | empty array | Database names to be monitored; any database name not included in database.include is excluded from monitoring. By default all databases are monitored. Must not be used with database.exclude                                                                                                                                                                      |
 | database.exclude   | optional | empty array | Database names to be excluded from monitoring; any database name not included in database.exclude is monitored. Must not be used with database.include                                                                                                                                                                                                              |
 | collection.include | optional | empty array | Match fully-qualified namespaces for MongoDB collections to be monitored; any collection not included in collection.include is excluded from monitoring. Each identifier is of the form databaseName.collectionName. By default the connector will monitor all collections except those in the local and admin databases. Must not be used with collection.exclude. |
@@ -135,7 +135,7 @@ docker stop mongodb-source
 
 Note: the `name` property can't be modified once it has been started.
 
-Excepting `v_target` and `v_store_file`, all item are listed are mapping
+Excepting `v_target` and `v_store_file`, all item are listed here mapping
 to [debezium-mongo](https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-example-configuration), the properties are not listed are not supported now.
 
 ### secret
@@ -170,6 +170,28 @@ docker run -d \
   --rm public.ecr.aws/vanus/connector/mongodb-source:dev
 ```
 
+## Deploy
+
+### using k8s(recommended)
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-source/mongodb-source.yml
+```
+
+### using vance Operator
+
+Coming soon, it depends on Vance Operator, the experience of it will be like follow:
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-source/crd.yml
+```
+
+or
+
+```shell
+vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx/secret.json
+```
+
 ## Schema
 
 The output events' schema is a [CloudEvent](https://github.com/cloudevents/spec) format, and each field are explained
@@ -189,7 +211,7 @@ the original `ChangeEvent` can be found in [official document](https://www.mongo
 | data.raw               |    NO    | the raw data of this event, it's defined as "Raw" in[database.proto](../../schemas/database/database.proto)                                   |
 | data.insert            |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
 | data.update            |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
-| vancemongodbrecognized | **YES**  | if this event was recognized with well-schema, the further explanation in[Unrecognized Event](#unrecognized-event)                            |
+| vancemongodbrecognized | **YES**  | if this event was recognized with well-schema, the further explanation in [Unrecognized Event](#unrecognized-event)                           |
 | vancemongodboperation  | **YES**  | the operation type of this event, it's enum in`insert, update, delete`                                                                        |
 | vancemongodb*          | **YES**  | other metadata from debezium may helpful                                                                                                      |
 
@@ -360,6 +382,6 @@ that you can create an issue to feedback us about the unrecognized event, we wil
 }
 ```
 
-## example
-
-Use mongo-source to build a data pipeline to MySQL in minutes.
+## Example
+(TODO here can refer another page)
+Use `mongo-source` and `mysql-sink` to build a data pipeline in minutes.

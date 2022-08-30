@@ -62,28 +62,6 @@ curl --location --request POST 'http://127.0.0.1:8080' \
 docker stop mongodb-sink  
 ```
 
-## Deploy
-
-### using k8s(recommended)
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/mongodb-sink.yml
-```
-
-### using vance Operator
-
-Coming soon, it depends on Vance Operator, the experience of it will be like follow:
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/crd.yml
-```
-
-or
-
-```shell
-vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx/secret.json
-```
-
 ## Configuration
 
 the configuration of mongodb-sink based on [Connection String URI Format](https://www.mongodb.com/docs/v6.0/reference/connection-string/)
@@ -141,6 +119,28 @@ docker run -d \
   --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
 ```
 
+## Deploy
+
+### using k8s(recommended)
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/mongodb-sink.yml
+```
+
+### using vance Operator
+
+Coming soon, it depends on Vance Operator, the experience of it will be like follow:
+
+```shell
+kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/crd.yml
+```
+
+or
+
+```shell
+vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx/secret.json
+```
+
 ## Schema
 
 The input events' schema is a [CloudEvent](https://github.com/cloudevents/spec) format, and each field are explained
@@ -151,20 +151,17 @@ the original `ChangeEvent` can be found in [official document](https://www.mongo
 | Field                    | Required | Description                                                                                                                                   |
 |--------------------------|:--------:|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | id                       | **YES**  | the bson`_id` will be set as the id                                                                                                           |
-| source                   | **YES**  | `mongodb.{relicaset_name}.{db_name}.{collection_name}`                                                                                        |
-| type                     | **YES**  | `{db_name}.{collection_name}`                                                                                                                 |
+| source                   | **YES**  | where the event come from                                                                                                                     |
+| type                     | **YES**  | what's the event's type                                                                                                                       |
 | time                     |    NO    | the time of this event generated with RFC3339 encoding                                                                                        |
 | data                     | **YES**  | the body of`ChangeEvent`, it's defined as `Event` in [mongodb.proto](../../schemas/database/mongodb.proto)                                    |
 | data.metadata            |    NO    | the metadata of this event, it's defined as`Metadata` in [base.proto](../../schemas/base/base.proto) , in the most cases users can be ignored |
-| data.op                  | **YES**  | the event operation of this event, it's defined as`Operation` in  [database.proto](../../schemas/database/database.proto)                     |
-| data.raw                 |    NO    | the raw data of this event, it's defined as "Raw" in[database.proto](../../schemas/database/database.proto)                                   |
+| data.op                  | **YES**  | the event operation of this event, it's defined as`Operation` in [database.proto](../../schemas/database/database.proto)                      |
+| data.raw                 |    NO    | the raw data of this event, it's defined as "Raw" in [database.proto](../../schemas/database/database.proto)                                  |
 | data.insert              |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
 | data.update              |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../schemas/database/mongodb.proto)                                                         |
-| vancemongosinkdatabase   | **YES**  | which database the event into                                                                                                                 |
-| vancemongosinkcollection | **YES**  | which collection the event into                                                                                                               |
-
-
-`Required=YES` means it must appear in event, `NO` means it only appears in some conditional cases.
+| vancemongosinkdatabase   | **YES**  | which `database` the event into                                                                                                               |
+| vancemongosinkcollection | **YES**  | which `collection` the event into                                                                                                             |
 
 ## Examples
 

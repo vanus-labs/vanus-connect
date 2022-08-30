@@ -28,5 +28,4 @@ message Metadata {
   string time = 4;
   bool recognized = 5;
   google.protobuf.Struct extension = 6;
-//  map<string, google.protobuf.Value> extension = 6;
 }
