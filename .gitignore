@@ -35,12 +35,3 @@ testbin/*
 target/
 # dep
 cdk-go
-
-# jetbrains
-.idea
-
-# go test resources
-**/test/resources/*
-
-# java proto file
-**/src/proto
