@@ -1,6 +1,4 @@
-FROM openjdk
-COPY . /src/java
-WORKDIR /src/java
-ADD Source-Kafka.jar Source-Kafka.jar
-CMD ["java", "-jar", "Source-Kafka.jar"]
-
+FROM openjdk:8-jre-alpine
+WORKDIR /vance
+COPY target/Source-kafka-1.0-SNAPSHOT-jar-with-dependencies.jar /vance
+CMD ["java", "-jar", "./Source-kafka-1.0-SNAPSHOT-jar-with-dependencies.jar"]
