@@ -3,10 +3,10 @@ package k8s
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func CreateLBService(nameSpace, name string, port int32) *corev1.Service {
+// createBaseService creates a K8S service without setting its service type
+func createBaseService(nameSpace, name string, port int32) *corev1.Service {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: nameSpace,
@@ -14,16 +14,27 @@ func CreateLBService(nameSpace, name string, port int32) *corev1.Service {
 		},
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{{
-				//Port:       connector.Spec.Scaler.Metadata["svcPort"].IntVal,
-				Port:       port,
-				TargetPort: intstr.IntOrString{IntVal: 8080},
+				Port: port,
 			},
 			},
 			Selector: map[string]string{
 				"app": name,
 			},
-			Type: corev1.ServiceTypeLoadBalancer,
 		},
 	}
+	return service
+}
+
+// CreateCLUService creates a K8S Cluster Service
+func CreateCLUService(nameSpace, name string, port int32) *corev1.Service {
+	service := createBaseService(nameSpace, name, port)
+	service.Spec.Type = corev1.ServiceTypeClusterIP
+	return service
+}
+
+// CreateLBService creates a K8S LoadBalance Service
+func CreateLBService(nameSpace, name string, port int32) *corev1.Service {
+	service := createBaseService(nameSpace, name, port)
+	service.Spec.Type = corev1.ServiceTypeLoadBalancer
 	return service
 }
