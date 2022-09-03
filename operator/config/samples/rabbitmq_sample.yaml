@@ -5,12 +5,13 @@ metadata:
 data:
   host: YW1xcDovL3VzZXI6UEFTU1dPUkRAcmFiYml0bXEuZGVmYXVsdC5zdmMuY2x1c3Rlci5sb2NhbDo1Njcy
 ---
-apiVersion: cloud.vance/v1alpha1
+apiVersion: vance.io/v1alpha1
 kind: Connector
 metadata:
-  name: rabbitmq-connector-sample
+  name: rabbitmq-sample
 spec:
-  type: rabbitmq
+  # TODO(user): Add fields here
+  exposePort: 8080
   containers:
     - name: rabbitmq-connector-sample
       image: jeffhollan/rabbitmq-client:dev
@@ -19,11 +20,13 @@ spec:
         - receive
       args:
         - "amqp://user:PASSWORD@rabbitmq.default.svc.cluster.local:5672"
-  scalerSpec:
-    checkInterval: 5
-    cooldownPeriod: 5
-    metadata:
-      secret: rabbitmq-consumer-secret
-      queueName: hello
-      mode: QueueLength
-      value: "50"
+  secretRef: rabbitmq-consumer-secret
+  scalingRule:
+    customScaling:
+      triggers:
+        - type: rabbitmq
+          metadata:
+            queueName: hello
+            mode: QueueLength
+            value: "50"
+          secretRef: rabbitmq-consumer-secret

@@ -4,11 +4,10 @@ metadata:
   name: webhook-sample
 spec:
   # TODO(user): Add fields here
-  type: http
   image: tomcat:8.0.18-jre8
-  scalerSpec:
-    metadata:
+  exposePort: 8080
+  scalingRule:
+    minReplicaCount: 0
+    httpScaling:
       host: myhost.com
-      svcPort: 8080
-      maxReplica: 30
-      pendingRequests: 20
+      pendingRequests: 10
