@@ -9,10 +9,15 @@ import com.linkall.vance.core.http.HttpClient;
 
 import com.linkall.vance.core.http.HttpResponseInfo;
 import io.cloudevents.CloudEvent;
+import io.cloudevents.http.vertx.VertxMessageFactory;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
@@ -30,6 +35,7 @@ public class SnsSource implements Source {
     private static Router router;
     private HttpServer httpServer;
     private HttpResponseInfo handlerRI;
+    private static final WebClient webClient = WebClient.create(vertx);
 
     @Override
     public void start(){
@@ -51,11 +57,6 @@ public class SnsSource implements Source {
             snsClient.close();
             System.exit(1);
         }
-
-        HttpClient.setDeliverSuccessHandler(resp->{
-            int num = eventNum.addAndGet(1);
-            LOGGER.info("send event in total: "+num);
-        });
 
         this.httpServer = vertx.createHttpServer();
         this.router = Router.router(vertx);
@@ -85,10 +86,25 @@ public class SnsSource implements Source {
                     }
 
                     CloudEvent ce = adapter.adapt(request.request(), body);
-                    HttpClient.deliver(ce);
-                    HttpResponseInfo info = this.handlerRI;
-                    request.response().setStatusCode(info.getSuccessCode());
-                    request.response().end(info.getSuccessChunk());
+
+                    Future<HttpResponse<Buffer>> responseFuture;
+                    String vanceSink = ConfigUtil.getVanceSink();
+                    responseFuture = VertxMessageFactory.createWriter(webClient.postAbs(vanceSink))
+                            .writeStructured(ce, "application/cloudevents+json");
+
+                    responseFuture.onSuccess(resp->{
+                       LOGGER.info("send CloudEvent to " + vanceSink + " success");
+                       eventNum.getAndAdd(1);
+                       LOGGER.info("send " + eventNum + " CloudEvents in total");
+                       HttpResponseInfo info = this.handlerRI;
+                       request.response().setStatusCode(info.getSuccessCode());
+                       request.response().end(info.getSuccessChunk());
+                    });
+                    responseFuture.onFailure(resp->{
+                        LOGGER.error("send CloudEvent to " + vanceSink + " failure");
+                        LOGGER.info("send " + eventNum + " CloudEvents in total");
+                    });
+
                 }
 
             });

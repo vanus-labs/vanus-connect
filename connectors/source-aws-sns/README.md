@@ -18,7 +18,7 @@ Subscription confirmation
 | `id`                  | "x-amz-sns-message-id" value |
 | `source`              | "x-amz-sns-topic-arn" value |
 | `specversion`         | `1.0`                                           |
-| `type`                | "x-amz-sns-message-type" value    |
+| `type`                | `com.amazonaws.sns.` + "x-amz-sns-message-type" value    |
 | `datacontenttype`     | `application/json`         |
 | `dataschema`          | Omit                                            |
 | `subject`             | Omit                        |
@@ -82,24 +82,24 @@ User-Agent: Amazon Simple Notification Service Agent
 A transformed CloudEvent looks like:
 ```JSON
 CloudEvent:{
-  "id" : "86f1c45f-4b82-5337-8bd6-9f289c2690da",
-  "source" : "arn:aws:sns:us-west-2:843378899134:TestTopic:70fdfbd7-805a-4dbd-83a2-66cffa859a27",
+  "id" : "22b80b92-fdea-4c2c-8f9d-bdfb0c7bf324",
+  "source" : "arn:aws:sns:us-west-2:123456789012:MyTopic:c9135db0-26c4-47ec-8998-413945fb5a96",
   "specversion" : "V1",
   "type" : "com.amazonaws.sns.Notification",
   "datacontenttype" : "application/json",
-  "subject" : "display",
+  "subject" : "My First Message",
   "time" : "2022-08-18T06:00:04.638Z",
   "data" : {
     "Type" : "Notification",
-    "MessageId" : "86f1c45f-4b82-5337-8bd6-9f289c2690da",
-    "TopicArn" : "arn:aws:sns:us-west-2:843378899134:TestTopic",
-    "Subject" : "display",
-    "Message" : "a message send to display",
-    "Timestamp" : "2022-08-18T06:00:04.638Z",
+    "MessageId" : "22b80b92-fdea-4c2c-8f9d-bdfb0c7bf324",
+    "TopicArn" : "arn:aws:sns:us-west-2:123456789012:MyTopic",
+    "Subject" : "My First Message",
+    "Message" : "Hello world!",
+    "Timestamp" : "2012-05-02T00:54:06.655Z",
     "SignatureVersion" : "1",
-    "Signature" : "AVzjPMTtXaRQz1XA/8kA2ouc4BVKNQYPHzAK5nF3ehUz44YydQmNv2VzQZ6in+riHtv6PgdWz9QsnYjDSItO9rVL+k6ngQBIagHCOkf+hL307J8fsIIRMZsYIHsv7+JNmhjQfsM3BelDJh+OBj6gJPmTKz+PtOXiPAxDKHijmOqN4Eq8TIjTkHX4YrcDAS9ZmM77mtvRlbpVVFNaYTtfYX8sYktuEiFZSfrBInWY74nP47Aqb+s7vi0soRDS6ACCd64k1U4X3r5VDs/t3NLrU++OCfhuE1GvJe+2WVxCvZbkY6K/nL/Q96mZMYT7iNRSma0mDQ89PQOclgbM58FVog==",
-    "SigningCertURL" : "https://sns.us-west-2.amazonaws.com/SimpleNotificationService-56e67fcb41f6fec09b0196692625d385.pem",
-    "UnsubscribeURL" : "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:843378899134:TestTopic:70fdfbd7-805a-4dbd-83a2-66cffa859a27"
+    "Signature" : "EXAMPLEw6JRN...",
+    "SigningCertURL" : "https://sns.us-west-2.amazonaws.com/SimpleNotificationService-f3ecfb7224c7233fe7bb5f59f96de52f.pem",
+	"UnsubscribeURL" : "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe&SubscriptionArn=arn:aws:sns:us-west-2:123456789012:MyTopic:c9135db0-26c4-47ec-8998-413945fb5a96"
   }
 }
 ```
