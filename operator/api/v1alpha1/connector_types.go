@@ -20,7 +20,6 @@ import (
 	"fmt"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -31,27 +30,52 @@ type ConnectorSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	ConnectorType Type `json:"type"`
 	// The image uri of your connector
 	Image string `json:"image,omitempty"`
 	// Specify the container in detail if needed
 	Containers []v1.Container `json:"containers,omitempty"`
 
-	Scaler *ScalerSpec `json:"scalerSpec,omitempty"`
+	ExposePort *int32 `json:"exposePort"`
+
+	ConfigRef string `json:"configRef,omitempty"`
+
+	SecretRef string `json:"secretRef,omitempty"`
+
+	ScalingRule *ScalingRule `json:"scalingRule,omitempty"`
 }
 
-type ScalerSpec struct {
-	// +optional
-	CheckInterval *int32 `json:"checkInterval,omitempty"`
-	// +optional
-	CooldownPeriod *int32 `json:"cooldownPeriod,omitempty"`
+type ScalingRule struct {
 	// +optional
 	MaxReplicaCount *int32 `json:"maxReplicaCount,omitempty"`
 	// +optional
 	MinReplicaCount *int32 `json:"minReplicaCount,omitempty"`
+	// +optional
+	CustomScaling *CustomScaling `json:"customScaling,omitempty"`
+	// +optional
+	HTTPScaling *HTTPScaling `json:"httpScaling,omitempty"`
+}
 
-	Metadata     map[string]intstr.IntOrString `json:"metadata,omitempty"`
-	ScalerSecret string                        `json:"scalerSecret,omitempty"`
+type HTTPScaling struct {
+	Host string `json:"host"`
+	// +optional
+	SvcType string `json:"svcType,omitempty"`
+	// +optional
+	PendingRequests int32 `json:"pendingRequests,omitempty" description:"The target metric value for the HPA (Default 100)"`
+}
+
+type CustomScaling struct {
+	// +optional
+	CheckInterval *int32 `json:"checkInterval,omitempty"`
+	// +optional
+	CooldownPeriod *int32 `json:"cooldownPeriod,omitempty"`
+
+	Triggers []Trigger `json:"triggers"`
+}
+
+type Trigger struct {
+	Type      string            `json:"type"`
+	Metadata  map[string]string `json:"metadata"`
+	SecretRef string            `json:"secretRef,omitempty"`
 }
 
 // ConnectorStatus defines the observed state of Connector
@@ -118,55 +142,29 @@ type ConnectorList struct {
 	Items           []Connector `json:"items"`
 }
 
+type TriggerType string
+
+const (
+	MySQL TriggerType = "mysql"
+	SQS   TriggerType = "aws-sqs-queue"
+)
+
 type ResourceType string
 
 const (
 	DeployResType ResourceType = "deployment"
 	SvcResType    ResourceType = "service"
+	CLSvcResType  ResourceType = "cl-service"
+	LBSvcResType  ResourceType = "lb-service"
 	HttpSOResType ResourceType = "httpScaledObject"
 	SoResType     ResourceType = "scaledObject"
 	TAResType     ResourceType = "triggerAuthentication"
 )
 
-// Type describes the pattern the image uses to obtain data and reflects to a corresponding scaler.
-// +enum
-type Type string
-
-const (
-	// Http type means that the image is a webserver waiting data to be pushed to it.
-	// This type also reflects to a http scaler.
-	Http Type = "http"
-	// ActiveMQ type means that the image fetches data from an ActiveMQ queue
-	// This type also reflects to a ActiveMQ scaler.
-	ActiveMQ Type = "activemq"
-	// ArtemisQue type means that the image fetches data from an ActiveMQ Artemis queue
-	// This type also reflects to an artemis-queue scaler.
-	ArtemisQue Type = "artemis-queue"
-	// Kafka type means that the image fetches data from an Apache Kafka topic
-	// This type also reflects to a Kafka scaler.
-	Kafka Type = "kafka"
-	// AWSCloudwatch type means that the image fetches data from AWS Cloudwatch
-	// This type also reflects to a AWSCloudwatch scaler.
-	AWSCloudwatch Type = "aws-cloudwatch"
-	// AWSKinesisStream type means that the image fetches data from AWS Kinesis Stream
-	// This type also reflects to a AWSKinesisStream scaler.
-	AWSKinesisStream Type = "aws-kinesis-stream"
-	// AWSSqsQueue type means that the image fetches data from AWS Sqs Queue
-	// This type also reflects to a AWSSqsQueue scaler.
-	AWSSqsQueue Type = "aws-sqs-queue"
-	// AZUREAppInsights type means that the image fetches data from Azure Application Insights
-	// This type also reflects to a AZUREAppInsights scaler.
-	AZUREAppInsights Type = "azure-app-insights"
-	// Rabbitmq type means that the image fetches data from Rabbitmq
-	// This type also reflects to a Rabbitmq scaler.
-	Rabbitmq Type = "rabbitmq"
-)
-
 func (in *Connector) String() string {
 
-	return fmt.Sprintf("Image [%s], Mode [%s]",
-		in.Spec.Image,
-		in.Spec.ConnectorType)
+	return fmt.Sprintf("Image [%s]",
+		in.Spec.Image)
 }
 
 func init() {
