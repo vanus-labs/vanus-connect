@@ -35,10 +35,10 @@ A Kafka message transformed into a CloudEvent looks like:
   "type" : "kafka",
   "datacontenttype" : "application/json or Plain/text",
   "time" : "2022-05-17T18:44:02.681+08:00",
-  "data" : "Data" : "{
+  "data" : {
 	 "name": "Jason",
 	 "age": "30"
-	 }"
+	 }
 }
 ```
 
