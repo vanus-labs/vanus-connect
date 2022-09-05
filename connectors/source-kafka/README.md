@@ -19,10 +19,6 @@ The ideal type of event for the Kafka source is a String in a JSON format. But i
 For example, if an original message looks like:
 ... json
 > { "name": "Jason", "age": "30" }
-> Result:
-> {
->    "myData" : "{ "name": "Jason", "age": "30" }"
-> }
 ```
 
 A Kafka message transformed into a CloudEvent looks like:
