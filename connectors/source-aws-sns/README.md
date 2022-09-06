@@ -32,7 +32,7 @@ Subscription confirmation
 | `id`                  | "x-amz-sns-message-id" value |
 | `source`              | "x-amz-sns-subscription-arn" value |
 | `specversion`         | `1.0`                                           |
-| `type`                | "x-amz-sns-message-type" value    |
+| `type`                | `com.amazonaws.sns.` + "x-amz-sns-message-type" value    |
 | `datacontenttype`     | `application/json`         |
 | `dataschema`          | Omit                                            |
 | `subject`             | "Subject" value (if present)                    |
@@ -46,7 +46,7 @@ Subscription confirmation
 | `id`                  | "x-amz-sns-message-id" value |
 | `source`              | "x-amz-sns-subscription-arn" value |
 | `specversion`         | `1.0`                                           |
-| `type`                | "x-amz-sns-message-type" value    |
+| `type`                | `com.amazonaws.sns.` + "x-amz-sns-message-type" value    |
 | `datacontenttype`     | `application/json`         |
 | `dataschema`          | Omit                                            |
 | `subject`             | Omit                    |
@@ -144,6 +144,12 @@ $ cat secret.json
 |:----------|:--------------------------------------------------------------------------------|:------------------------|:------------------------|
 | awsAccessKeyID  | `awsAccessKeyID` is the Access key ID of your aws credential. | "BASE64VALUEOFYOURACCESSKEY=" |**YES** |
 | awsSecretAccessKey    | `awsSecretAccessKey` is the Secret access key of your aws credential. | "BASE64VALUEOFYOURSECRETKEY="                  |**YES** |
+
+## Amazon SNS message delivery retries
+If the target endpoint of your SNS Source Connector does not give the successful respond back, SNS Source Connector
+won't give respond to AWS SNS either. Then by default, AWS SNS will retry sending this message three times. 
+You can also configure the retry policy of the subscription corresponding to the SNS source connector yourself. Further, you can configure the SQS dead letter queue for the subscription corresponding to the SNS source connector, and then retry sending the dead letter back to SNS topic.
+
 ## AWS SNS Source Connector Image
 >    
 ### Run the SNS-source image in a container
