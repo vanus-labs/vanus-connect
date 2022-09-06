@@ -1,0 +1,8 @@
+apiVersion: vance.linkall.com/v1alpha
+kind: Connector
+metadata:
+  name: connector-mongo-sink
+  labels:
+    app: connector-mongo-sink
+spec:
+  # TODO finish

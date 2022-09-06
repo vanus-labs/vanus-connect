@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: connector-mongo-source
+  namespace: vanus
+data:
+  config.yml: |-
+    db_hosts:
+      - 44.242.140.28:27017
+    port: 8080
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: connector-mongo-source
+  namespace: vanus
+type: Opaque
+data:
+  # cat secret.yml | base64
+  secert.yml: dXNlcm5hbWU6ICJ0ZXN0IgpwYXNzd29yZDogIjEyMzQ1NiIKYXV0aFNvdXJjZTogImFkbWluIg==
+immutable: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connector-mongo-source
+  namespace: vanus
+  labels:
+    app: connector-mongo-source
+spec:
+  selector:
+    matchLabels:
+      app: connector-mongo-source
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: connector-mongo-source
+    spec:
+      containers:
+        - name: connector-mongo-source
+          image: public.ecr.aws/vanus/connector/mongodb-source:v0.2.0-alpha
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+            - name: secret
+              mountPath: /vance/secret
+          # env: see README for more about how to set env
+      volumes:
+        - name: secret
+          secret:
+            secretName: connector-mongo-source
+        - name: config
+          configMap:
+            name: connector-mongo-source
