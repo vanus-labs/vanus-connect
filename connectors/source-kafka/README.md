@@ -25,12 +25,11 @@ A Kafka message transformed into a CloudEvent looks like:
 
 ``` JSON
 {
-  "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
-  "source" : "vance-kafka-source",
-  "specversion" : "V1",
-  "type" : "kafka",
+  "id" : "4ad0b59fc-3e1f-484d-8925-bd78aab15123",
+  "source" : "kafka.localhost.topic2",
+  "type" : "kafka.message",
   "datacontenttype" : "application/json or Plain/text",
-  "time" : "2022-05-17T18:44:02.681+08:00",
+  "time" : "2022-09-07T10:21:49.668Z",
   "data" : {
 	 "name": "Jason",
 	 "age": "30"
