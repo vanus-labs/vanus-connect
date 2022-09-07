@@ -51,8 +51,14 @@ public class KafkaWorker extends ShutdownableThread {
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
 
         consumer = new KafkaConsumer<>(properties);
+        String[] topicsListArray = null;
+        boolean haveSpace = topicList.contains(", ");
+        if (haveSpace) {
+            topicsListArray = topicList.split(", ");
+        } else
+            topicsListArray = topicList.split(",");
 
-        String[] topicsListArray = topicList.split(", ");
+       
         consumer.subscribe(Arrays.asList(topicsListArray));
 
         adapter = new KafkaAdapter();

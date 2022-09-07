@@ -3,6 +3,6 @@
   "KAFKA_SERVER_URL": "localhost",
   "KAFKA_SERVER_PORT": "9092",
   "CLIENT_ID": "Source",
-  "TOPIC_LIST": "topic2"
+  "TOPIC_LIST": "topic1,topic2"
 }
 
