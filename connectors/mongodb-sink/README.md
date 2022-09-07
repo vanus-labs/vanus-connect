@@ -2,7 +2,8 @@
 
 ## Introduction
 
-This connector for interaction with MongoDB, which support `insert/update/delete` operation now.
+The MongoDB Sink is a [Vance Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md), 
+which now supports insert/update/delete operations.
 
 ## Quickstart
 
@@ -31,7 +32,7 @@ docker run -d \
 ```
 
 ### insert document to mongodb
-About more details for how to understand, please see [Structure](#structure) and [Examples](#examples) section.
+For more details on how to understand, please see [Structure](#structure) and [Examples](#examples) section.
 
 ```shell
 curl --location --request POST 'http://127.0.0.1:8080' \
@@ -75,7 +76,7 @@ the configuration of mongodb-sink based on [Connection String URI Format](https:
 
 - example
 
-create a `config.yml` that its content like follow, and mount it to container inside.
+create a `config.yml` with its content as below, and mount it to container inside.
 
 ```yaml
 db_hosts:
@@ -148,20 +149,20 @@ follows.
 
 the original `ChangeEvent` can be found in [official document](https://www.mongodb.com/docs/manual/reference/change-events/)
 
-| Field                    | Required | Description                                                                                                                                   |
-|--------------------------|:--------:|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| id                       | **YES**  | the bson`_id` will be set as the id                                                                                                           |
-| source                   | **YES**  | where the event come from                                                                                                                     |
-| type                     | **YES**  | what's the event's type                                                                                                                       |
-| time                     |    NO    | the time of this event generated with RFC3339 encoding                                                                                        |
+| Field                    | Required | Description                                                                                                                                 |
+|--------------------------|:--------:|---------------------------------------------------------------------------------------------------------------------------------------------|
+| id                       | **YES**  | the bson`_id` will be set as the id                                                                                                         |
+| source                   | **YES**  | where the event come from                                                                                                                   |
+| type                     | **YES**  | what's the event's type                                                                                                                     |
+| time                     |    NO    | the time of this event generated with RFC3339 encoding                                                                                      |
 | data                     | **YES**  | the body of`ChangeEvent`, it's defined as `Event` in [mongodb.proto](../../proto/database/mongodb.proto)                                    |
 | data.metadata            |    NO    | the metadata of this event, it's defined as`Metadata` in [base.proto](../../proto/base/base.proto) , in the most cases users can be ignored |
 | data.op                  | **YES**  | the event operation of this event, it's defined as`Operation` in [database.proto](../../proto/database/database.proto)                      |
 | data.raw                 |    NO    | the raw data of this event, it's defined as "Raw" in [database.proto](../../proto/database/database.proto)                                  |
 | data.insert              |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../proto/database/mongodb.proto)                                                         |
 | data.update              |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../proto/database/mongodb.proto)                                                         |
-| vancemongosinkdatabase   | **YES**  | which `database` the event into                                                                                                               |
-| vancemongosinkcollection | **YES**  | which `collection` the event into                                                                                                             |
+| vancemongosinkdatabase   | **YES**  | which `database` the event into                                                                                                             |
+| vancemongosinkcollection | **YES**  | which `collection` the event into                                                                                                           |
 
 ## Examples
 
