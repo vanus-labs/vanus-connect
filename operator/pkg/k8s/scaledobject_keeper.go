@@ -2,10 +2,11 @@ package k8s
 
 import (
 	keda "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
+	vance "github.com/linkall-labs/vance/operator/api/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func CreateScaledObject(nameSpace, name, refName, scalerType string) *keda.ScaledObject {
+func CreateScaledObject(nameSpace, name, refName string, triggers []vance.Trigger) *keda.ScaledObject {
 
 	scaledObject := &keda.ScaledObject{
 		ObjectMeta: metav1.ObjectMeta{
@@ -16,12 +17,9 @@ func CreateScaledObject(nameSpace, name, refName, scalerType string) *keda.Scale
 			ScaleTargetRef: &keda.ScaleTarget{
 				Name: refName,
 			},
-			Triggers: []keda.ScaleTriggers{
-				{
-					Type: scalerType,
-				},
-			},
+			Triggers: []keda.ScaleTriggers{},
 		},
 	}
+
 	return scaledObject
 }

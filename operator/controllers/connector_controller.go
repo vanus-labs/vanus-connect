@@ -78,25 +78,34 @@ func (r *ConnectorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 
 		logger.Error(err, "Getting connector failed")
-		// 返回错误信息给外部
+		// return error to outside
 		return ctrl.Result{}, err
 	}
+	// create Deployment for the connector.
 	if err = createOrUpdateAPIResources(ctx, r, connector, vance.DeployResType); err != nil {
 		return ctrl.Result{}, err
 	}
-	if connector.Spec.Scaler == nil {
-		logger.Info("scaler is nil")
+	// create a cluster svc for the connector
+	if err = createOrUpdateAPIResources(ctx, r, connector, vance.CLSvcResType); err != nil {
+		return ctrl.Result{}, err
+	}
+	if connector.Spec.ScalingRule == nil {
+		logger.Info("ScalingRule is nil")
 	} else {
-		logger.Info("scaler is not nil")
-		// build a http scaler if the type is http, otherwise build other scalers
-		if connector.Spec.ConnectorType == vance.Http {
-			if err = createOrUpdateAPIResources(ctx, r, connector, vance.SvcResType); err != nil {
-				return ctrl.Result{}, err
+		logger.Info("ScalingRule is not nil")
+
+		if connector.Spec.ScalingRule.HTTPScaling != nil {
+			// set service type to LB and create an ingress for it
+			if connector.Spec.ScalingRule.HTTPScaling.SvcType == "LB" {
+				if err = createOrUpdateAPIResources(ctx, r, connector, vance.LBSvcResType); err != nil {
+					return ctrl.Result{}, err
+				}
 			}
+
 			if err = createOrUpdateAPIResources(ctx, r, connector, vance.HttpSOResType); err != nil {
 				return ctrl.Result{}, err
 			}
-		} else {
+		} else if connector.Spec.ScalingRule.CustomScaling != nil {
 			if err = createOrUpdateAPIResources(ctx, r, connector, vance.SoResType); err != nil {
 				return ctrl.Result{}, err
 			}

@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"github.com/go-logr/logr"
 	kedahttp "github.com/kedacore/http-add-on/operator/api/v1alpha1"
 	keda "github.com/kedacore/keda/v2/apis/keda/v1alpha1"
@@ -33,9 +32,13 @@ func createOrUpdateAPIResources(
 		{
 			return createOrUpdateScaledObject(ctx, r, connector)
 		}
-	case vance.SvcResType:
+	case vance.CLSvcResType:
 		{
-			return createOrUpdateService(ctx, r, connector)
+			return createOrUpdateService(ctx, r, connector, vance.CLSvcResType)
+		}
+	case vance.LBSvcResType:
+		{
+			return createOrUpdateService(ctx, r, connector, vance.LBSvcResType)
 		}
 	case vance.HttpSOResType:
 		{
@@ -54,31 +57,25 @@ func createOrUpdateHttpScaledObject(
 		"httpScaledObject name", connector.Name,
 		"httpScaledObject namespace", connector.Namespace)
 	logger.Info(" Start creating or updating a httpScaledObject ")
-	var svcPort int32
-	if svcPort = connector.Spec.Scaler.Metadata["svcPort"].IntVal; svcPort == 0 {
-		err := errors.New("Error: missing required field of metadata <svcPort>. ")
-		logger.Error(err, err.Error())
-		return err
-	}
-	var host string
-	if host = connector.Spec.Scaler.Metadata["host"].StrVal; host == "" {
-		err := errors.New("Error: missing required field of metadata <host>. ")
-		logger.Error(err, err.Error())
-		return err
-	}
+	var svcPort int32 = *connector.Spec.ExposePort
 
 	httpso := k8s2.CreateHttpScaledObject(
 		connector.Namespace, connector.Name,
-		host,
+		connector.Spec.ScalingRule.HTTPScaling.Host,
 		svcPort)
-	if minReplica := connector.Spec.Scaler.Metadata["minReplica"].IntVal; minReplica != 0 {
-		httpso.Spec.Replicas.Min = minReplica
+	if connector.Spec.ScalingRule.MinReplicaCount != nil {
+		httpso.Spec.Replicas.Min = *connector.Spec.ScalingRule.MinReplicaCount
+	} else {
+		httpso.Spec.Replicas.Min = 0
 	}
-	if maxReplica := connector.Spec.Scaler.Metadata["maxReplica"].IntVal; maxReplica != 0 {
-		httpso.Spec.Replicas.Max = maxReplica
+	if connector.Spec.ScalingRule.MaxReplicaCount != nil {
+		httpso.Spec.Replicas.Max = *connector.Spec.ScalingRule.MaxReplicaCount
+	} else {
+		httpso.Spec.Replicas.Max = 10
 	}
-	if pendingRequests := connector.Spec.Scaler.Metadata["pendingRequests"].IntVal; pendingRequests != 0 {
-		httpso.Spec.TargetPendingRequests = pendingRequests
+
+	if connector.Spec.ScalingRule.HTTPScaling.PendingRequests != 0 {
+		httpso.Spec.TargetPendingRequests = connector.Spec.ScalingRule.HTTPScaling.PendingRequests
 	}
 	if err := controllerutil.SetControllerReference(connector, httpso, r.Scheme); err != nil {
 		logger.Error(err, "Set service ControllerReference error")
@@ -90,28 +87,37 @@ func createOrUpdateHttpScaledObject(
 	}
 	return nil
 }
+
+// createOrUpdateService is used to generate SVCs for HTTP Scaling rules
 func createOrUpdateService(
 	ctx context.Context,
 	r *ConnectorReconciler,
-	connector *vance.Connector) error {
+	connector *vance.Connector,
+	resourceType vance.ResourceType,
+) error {
 	logger := r.Log.WithValues(
 		"service name", connector.Name,
 		"service namespace", connector.Namespace)
 	logger.Info(" Start creating or updating a Service ")
 
-	var port int32
-	if port = connector.Spec.Scaler.Metadata["svcPort"].IntVal; port == 0 {
-		err := errors.New("Error: missing required field of metadata <svcPort>. ")
-		logger.Error(err, err.Error())
-		return err
+	var svcPort int32 = *connector.Spec.ExposePort
+	var svc *corev1.Service
+	switch resourceType {
+	case vance.CLSvcResType:
+		{
+			svc = k8s2.CreateCLUService(connector.Namespace, connector.Name, svcPort)
+		}
+	case vance.LBSvcResType:
+		{
+			svc = k8s2.CreateLBService(connector.Namespace, connector.Name, svcPort)
+		}
 	}
-	service := k8s2.CreateLBService(connector.Namespace, connector.Name,
-		port)
-	if err := controllerutil.SetControllerReference(connector, service, r.Scheme); err != nil {
+
+	if err := controllerutil.SetControllerReference(connector, svc, r.Scheme); err != nil {
 		logger.Error(err, "Set service ControllerReference error")
 		return err
 	}
-	if err := createOrPatchObj(ctx, r, service, connector.Name,
+	if err := createOrPatchObj(ctx, r, svc, connector.Name,
 		connector.Namespace, logger, vance.SvcResType); err != nil {
 		return err
 	}
@@ -130,12 +136,34 @@ func createOrUpdateDeployment(
 		logger.Error(err, "Set deployment ControllerReference error")
 		return err
 	}
+	userConfig := &corev1.ConfigMap{}
+	var cmVolume corev1.Volume
+	if connector.Spec.ConfigRef != "" {
+		existedKey := client.ObjectKey{
+			Namespace: connector.Namespace,
+			Name:      connector.Spec.ConfigRef,
+		}
+		if err := r.Get(ctx, existedKey, userConfig); err != nil {
+			if k8serrs.IsNotFound(err) {
+				logger.Error(err, "no such ConfigMap ", "configRef", connector.Spec.ConfigRef,
+					"namespace", connector.Namespace)
+			} else {
+				logger.Error(err, "fetch ConfigMap err")
+			}
+			return err
+		}
+		cmVolume = corev1.Volume{Name: connector.Name + "-cmv"}
+		cmVolume.ConfigMap = &corev1.ConfigMapVolumeSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: connector.Spec.ConfigRef,
+			},
+		}
+	}
 	if connector.Spec.Containers != nil {
 		logger.Info("custom pod containers")
 		deployment.Spec.Template.Spec.Containers = connector.Spec.Containers
 	} else {
 		logger.Info("simply provide image url")
-
 		deployment.Spec.Template.Spec.Containers = []corev1.Container{
 			{
 				Name: connector.Name,
@@ -145,7 +173,21 @@ func createOrUpdateDeployment(
 			},
 		}
 	}
-	logger.Info(" Create an in-memory Deployment ",
+	// Add configMap volume to Spec.Volumes if the cmVolume is ready
+	// Also add a VolumeMount to Containers[0].VolumeMounts and set the MountPath as "/vance/config"
+	if cmVolume.Name != "" {
+		deployment.Spec.Template.Spec.Volumes = []corev1.Volume{
+			cmVolume,
+		}
+		deployment.Spec.Template.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{
+			{
+				Name:      cmVolume.Name,
+				MountPath: "/vance/config",
+			},
+		}
+	}
+
+	logger.Info("Create an in-memory Deployment ",
 		"deployment", *deployment)
 	if err := createOrPatchObj(ctx, r, deployment, connector.Name,
 		connector.Namespace, logger, vance.DeployResType); err != nil {

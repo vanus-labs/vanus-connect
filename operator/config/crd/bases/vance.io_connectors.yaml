@@ -35,6 +35,8 @@ spec:
           spec:
             description: ConnectorSpec defines the desired state of Connector
             properties:
+              configRef:
+                type: string
               containers:
                 description: Specify the container in detail if needed
                 items:
@@ -1252,39 +1254,64 @@ spec:
                   - name
                   type: object
                 type: array
+              exposePort:
+                format: int32
+                type: integer
               image:
                 description: The image uri of your connector
                 type: string
-              scalerSpec:
+              scalingRule:
                 properties:
-                  checkInterval:
-                    format: int32
-                    type: integer
-                  cooldownPeriod:
-                    format: int32
-                    type: integer
+                  customScaling:
+                    properties:
+                      checkInterval:
+                        format: int32
+                        type: integer
+                      cooldownPeriod:
+                        format: int32
+                        type: integer
+                      triggers:
+                        items:
+                          properties:
+                            metadata:
+                              additionalProperties:
+                                type: string
+                              type: object
+                            secretRef:
+                              type: string
+                            type:
+                              type: string
+                          required:
+                          - metadata
+                          - type
+                          type: object
+                        type: array
+                    required:
+                    - triggers
+                    type: object
+                  httpScaling:
+                    properties:
+                      host:
+                        type: string
+                      pendingRequests:
+                        format: int32
+                        type: integer
+                      svcType:
+                        type: string
+                    required:
+                    - host
+                    type: object
                   maxReplicaCount:
                     format: int32
                     type: integer
-                  metadata:
-                    additionalProperties:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      x-kubernetes-int-or-string: true
-                    type: object
                   minReplicaCount:
                     format: int32
                     type: integer
-                  scalerSecret:
-                    type: string
                 type: object
-              type:
-                description: Type describes the pattern the image uses to obtain data
-                  and reflects to a corresponding scaler.
+              secretRef:
                 type: string
             required:
-            - type
+            - exposePort
             type: object
           status:
             description: ConnectorStatus defines the observed state of Connector

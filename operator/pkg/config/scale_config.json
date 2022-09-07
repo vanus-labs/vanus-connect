@@ -1,4 +1,5 @@
 {
   "rabbitmq-auth": [["host"]],
-  "rabbitmq2-auth": [["a","b","hello_world"],["c","d"],["e","f"]]
+  "mysql-auth": [["connectionString"],["host","port","dbName","username","password"]],
+  "aws-sqs-queue-auth": [["awsRoleArn"],["awsAccessKeyID","awsSecretAccessKey"]]
 }
