@@ -37,10 +37,6 @@ connector's ut coverage should be greater than 80%.
 ### Observability
 TODO
 
-## Schema
-The event schema of source output and sink output should be consistent, which means the source output can be the input
-of the sink directly. Which means sink will check the input event struct, if it same as the source's produced, 
-and if isn't, sink should respond an error to requester.
 
 ## Configuration
 each connector will have 2 config files:
