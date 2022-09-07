@@ -20,7 +20,7 @@ public class KafkaAdapter implements Adapter1<KafkaData> {
         template.withType("kafka");
         template.withExtension("sequence", kafkaData.key());
         template.withSubject(kafkaData.topic());
-        template.withTime(OffsetDateTime.now());
+        template.withTime(kafkaData.timestamp());
         try{
             new JsonObject(new String(kafkaData.value()));
             template.withDataContentType("application/json");
