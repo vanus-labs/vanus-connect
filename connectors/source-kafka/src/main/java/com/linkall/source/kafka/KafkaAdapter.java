@@ -18,7 +18,7 @@ public class KafkaAdapter implements Adapter1<KafkaData> {
         URI uri = URI.create("vance-kafka-source");
         template.withSource(uri);
         template.withType("kafka.message");
-        template.withSubject(kafkaData.topic());
+        template.withSubject(kafkaData.key());
         template.withTime(kafkaData.timestamp());
         try{
             new JsonObject(new String(kafkaData.value()));
