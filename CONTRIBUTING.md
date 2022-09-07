@@ -15,7 +15,6 @@ Because the connectors aim to be serverless application, So, each connector's pr
 order to meet the minimum package size and maximum speed of starting application, unless there is the special consideration, 
 like library and eco-system.
 
-the source and sink SHOULD use the same language to reduce redundant code. it might be worth putting them in one connector. 
 
 ### Naming
 
