@@ -15,11 +15,10 @@ public class KafkaAdapter implements Adapter1<KafkaData> {
 
     public CloudEvent adapt(KafkaData kafkaData) {
         template.withId(UUID.randomUUID().toString());
-        URI uri = URI.create("vance-kafka-source");
+        URI uri = URI.create("kafka." + kafkaData.KAFKA_SERVER_URL() +"."+ kafkaData.topic());
         template.withSource(uri);
         template.withType("kafka.message");
-        template.withSubject(kafkaData.key());
-        template.withTime(kafkaData.timestamp());
+        template.withTime(kafkaData.timeStamp());
         try{
             new JsonObject(new String(kafkaData.value()));
             template.withDataContentType("application/json");

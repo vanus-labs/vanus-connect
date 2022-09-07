@@ -1,0 +1,5 @@
+com/linkall/source/kafka/KafkaWorker.class
+com/linkall/source/kafka/Entrance.class
+com/linkall/source/kafka/KafkaAdapter.class
+com/linkall/source/kafka/KafkaSource.class
+com/linkall/source/kafka/KafkaData.class
