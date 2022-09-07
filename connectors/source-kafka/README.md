@@ -54,7 +54,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## Kafka Source Image
 
-
+> vancehub/source-kafka
 
 ## Local Development
 
