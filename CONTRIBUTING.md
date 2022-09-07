@@ -47,7 +47,6 @@ each connector will have 2 config files:
 each connector should provide 3 methods to run:
 - **docker**: how to run connector in a docker engine.
 - **k8s**: how to run connector in k8s cluster.
-- **vsctl**: the connector should be integrated with vance operator, and it can be run by `vsctl` command.
 
 These already included in [templates](templates/README.md), whose 'how to use' section has been displayed it.
 
