@@ -1,4 +1,4 @@
-FROM maven:3.8.6-jdk-11 as builder
+FROM --platform=$BUILDPLATFORM  maven:3.8.5-openjdk-17 as builder
 
 ARG connector
 
@@ -12,7 +12,7 @@ RUN apt-get -qq install libatomic1
 RUN mvn clean package
 RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
 
-FROM openjdk:11
+FROM openjdk:17.0.2-jdk
 
 ARG connector
 ARG version
