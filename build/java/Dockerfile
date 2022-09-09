@@ -12,7 +12,7 @@ RUN apt-get -qq install libatomic1
 RUN mvn clean package
 RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
 
-FROM openjdk:17.0.2-jdk
+FROM openjdk:17
 
 ARG connector
 ARG version
