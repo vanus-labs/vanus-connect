@@ -7,8 +7,7 @@ COPY ./cdk-java /build/cdk-java
 
 WORKDIR /build/vance/connectors/${connector}
 
-RUN apt-get -qq update
-RUN apt-get -qq install libatomic1
+RUN microdnf install libatomic
 RUN mvn clean package
 RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
 
