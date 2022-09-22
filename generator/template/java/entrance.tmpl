@@ -1,0 +1,9 @@
+package com.vance.{{.ConnectorType | ToLower}}.{{.ConnectorName | ToLower}};
+
+import com.linkall.vance.core.VanceApplication;
+
+public class Entrance {
+    public static void main(String[] args) {
+        VanceApplication.run({{.ConnectorName}}{{.ConnectorType}}.class);
+    }
+}

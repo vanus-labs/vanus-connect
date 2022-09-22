@@ -1,0 +1,18 @@
+package com.vance.sink.{{.ConnectorName | ToLower}};
+
+import com.linkall.vance.common.annotation.Tag;
+
+public class {{.ConnectorName}}Config{
+
+    @Tag(key = "v_port")
+    private int vPort;
+
+    public void setVanceTarget(int vPort){
+        this.vPort = vPort;
+    }
+
+    public int getVancePort(){
+        return vPort;
+    }
+
+}

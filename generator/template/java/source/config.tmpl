@@ -1,0 +1,18 @@
+package com.vance.source.{{.ConnectorName | ToLower}};
+
+import com.linkall.vance.common.annotation.Tag;
+
+public class {{.ConnectorName}}Config{
+
+    @Tag(key = "v_target")
+    private String vTarget;
+
+    public void setVanceTarget(String vTarget){
+        this.vTarget = vTarget;
+    }
+
+    public String getVanceTarget(){
+        return vTarget;
+    }
+
+}

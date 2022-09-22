@@ -1,0 +1,17 @@
+package com.vance.source.{{.ConnectorName | ToLower}};
+
+import com.linkall.vance.core.Source;
+import com.linkall.vance.core.Adapter;
+
+public class {{.ConnectorName}}Source implements Source {
+
+    @Override
+    public void start(){
+
+    }
+
+    @Override
+    public Adapter getAdapter() {
+       return new {{.ConnectorName}}Adapter();
+    }
+}
