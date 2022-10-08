@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -17,9 +18,9 @@ type ConnectorData struct {
 var funcMap template.FuncMap
 
 func parseFlag(data *ConnectorData) {
-	flag.StringVar(&data.LanguageName, "cdk", "java", "请输入Connector的语言环境")
-	flag.StringVar(&data.ConnectorName, "name", "Sns", "请输入Connector的名字")
-	flag.StringVar(&data.ConnectorType, "type", "Source", "请输入Connector的类型")
+	flag.StringVar(&data.LanguageName, "cdk", "java", "The type of cdk. The value can be either java or go")
+	flag.StringVar(&data.ConnectorName, "name", "Sns", "The name of your connector")
+	flag.StringVar(&data.ConnectorType, "type", "Source", "The type of your connector. The value can be either source or sink")
 }
 
 func processTemplate(tmplName string, tmplPath string, outFilePath string, data *ConnectorData) {
@@ -38,15 +39,30 @@ func processTemplate(tmplName string, tmplPath string, outFilePath string, data 
 	}
 }
 
+func (data *ConnectorData) validate() (err error) {
+	lowerLan := strings.ToLower(data.LanguageName)
+	lowerType := strings.ToLower(data.ConnectorType)
+	if lowerLan != "java" && lowerLan != "go" {
+		err = errors.New("illegal language name")
+	} else if lowerType != "source" && lowerType != "sink" {
+		err = errors.New("illegal connector type")
+	}
+	return err
+}
+
 func main() {
 	data := &ConnectorData{}
 	parseFlag(data)
+	err := data.validate()
+	if err != nil {
+		panic(err)
+	}
 	flag.Parse()
 	funcMap = template.FuncMap{
 		"ToUpper": strings.ToUpper,
 		"ToLower": strings.ToLower,
 	}
-	if data.LanguageName == "java" {
+	if strings.ToLower(data.LanguageName) == "java" {
 		projectPath := "./" + strings.ToLower(data.ConnectorType) + "-" + strings.ToLower(data.ConnectorName)
 		outputPath := projectPath + "/src/main/java/com/vance/" + strings.ToLower(data.ConnectorType) +
 			"/" + strings.ToLower(data.ConnectorName)
@@ -76,7 +92,7 @@ func main() {
 				outputPath+"/"+data.ConnectorName+"Adapter.java", data)
 			processTemplate("adapted_sample.tmpl", "./template/java/source/adapted_sample.tmpl",
 				outputPath+"/"+data.ConnectorName+"AdaptedSample.java", data)
-		} else if data.ConnectorType == "Sink" {
+		} else if strings.ToLower(data.ConnectorType) == "sink" {
 			processTemplate("sink.tmpl", "./template/java/sink/sink.tmpl",
 				outputPath+"/"+data.ConnectorName+"Sink.java", data)
 			processTemplate("config.tmpl", "./template/java/sink/config.tmpl",
