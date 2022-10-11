@@ -1,8 +1,7 @@
 {
-  "region": "us-west-2",
+  "region": "us-west-1",
   "v_port": "8080",
-  "v_target": "http://127.0.0.1:8080",
-  "bucketName": "${bucketName}",
+  "bucketName": "s3-xxx-test-bucket",
   "flushSize": "60",
   "scheduledInterval": "120",
   "timeInterval": "HOURLY"

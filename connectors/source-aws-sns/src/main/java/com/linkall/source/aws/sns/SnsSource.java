@@ -1,5 +1,6 @@
 package com.linkall.source.aws.sns;
 
+import com.amazonaws.services.sns.message.SnsMessageManager;
 import com.linkall.source.aws.utils.AwsHelper;
 import com.linkall.source.aws.utils.SNSUtil;
 import com.linkall.vance.common.config.ConfigUtil;
@@ -16,6 +17,7 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import org.slf4j.Logger;
@@ -36,55 +38,45 @@ public class SnsSource implements Source {
     private HttpServer httpServer;
     private HttpResponseInfo handlerRI;
     private static final WebClient webClient = WebClient.create(vertx);
+    private String snsTopicArn;
+    private String region;
+    private String endPoint;
+    private String protocol;
+    private SnsAdapter adapter;
+    private SnsClient snsClient;
 
-    @Override
-    public void start(){
+    public void init(){
         AwsHelper.checkCredentials();
-        SnsAdapter adapter = (SnsAdapter) getAdapter();
+        this.adapter = (SnsAdapter) getAdapter();
 
-        String snsTopicArn = ConfigUtil.getString("topic_arn");
-        String region = SNSUtil.getRegion(snsTopicArn);
-        String host = ConfigUtil.getString("endpoint");
-        String protocol = ConfigUtil.getString("protocol");
+        this.snsTopicArn = ConfigUtil.getString("topic_arn");
+        this.region = SNSUtil.getRegion(snsTopicArn);
+        this.endPoint = ConfigUtil.getString("endpoint");
+        this.protocol = ConfigUtil.getString("protocol");
 
-        SnsClient snsClient = SnsClient.builder().region(Region.of(region)).build();
-
-        String subscribeArn = "";
-        try {
-            subscribeArn =  SNSUtil.subHTTPS(snsClient, snsTopicArn, host, protocol);
-        }catch (SnsException e){
-            LOGGER.error(e.awsErrorDetails().errorMessage());
-            snsClient.close();
-            System.exit(1);
-        }
+        this.snsClient = SnsClient.builder().region(Region.of(this.region)).build();
 
         this.httpServer = vertx.createHttpServer();
         this.router = Router.router(vertx);
         this.handlerRI = new HttpResponseInfo(200, "Receive success, deliver CloudEvents to"
                 + ConfigUtil.getVanceSink() + "success", 500, "Receive success, deliver CloudEvents to"
                 + ConfigUtil.getVanceSink() + "failure");
+    }
+
+    @Override
+    public void start(){
+        this.init();
+
+        String subscribeArn = subscribe(this.snsClient, this.snsTopicArn, this.endPoint, this.protocol);
+
         this.router.route("/").handler(request-> {
-            String messageType = request.request().getHeader("x-amz-sns-message-type");
             request.request().bodyHandler(body->{
                 JsonObject jsonObject = body.toJsonObject();
-                String token = jsonObject.getString("Token");
-                if(!SNSUtil.verifySignatrue(new ByteArrayInputStream(body.getBytes()), region)){
-                    HttpResponseInfo info = this.handlerRI;
-                    request.response().setStatusCode(info.getFailureCode());
-                    request.response().end(info.getFailureChunk());
-                }else{
-                    //confirm sub or unSub
-                    LOGGER.info("verify signature successful");
-                    if(messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")){
-                        try{
-                            SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
-                        }catch (SnsException e){
-                            LOGGER.error(e.awsErrorDetails().errorMessage());
-                            snsClient.close();
-                            System.exit(1);
-                        }
-                    }
+                SnsMessageManager manager = new SnsMessageManager(region);
 
+                boolean verifyResult = verifySignature(manager, snsClient, jsonObject, snsTopicArn);
+
+                if(verifyResult){
                     CloudEvent ce = adapter.adapt(request.request(), body);
 
                     Future<HttpResponse<Buffer>> responseFuture;
@@ -135,9 +127,57 @@ public class SnsSource implements Source {
 
     }
 
+    public String subscribe(SnsClient snsClient, String snsTopicArn, String endPoint, String protocol){
+        String subscribeArn = "";
+        try {
+            subscribeArn =  SNSUtil.subHTTPS(snsClient, snsTopicArn, endPoint, protocol);
+        }catch (SnsException e){
+            LOGGER.error(e.awsErrorDetails().errorMessage());
+            return subscribeArn;
+        }
+        return subscribeArn;
+    }
+
+    public boolean verifySignature(SnsMessageManager manager, SnsClient snsClient, JsonObject jsonObject, String snsTopicArn){
+        String messageType = jsonObject.getString("Type");
+        String token = jsonObject.getString("Token");
+        if(!SNSUtil.verifySignatrue(manager, new ByteArrayInputStream(jsonObject.toBuffer().getBytes()))){
+            LOGGER.error("An error occurred while verifying the signature.");
+            return false;
+        }else{
+            //confirm sub or unSub
+            LOGGER.info("verify signature successful");
+            if (messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")) {
+                try {
+                    SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
+                } catch (SnsException e) {
+                    LOGGER.error(e.awsErrorDetails().errorMessage());
+                    LOGGER.error("an error occurred while confirming subscription");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     @Override
     public Adapter getAdapter() {
         return new SnsAdapter();
     }
 
+    public String getTopicArn(){
+        return this.snsTopicArn;
+    }
+
+    public String getRegion(){
+        return this.region;
+    }
+
+    public String getEndPoint(){
+        return this.endPoint;
+    }
+
+    public String getProtocol(){
+        return this.protocol;
+    }
 }

@@ -29,8 +29,11 @@ public class SNSUtil {
                 .build();
 
         SubscribeResponse result = snsClient.subscribe(request);
-        LOGGER.info("Subscription ARN is " + result.subscriptionArn() + "\n\n Status is " + result.sdkHttpResponse().statusCode());
-        subscriptionArn = result.subscriptionArn();
+        if(result != null){
+            LOGGER.info("Subscription ARN is " + result.subscriptionArn() + "\n\n Status is " + result.sdkHttpResponse().statusCode());
+            subscriptionArn = result.subscriptionArn();
+        }
+
         return subscriptionArn;
     }
 
@@ -57,8 +60,7 @@ public class SNSUtil {
 
     }
 
-    public static boolean verifySignatrue(InputStream message, String region){
-        SnsMessageManager manager = new SnsMessageManager(region);
+    public static boolean verifySignatrue(SnsMessageManager manager,InputStream message){
         boolean verifyResult = true;
         try{
             manager.parseMessage(message);
