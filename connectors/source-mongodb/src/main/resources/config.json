@@ -1,9 +1,9 @@
 {
-  "v_target": "http://localhost:8080",
+  "v_target": "http://localhost:8080/gateway/test",
   "v_store_file": "/tmp/vance/source-mongodb/offset.data",
-  "name": "test",
-  "db_hosts": "44.242.140.28:27017",
-  "db_name": "replica-set01",
+  "name": "ml-etl",
+  "db_hosts": "localhost:27017",
+  "db_name": "away",
   "database": {
     "include": [],
     "exclude": []

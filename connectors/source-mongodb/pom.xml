@@ -5,7 +5,7 @@
 
     <groupId>com.linkall</groupId>
     <modelVersion>4.0.0</modelVersion>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>dev</version>
     <artifactId>mongodb-source</artifactId>
 
     <properties>
@@ -101,7 +101,7 @@
                     <outputDirectory>
                         ${project.basedir}/src/proto/java
                     </outputDirectory>
-                    <protoSourceRoot>../../schemas</protoSourceRoot>
+                    <protoSourceRoot>../../proto</protoSourceRoot>
                     <includes>
                         <include>database/database.proto</include>
                         <include>database/mongodb.proto</include>
