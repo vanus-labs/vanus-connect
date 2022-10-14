@@ -24,11 +24,11 @@ it assumes that the mongodb instance doesn't need authentication. For how to use
 [secret](#secret) section.
 
 ```shell
-docker run -d \
+docker run -d --rm \
+  --network host \
   -p 8080:8080 \
   -v ${PWD}:/vance/config \
-  --name mongodb-sink \
-  --rm public.ecr.aws/vanus/connector/mongodb-sink:dev
+  --name mongodb-sink public.ecr.aws/vanus/connector/mongodb-sink:dev
 ```
 
 ### insert document to mongodb

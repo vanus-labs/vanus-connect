@@ -98,7 +98,7 @@ public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSou
         props.setProperty("mongodb.name", config.get("db_name").toString());
         props.setProperty("capture.mode", "change_streams_update_full");
         if (secret != null && secret.size() > 0) {
-            props.setProperty("mongodb.user", secret.get("user"));
+            props.setProperty("mongodb.user", secret.get("username"));
             props.setProperty("mongodb.password", secret.get("password"));
             props.setProperty("mongodb.authsource", secret.getOrDefault("authSource", "admin"));
         }

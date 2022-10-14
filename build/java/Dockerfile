@@ -1,14 +1,20 @@
-FROM --platform=$BUILDPLATFORM  maven:3.8.5-openjdk-17 as builder
+FROM maven:3.8.5-openjdk-17 as builder
 
 ARG connector
 
 COPY ./vance /build/vance
 COPY ./cdk-java /build/cdk-java
 
+# remove in future
+WORKDIR /build/cdk-java/database
+
+RUN mvn clean install -Dmaven.javadoc.skip=true
+
 WORKDIR /build/vance/connectors/${connector}
 
 RUN microdnf install libatomic
-RUN mvn clean package
+RUN mvn clean package -Dmaven.javadoc.skip=true
+# DON'T REMOVE SPACE BEHIND OF '/build/executable.jar'
 RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
 
 FROM openjdk:17

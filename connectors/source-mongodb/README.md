@@ -9,14 +9,14 @@ This connector capturing mongodb [ChangeEvent](https://www.mongodb.com/docs/manu
 ### create config file
 
 ```shell
-cat << EOF > config.yml
+touch offset.data
+
+cat << EOF > config.json
 # change this hosts to your mongodb's address
 {
   "v_target": "http://localhost:8080",
-  "v_store_file": "/vance/tmp/offset.data",
-  "db_hosts":[
-    "127.0.0.1:27017"
-  ],
+  "v_store_file": "/vance/config/offset.data",
+  "db_hosts": "127.0.0.1:27017",
   "port": 8080
 }
 EOF
@@ -30,12 +30,12 @@ it assumes that the mongodb instance doesn't need authentication. For how to use
 [secret](#secret) section.
 
 ```shell
-docker run -d \
-  -p 8080:8080 \
+docker run -d --rm \
+  --network host \
+  -p 12321:12321 \
   -v ${PWD}:/vance/config \
-  -v /tmp:/vance/tmp \
-  --name mongodb-source \
-  --rm public.ecr.aws/vanus/connector/mongodb-source:dev
+  -e CONNECTOR_CONFIG=/vance/config/config.json \
+  --name mongodb-source public.ecr.aws/vanus/connector/mongodb-source:dev
 ```
 
 ### capture a insert event
