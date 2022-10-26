@@ -41,7 +41,8 @@ public abstract class DebeziumSource implements Source {
             SecretUtil.getString("dbName"),
             ConfigUtil.getString("include_table"),
             ConfigUtil.getString("exclude_table"),
-            ConfigUtil.getString("store_offset_key"));
+            ConfigUtil.getString("store_offset_key"),
+            ConfigUtil.getString("db_history_file"));
   }
 
   public abstract String getConnectorClass();
@@ -59,10 +60,7 @@ public abstract class DebeziumSource implements Source {
             .using(
                 (success, message, error) -> {
                   LOGGER.info(
-                      "Debezium engine shutdown,success: {},message: {},error:{}",
-                      success,
-                      message,
-                      error);
+                      "Debezium engine shutdown,success: {},message: {}", success, message, error);
                 })
             .build();
     executor = Executors.newSingleThreadExecutor();
@@ -113,7 +111,7 @@ public abstract class DebeziumSource implements Source {
 
     // history
     props.setProperty("database.history", "io.debezium.relational.history.FileDatabaseHistory");
-    props.setProperty("database.history.file.filename", "/tmp/mysql/history.data");
+    props.setProperty("database.history.file.filename", config.getHistoryFile());
 
     // https://debezium.io/documentation/reference/configuration/avro.html
     props.setProperty("key.converter.schemas.enable", "false");
