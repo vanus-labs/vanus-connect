@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	connector.RunSink("ElasticsearchSink", internal.NewElasticsearchSink)
+	connector.RunSink(&internal.ElasticsearchSink{})
 }

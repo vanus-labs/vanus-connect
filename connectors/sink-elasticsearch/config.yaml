@@ -1,0 +1,10 @@
+# receive event port
+"v_port": 8080
+# es info
+"address": "http://localhost:9200"
+"username": "elastic"
+"password": "elastic"
+"index_name": "vance_test"
+# es primary id from event key
+"primary_key": "data.id"
+"insert_mode": "upsert"

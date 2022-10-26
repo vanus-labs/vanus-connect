@@ -1,15 +1,21 @@
-FROM golang:1.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.17-alpine AS builder
 WORKDIR /workspace
+ARG CONNECTOR
 
-COPY vance/connectors/sink-elasticsearch  sink
+COPY vance/connectors/$CONNECTOR vance/connectors/$CONNECTOR
 COPY cdk-go cdk-go
-WORKDIR /workspace/sink
+WORKDIR /workspace/vance/connectors/$CONNECTOR
+RUN go mod download
+
 ARG TARGETOS
 ARG TARGETARCH
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o bin/sink cmd/main.go
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /workspace/vance/bin/$CONNECTOR cmd/main.go
 
 FROM centos:8.4.2105
-RUN mkdir -p /vance
-COPY --from=builder /workspace/sink/bin/sink /vance/bin/sink
 WORKDIR /vance
-ENTRYPOINT ["bin/sink"]
+ARG CONNECTOR
+COPY --from=builder /workspace/vance/bin/$CONNECTOR /vance/bin/$CONNECTOR
+
+ENV CONNECTOR_CONFIG=/vance/config/config.yaml
+
+ENTRYPOINT ["/vance/bin/$CONNECTOR"]
