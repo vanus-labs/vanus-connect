@@ -3,7 +3,7 @@ module github.com/linkall-labs/sink-elasticsearch
 go 1.17
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.8.0
+	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/elastic/go-elasticsearch/v7 v7.17.1
 	github.com/linkall-labs/cdk-go v0.0.0
 	github.com/pkg/errors v0.9.1
