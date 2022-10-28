@@ -76,8 +76,7 @@ public class KafkaWorker extends ShutdownableThread {
 
             for (ConsumerRecord<byte[], byte[]> record : partitionRecords) {
                 OffsetDateTime timeStamp = new Date(record.timestamp()).toInstant().atOffset( ZoneOffset.UTC );
-                String key64 = Base64.getEncoder().encodeToString(record.key());
-                KafkaData kafkaData = new KafkaData(record.topic(), key64, record.value(), KAFKA_SERVER_URL, timeStamp);
+                KafkaData kafkaData = new KafkaData(record.topic(), record.key(), record.value(), KAFKA_SERVER_URL, timeStamp);
                 CloudEvent event = adapter.adapt(kafkaData);
                 String sink = ConfigUtil.getVanceSink();
                 System.out.println("message: " + Arrays.toString(record.value()));
