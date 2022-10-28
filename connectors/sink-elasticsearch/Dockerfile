@@ -14,8 +14,8 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /workspace/vance/bin/$CONNECTO
 FROM centos:8.4.2105
 WORKDIR /vance
 ARG CONNECTOR
-COPY --from=builder /workspace/vance/bin/$CONNECTOR /vance/bin/$CONNECTOR
+COPY --from=builder /workspace/vance/bin/$CONNECTOR /vance/bin/connector
 
 ENV CONNECTOR_CONFIG=/vance/config/config.yaml
 
-ENTRYPOINT ["/vance/bin/$CONNECTOR"]
+ENTRYPOINT ["/vance/bin/connector"]
