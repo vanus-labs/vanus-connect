@@ -80,10 +80,8 @@ Users can specify their configs by either setting environments variables or moun
   "password": "123456",
   "db_name": "dbname",
   "include_table": "user",
-
   "v_store_file": "/vance/data/offset.dat",
   "db_history_file": "/vance/data/history.dat",
-
   "v_target": "http://localhost:8080"
 }
 ```
@@ -94,7 +92,9 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Running with Docker
 
-> docker run -v $(pwd)/config.json:/vance/config/config.json -v $(pwd)/data:/vance/data --rm vancehub/source-mysql
+```shell
+docker run -v $(pwd)/config.json:/vance/config/config.json -v $(pwd)/data:/vance/data --rm vancehub/source-mysql
+```
 
 ## Local Development
 
