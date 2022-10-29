@@ -1,7 +1,6 @@
 package com.linkall.source.debezium;
 
 import com.linkall.vance.common.config.ConfigUtil;
-import com.linkall.vance.common.config.SecretUtil;
 import com.linkall.vance.core.Adapter1;
 import com.linkall.vance.core.Source;
 import io.debezium.embedded.Connect;
@@ -34,11 +33,11 @@ public abstract class DebeziumSource implements Source {
     consumer = new DebeziumRecordConsumer((Adapter1<SourceRecord>) getAdapter());
     config =
         new DbConfig(
-            SecretUtil.getString("host"),
-            SecretUtil.getString("port"),
-            SecretUtil.getString("username"),
-            SecretUtil.getString("password"),
-            SecretUtil.getString("dbName"),
+            ConfigUtil.getString("host"),
+            ConfigUtil.getString("port"),
+            ConfigUtil.getString("username"),
+            ConfigUtil.getString("password"),
+            ConfigUtil.getString("db_name"),
             ConfigUtil.getString("include_table"),
             ConfigUtil.getString("exclude_table"),
             ConfigUtil.getString("store_offset_key"),
@@ -124,9 +123,11 @@ public abstract class DebeziumSource implements Source {
     // db connection configuration
     props.setProperty("database.hostname", config.getHost());
     props.setProperty("database.port", config.getPort());
-    props.setProperty("database.user", config.getUsername());
     props.setProperty("database.dbname", config.getDatabase());
-    props.setProperty("database.password", config.getPassword());
+    if (config.getUsername() != null && config.getUsername() != "")
+      props.setProperty("database.user", config.getUsername());
+    if (config.getPassword() != null && config.getPassword() != "")
+      props.setProperty("database.password", config.getPassword());
 
     // https://debezium.io/documentation/reference/1.9/connectors/mysql.html#mysql-property-binary-handling-mode
     props.setProperty("binary.handling.mode", "base64");

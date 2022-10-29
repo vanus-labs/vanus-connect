@@ -1,10 +1,17 @@
 {
-  "v_target": "http://localhost:8080",
+  "host": "localhost",
+  "port": "3306",
+  "username": "root",
+  "password": "vanus123456",
+  "db_name": "dbname",
+  "include_table": "user",
+
   "v_store_file": "/tmp/mysql/offset.dat",
   "db_history_file": "/tmp/mysql/history.dat",
-  "include_table": "runoob_tbl",
-  "store_offset_key": "vance_mysql_test",
+
   "offset_binlog_file": "",
   "offset_binlog_pos": "",
-  "offset_binlog_gtids": ""
+  "offset_binlog_gtids": "",
+
+  "v_target": "http://localhost:8080"
 }
