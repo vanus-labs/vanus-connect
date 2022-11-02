@@ -100,6 +100,6 @@ func main() {
 		funcName: fName,
 		debug:    dg,
 	}
-	// Make the handler available for Remote Procedure Call by Cloud Code
+	// Make the handler available for Remote Procedure Call by Cloud Function
 	cloudfunction.Start(w.receive)
 }
