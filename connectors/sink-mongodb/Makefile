@@ -1,5 +1,5 @@
 WORKDIR=$(shell pwd)
-PROTO_ROOT=${WORKDIR}/../../schemas
+PROTO_ROOT=${WORKDIR}/../../proto
 
 generate-pb:
 	mkdir -p proto

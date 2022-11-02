@@ -13,7 +13,7 @@ require (
 
 replace (
 	github.com/linkall-labs/cdk-go => ../../../cdk-go
-	github.com/linkall-labs/connector/proto => ./../../proto/pkg
+	github.com/linkall-labs/connector/proto => ../../proto/pkg
 )
 
 require (

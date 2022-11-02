@@ -44,8 +44,8 @@ const (
 type Config struct {
 	Port       int      `json:"port" yaml:"port"`
 	DBHosts    []string `json:"db_hosts" yaml:"db_hosts"`
-	Secret     *Secret  `json:"-" yaml:"-"`
 	ReplicaSet string   `json:"replica_set" yaml:"replica_set"`
+	Secret     *Secret  `json:"-" yaml:"-"`
 }
 
 type Secret struct {
