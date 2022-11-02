@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sink-k8s-sa
+  namespace: vanus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sink-k8s-cluster-role
+rules:
+- apiGroups:
+  - ""
+  - "apps"
+  - "batch"
+  resources:
+  - pods
+  - jobs
+  - cronjobs
+  - daemonsets
+  - deployments
+  - statefulsets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - create
+  - update
+  - patch
+  - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sink-k8s-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sink-k8s-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: sink-k8s-sa
+  namespace: vanus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-k8s
+  namespace: vanus
+spec:
+  selector:
+    app: sink-k8s
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sink-k8s
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-k8s
+  namespace: vanus
+data:
+  config.yml: |-
+    vPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-k8s
+  namespace: vanus
+  labels:
+    app: sink-k8s
+spec:
+  selector:
+    matchLabels:
+      app: sink-k8s
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-k8s
+    spec:
+      containers:
+        - name: sink-k8s
+          image: docker.io/vancehub/sink-k8s:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+          env:
+          - name: CONNECTOR_CONFIG
+            value: "/vance/config/config.yml"
+          - name: CONNECTOR_TARGET
+            value: "localhost"
+          # env: see README for more about how to set env
+      serviceAccount: sink-k8s-sa
+      volumes:
+        - name: config
+          configMap:
+            name: sink-k8s
