@@ -40,7 +40,7 @@ var (
 	funcDesc           = "auto-created function by Vanus for syncing COS event"
 	funcMemSize        = int64(64)
 	functionNamePrefix = "vanus-cos-source-function"
-	defaultFunction    = Function{
+	defaultFunction    = Code{
 		Bucket: "vanus-1253760853",
 		Region: "ap-beijing",
 		Path:   "/vanus/cos-source/dev/main.zip",
@@ -52,23 +52,23 @@ var (
 )
 
 type Config struct {
-	Target         string   `json:"v_target" yaml:"v_target"`
-	BucketEndpoint string   `json:"bucket_endpoint" yaml:"bucket_endpoint"`
-	Function       Function `json:"function" yaml:"function"`
-	Region         string   `json:"function_region" yaml:"function_region"`
-	Namespace      string   `json:"namespace" yaml:"namespace"`
-	Debug          bool     `json:"debug" yaml:"debug"`
-	Eventbus       string   `json:"eventbus" yaml:"eventbus"`
-	Secret         *Secret  `json:"-" yaml:"-"`
+	Target         string  `json:"v_target" yaml:"v_target"`
+	BucketEndpoint string  `json:"bucket_endpoint" yaml:"bucket_endpoint"`
+	Code           Code    `json:"code" yaml:"code"`
+	Region         string  `json:"function_region" yaml:"function_region"`
+	Namespace      string  `json:"namespace" yaml:"namespace"`
+	Debug          bool    `json:"debug" yaml:"debug"`
+	Eventbus       string  `json:"eventbus" yaml:"eventbus"`
+	Secret         *Secret `json:"-" yaml:"-"`
 }
 
-type Function struct {
+type Code struct {
 	Bucket string `yaml:"bucket" json:"bucket"`
 	Region string `yaml:"region" json:"region"`
 	Path   string `yaml:"path" json:"path"`
 }
 
-func (f Function) isValid() bool {
+func (f Code) isValid() bool {
 	return f.Bucket != "" && f.Region != "" && f.Path != ""
 }
 
@@ -104,8 +104,9 @@ func (c *cosSource) Init(cfgPath, secretPath string) error {
 	if cfg.Namespace == "" {
 		cfg.Namespace = "default"
 	}
-	if !cfg.Function.isValid() {
-		cfg.Function = defaultFunction
+
+	if !cfg.Code.isValid() {
+		cfg.Code = defaultFunction
 	}
 	c.cfg = cfg
 
@@ -168,9 +169,9 @@ func (c *cosSource) Run() error {
 	}
 
 	req.Code = &v20180416.Code{
-		CosBucketName:   &c.cfg.Function.Bucket,
-		CosBucketRegion: &c.cfg.Function.Region,
-		CosObjectName:   &c.cfg.Function.Path,
+		CosBucketName:   &c.cfg.Code.Bucket,
+		CosBucketRegion: &c.cfg.Code.Region,
+		CosObjectName:   &c.cfg.Code.Path,
 	}
 
 	res, err := c.scfClient.CreateFunction(req)
