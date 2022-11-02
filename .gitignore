@@ -45,3 +45,7 @@ cdk-go
 # generated proto file
 **/src/proto
 **/*.pb.go
+
+connectors/**/*.json
+
+connectors/**/*.yaml
