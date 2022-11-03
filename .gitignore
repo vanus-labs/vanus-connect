@@ -49,3 +49,4 @@ cdk-go
 connectors/**/*.json
 
 connectors/**/*.yaml
+connectors/**/*.yml
