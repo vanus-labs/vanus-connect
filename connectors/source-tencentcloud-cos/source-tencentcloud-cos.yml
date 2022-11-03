@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-tencentcloud-cos
+  namespace: vanus
+data:
+  config.yml: |-
+    v_target: "xxxx"
+    eventbus: "xxxxx"
+    bucket:
+      endpoint: "xxxxx.cos.ap-beijing.myqcloud.com"
+    function:
+      region: "ap-beijing"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: source-tencentcloud-cos
+  namespace: vanus
+type: Opaque
+data:
+  # cat secret.yml | base64
+  secret.yml: |
+    xxxxx
+immutable: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-tencentcloud-cos
+  namespace: vanus
+  labels:
+    app: source-tencentcloud-cos
+spec:
+  selector:
+    matchLabels:
+      app: source-tencentcloud-cos
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-tencentcloud-cos
+    spec:
+      containers:
+        - name: source-tencentcloud-cos
+          image: public.ecr.aws/vanus/connector/source-tencentcloud-cos:dev
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+            - name: secret
+              mountPath: /vance/secret
+      volumes:
+        - name: secret
+          secret:
+            secretName: source-tencentcloud-cos
+        - name: config
+          configMap:
+            name: source-tencentcloud-cos

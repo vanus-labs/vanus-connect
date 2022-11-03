@@ -41,14 +41,14 @@ var (
 )
 
 type Config struct {
-	Region   string   `yaml:"region" json:"region"`
-	Function Function `json:"function" yaml:"function"`
-	Debug    bool     `json:"debug" yaml:"debug"`
-	Secret   *Secret  `json:"-" yaml:"-"`
+	F      Function `json:"function" yaml:"function"`
+	Debug  bool     `json:"debug" yaml:"debug"`
+	Secret *Secret  `json:"-" yaml:"-"`
 }
 
 type Function struct {
 	Name      string `yaml:"name" json:"name"`
+	Region    string `yaml:"region" json:"region"`
 	Namespace string `yaml:"namespace" json:"namespace" default:"default"`
 }
 
@@ -74,13 +74,16 @@ type functionSink struct {
 
 func (c *functionSink) Receive(_ context.Context, event v2.Event) protocol.Result {
 	req := v20180416.NewInvokeRequest()
-	req.FunctionName = &c.cfg.Function.Name
-	req.Namespace = &c.cfg.Function.Namespace
+	req.FunctionName = &c.cfg.F.Name
+	req.Namespace = &c.cfg.F.Namespace
 	payload := string(event.Data())
 	req.ClientContext = &payload
 
 	res, err := c.scfClient.Invoke(req)
 	if err != nil {
+		c.logger.Debug("failed to invoke function", map[string]interface{}{
+			log.KeyError: err,
+		})
 		return v2.NewHTTPResult(http.StatusInternalServerError, err.Error())
 	}
 	c.logger.Debug("invoke function success", map[string]interface{}{
@@ -95,8 +98,8 @@ func (c *functionSink) Init(cfgPath, secretPath string) error {
 		return err
 	}
 
-	if cfg.Function.Namespace == "" {
-		cfg.Function.Namespace = "default"
+	if cfg.F.Namespace == "" {
+		cfg.F.Namespace = "default"
 	}
 
 	secret := &Secret{}
@@ -105,15 +108,19 @@ func (c *functionSink) Init(cfgPath, secretPath string) error {
 	}
 	cfg.Secret = secret
 
-	if !cfg.Function.isValid() {
+	if !cfg.F.isValid() {
 		return errors.New("invalid function configuration")
 	}
 	c.cfg = cfg
 
+	if c.cfg.Debug {
+		c.logger.SetLevel("debug")
+	}
+
 	cli, err := v20180416.NewClient(&common.Credential{
 		SecretId:  c.cfg.Secret.SecretID,
 		SecretKey: c.cfg.Secret.SecretKey,
-	}, c.cfg.Region, profile.NewClientProfile())
+	}, c.cfg.F.Region, profile.NewClientProfile())
 
 	if err != nil {
 		return err
