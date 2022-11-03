@@ -5,10 +5,10 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_target: "35.87.170.130:8080"
-    eventbus: "demo"
+    v_target: "xxxx"
+    eventbus: "xxxxx"
     bucket:
-      endpoint: "vanus-1253760853.cos.ap-beijing.myqcloud.com"
+      endpoint: "xxxxx.cos.ap-beijing.myqcloud.com"
     function:
       region: "ap-beijing"
 
@@ -22,11 +22,7 @@ type: Opaque
 data:
   # cat secret.yml | base64
   secret.yml: |
-    c2VjcmV0X2lkOiAiQUtJRFdxNDh5Y3J3blc2U2RjWEZtMzNvR1VnY1E0VnMxdmRIIgpzZWNyZXRf
-    a2V5OiAiVkNrQVp2ODdzNEVEcEVQVEwwU2ZlTjNYNjV1V3U1MWsiCg==
-#  secret.yml:
-#    secret_id: "AKIDWq48ycrwnW6SdcXFm33oGUgcQ4Vs1vdH"
-#    secret_key: "VCkAZv87s4EDpEPTL0SfeN3X65uWu51k"
+    xxxxx
 immutable: true
 ---
 apiVersion: apps/v1
@@ -50,7 +46,6 @@ spec:
         - name: source-tencentcloud-cos
           image: public.ecr.aws/vanus/connector/source-tencentcloud-cos:dev
           imagePullPolicy: Always
-          command: ["bash", "-c", "sleep 10000"]
           volumeMounts:
             - name: config
               mountPath: /vance/config
