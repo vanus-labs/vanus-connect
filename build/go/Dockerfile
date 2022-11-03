@@ -6,6 +6,7 @@ COPY ./vance /build/vance
 COPY ./cdk-go /build/cdk-go
 
 RUN cd /build/vance/connectors/${connector} && \
+    go mod tidy && \
     go build -v -o /build/vance/bin/${connector} ./cmd/main.go
 
 FROM centos:8.4.2105
