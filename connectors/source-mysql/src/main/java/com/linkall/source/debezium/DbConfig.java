@@ -12,6 +12,7 @@ public class DbConfig {
   private Set<String> includeTables;
   private Set<String> excludeTables;
   private String storeOffsetKey;
+  private String historyFile;
 
   public DbConfig(
       String host,
@@ -21,13 +22,15 @@ public class DbConfig {
       String database,
       String includeTable,
       String excludeTable,
-      String storeOffsetKey) {
+      String storeOffsetKey,
+      String historyFile) {
     this.host = host;
     this.port = port;
     this.username = username;
     this.password = password;
     this.database = database;
     this.storeOffsetKey = storeOffsetKey;
+    this.historyFile = historyFile;
     includeTables = new HashSet<>();
     excludeTables = new HashSet<>();
     if (includeTable != null) {
@@ -104,5 +107,13 @@ public class DbConfig {
 
   public void setStoreOffsetKey(String storeOffsetKey) {
     this.storeOffsetKey = storeOffsetKey;
+  }
+
+  public String getHistoryFile() {
+    return historyFile;
+  }
+
+  public void setHistoryFile(String historyFile) {
+    this.historyFile = historyFile;
   }
 }
