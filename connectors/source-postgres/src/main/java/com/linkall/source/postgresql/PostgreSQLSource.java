@@ -1,11 +1,9 @@
 package com.linkall.source.postgresql;
 
 import com.linkall.source.debezium.DebeziumSource;
-import com.linkall.vance.common.config.ConfigLoader;
 import com.linkall.vance.core.Adapter;
 import com.linkall.vance.core.Source;
 import io.debezium.connector.postgresql.PostgresConnector;
-import io.vertx.core.json.JsonObject;
 
 import java.util.*;
 
@@ -42,9 +40,8 @@ public class PostgreSQLSource extends DebeziumSource implements Source {
         props.setProperty("include.unknown.datatypes", "true");
         if (config.containsKey("plugin_name")) {
             props.setProperty("plugin.name", config.getString("plugin_name"));
-        }
-        if (config.containsKey("snapshot_mode")) {
-            props.setProperty("snapshot.mode", config.getString("snapshot_mode"));
+        } else {
+            props.setProperty("plugin.name", "pgoutput");
         }
         if (config.containsKey("snapshot_mode")) {
             props.setProperty("snapshot.mode", config.getString("snapshot_mode"));
@@ -59,23 +56,23 @@ public class PostgreSQLSource extends DebeziumSource implements Source {
         } else {
             props.setProperty("publication.name", "vance_publication");
         }
-
-        if (!config.containsKey("schema_name")) {
-            String schemaName = config.getString("schema_name");
-            props.setProperty("schema.include.list", schemaName);
-            if (!config.containsKey("include_table")) {
-                String includeTable = config.getString("include_table");
-                props.setProperty("table.include.list", tableFormat(schemaName, Arrays.stream(includeTable.split(","))));
-            } else {
-                Set<String> excludeTables = new HashSet<>();
-                if (!config.containsKey("exclude_table")) {
-                    String excludeTable = config.getString("exclude_table");
-                    Arrays.stream(excludeTable.split(",")).forEach(v -> {
-                        excludeTables.add(v);
-                    });
-                    props.setProperty("table.exclude.list", tableFormat(schemaName, getExcludedTables(excludeTables).stream()));
-                }
+        String schemaName = "public";
+        if (config.containsKey("schema_name")) {
+            schemaName = config.getString("schema_name");
+        }
+        props.setProperty("schema.include.list", schemaName);
+        if (config.containsKey("include_table")) {
+            String includeTable = config.getString("include_table");
+            props.setProperty("table.include.list", tableFormat(schemaName, Arrays.stream(includeTable.split(","))));
+        } else {
+            Set<String> excludeTables = new HashSet<>();
+            if (config.containsKey("exclude_table")) {
+                String excludeTable = config.getString("exclude_table");
+                Arrays.stream(excludeTable.split(",")).forEach(v -> {
+                    excludeTables.add(v);
+                });
             }
+            props.setProperty("table.exclude.list", tableFormat(schemaName, getExcludedTables(excludeTables).stream()));
         }
 
 //        props.setProperty("publication.autocreate.mode", "disabled");
