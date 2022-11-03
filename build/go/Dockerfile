@@ -16,7 +16,6 @@ ARG connector
 WORKDIR /vance
 
 COPY --from=builder /build/vance/bin/${connector} /vance/bin/${connector}
-COPY --from=builder /build/vance/connectors/${connector}/run.sh /vance/run.sh
 
 ENV CONNECTOR=${connector}
 ENV EXECUTABLE_FILE=/vance/bin/${connector}
