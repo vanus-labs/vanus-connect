@@ -15,28 +15,37 @@
 package internal
 
 import (
-	"strings"
+	"github.com/pkg/errors"
+)
 
-	"github.com/linkall-labs/cdk-go/config"
+type InsertMode string
+
+const (
+	Insert InsertMode = "insert"
+	Upsert InsertMode = "upsert"
 )
 
 type Config struct {
-	Addresses  []string `json:"address"`
-	Username   string   `json:"username"`
-	Password   string   `json:"password"`
-	SkipVerify bool
+	Address  string `json:"address" yaml:"address"`
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
 
-	IndexName string `json:"index_name"`
+	IndexName string `json:"index_name" yaml:"index_name"`
+
+	Timeout    int        `json:"timeout" yaml:"timeout"`
+	PrimaryKey string     `json:"primary_key" yaml:"primary_key"`
+	InsertMode InsertMode `json:"insert_mode" yaml:"insert_mode"`
 }
 
-func getConfig() Config {
-	c := config.Accessor
-	conf := Config{
-		Addresses:  strings.Split(c.Get("address"), ","),
-		Username:   c.Get("username"),
-		Password:   c.Get("password"),
-		IndexName:  c.Get("index_name"),
-		SkipVerify: true,
+func (cfg *Config) Validate() error {
+	if cfg == nil {
+		return errors.New("cfg is nil")
 	}
-	return conf
+	if cfg.IndexName == "" {
+		return errors.New("config index name is empty")
+	}
+	if cfg.InsertMode == Upsert && cfg.PrimaryKey == "" {
+		return errors.New("insert mode is upsert but primary key is empty")
+	}
+	return nil
 }

@@ -19,108 +19,162 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
+	"strings"
+	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/elastic/go-elasticsearch/v7"
+	"github.com/cloudevents/sdk-go/v2/protocol"
+	elasticsearch "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/go-logr/logr"
 	"github.com/linkall-labs/cdk-go/connector"
 	"github.com/linkall-labs/cdk-go/log"
+	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"github.com/pkg/errors"
 )
 
 type ElasticsearchSink struct {
-	config    elasticsearch.Config
-	client    *elasticsearch.Client
-	indexName string
+	config   *Config
+	esClient *elasticsearch.Client
 
-	ceClient ce.Client
-	logger   logr.Logger
-	ctx      context.Context
+	timeout    time.Duration
+	primaryKey PrimaryKey
+	logger     log.Logger
 }
 
-func NewElasticsearchSink(ctx context.Context, ceClient ce.Client) connector.Sink {
-	conf := getConfig()
-	config := getEsConfig(conf)
-	return &ElasticsearchSink{
-		ctx:       ctx,
-		config:    config,
-		indexName: conf.IndexName,
-		ceClient:  ceClient,
-		logger:    log.FromContext(ctx),
-	}
+func NewElasticsearchSink() connector.Sink {
+	return &ElasticsearchSink{}
 }
 
-func (es *ElasticsearchSink) Start() error {
-	ctx := context.Background()
-	es.logger.Info("start es target")
-	client, err := elasticsearch.NewClient(es.config)
-	if err != nil {
-		es.logger.Error(err, "create es client error")
-		return errors.Wrap(err, "create es client error")
+func (s *ElasticsearchSink) Init(cfgPath, secretPath string) error {
+	cfg := &Config{}
+	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
+		return err
 	}
-
-	resp, err := client.Info()
+	err := cfg.Validate()
 	if err != nil {
-		es.logger.Error(err, "client info api error")
-		return errors.Wrap(err, "client info api error")
+		return err
 	}
-	es.client = client
+	s.config = cfg
+	s.primaryKey = GetPrimaryKey(cfg.PrimaryKey)
+	if cfg.Timeout == 0 {
+		cfg.Timeout = 10 * 1000
+	}
+	s.timeout = time.Duration(cfg.Timeout) * time.Millisecond
+	// init es client
+	esClient, err := elasticsearch.NewClient(generateEsConfig(cfg))
+	if err != nil {
+		return errors.Wrap(err, "new es client error")
+	}
+	resp, err := esClient.Info()
+	if err != nil {
+		return errors.Wrap(err, "es info api error")
+	}
 	if !resp.IsError() {
-		info, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			es.logger.Error(err, "read es info error")
-			return errors.Wrap(err, "read es info error")
-		}
-		es.logger.Info("es info is", "info", string(info))
+		s.logger.Info(context.TODO(), "es connect success", map[string]interface{}{
+			"esInfo": resp,
+		})
 	}
-	return es.ceClient.StartReceiver(ctx, es.dispatch)
+	s.esClient = esClient
+	return nil
 }
 
-func (es *ElasticsearchSink) dispatch(ctx context.Context, event ce.Event) ce.Result {
-	req := esapi.IndexRequest{
-		Index: es.indexName,
-		Body:  bytes.NewReader(event.Data()),
+func (s *ElasticsearchSink) Name() string {
+	return "ElasticsearchSink"
+}
+
+func (s *ElasticsearchSink) SetLogger(logger log.Logger) {
+	s.logger = logger
+}
+
+func (s *ElasticsearchSink) Destroy() error {
+	return nil
+}
+
+func (s *ElasticsearchSink) Receive(ctx context.Context, event ce.Event) protocol.Result {
+	ctx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	var (
+		req          esapi.Request
+		documentID   string
+		documentType string
+	)
+	if s.primaryKey.Type() != None {
+		documentID = s.primaryKey.Value(event)
 	}
-	resp, err := req.Do(ctx, es.client)
+	if s.config.InsertMode == Upsert {
+		if documentID == "" {
+			s.logger.Warning(ctx, "documentID is empty", map[string]interface{}{
+				"event":      event,
+				"primaryKey": s.config.PrimaryKey,
+			})
+			return ce.NewHTTPResult(http.StatusBadRequest, "documentID is empty")
+		}
+		var body bytes.Buffer
+		body.WriteByte('{')
+		body.WriteString(`"doc":`)
+		body.Write(event.Data())
+		body.WriteByte(',')
+		body.WriteString(`"upsert":`)
+		body.Write(event.Data())
+		body.WriteByte('}')
+		// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-update.html
+		req = esapi.UpdateRequest{
+			Index:        s.config.IndexName,
+			Body:         bytes.NewReader(body.Bytes()),
+			DocumentID:   documentID,
+			DocumentType: documentType,
+		}
+	} else {
+		// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-index_.html
+		req = esapi.IndexRequest{
+			Index:        s.config.IndexName,
+			Body:         bytes.NewReader(event.Data()),
+			DocumentID:   documentID,
+			DocumentType: documentType,
+		}
+	}
+	resp, err := req.Do(ctx, s.esClient)
 	if err != nil {
-		es.logger.Error(err, "es index request api do error")
-		return ce.ResultNACK
+		s.logger.Warning(ctx, "es api do error", map[string]interface{}{
+			log.KeyError: err,
+			"event":      event,
+		})
+		return ce.NewHTTPResult(http.StatusInternalServerError, "write to es error %s", err.Error())
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		es.logger.Error(err, "read es body error")
-		return ce.ResultNACK
-	}
 	if resp.IsError() {
-		es.logger.Error(err, "es api response is error",
-			"statusCode", resp.StatusCode,
-			"body", string(body),
-		)
-		return ce.ResultNACK
+		respStr := resp.String()
+		s.logger.Warning(ctx, "es api response error", map[string]interface{}{
+			"resp": resp,
+			"id":   event.ID(),
+		})
+		return ce.NewHTTPResult(http.StatusInternalServerError, "es api response error %s", respStr)
 	}
 	var res map[string]interface{}
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		es.logger.Error(err, "decode resp body error", "body", string(body))
-		return ce.ResultNACK
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		s.logger.Warning(ctx, "parse response error", map[string]interface{}{
+			log.KeyError: err,
+			"id":         event.ID(),
+		})
+		return ce.NewHTTPResult(http.StatusInternalServerError, "parse response error %s", err.Error())
 	}
-	es.logger.Info("index api result ", "result", res["result"])
+	s.logger.Debug(ctx, "index api result ", map[string]interface{}{
+		"result": res["result"],
+		"id":     event.ID(),
+	})
 	return ce.ResultACK
 }
 
-func getEsConfig(conf Config) elasticsearch.Config {
+func generateEsConfig(conf *Config) elasticsearch.Config {
 	config := elasticsearch.Config{
-		Addresses:     conf.Addresses,
+		Addresses:     strings.Split(conf.Address, ","),
 		Username:      conf.Username,
 		Password:      conf.Password,
 		RetryOnStatus: []int{429, 502, 503, 504},
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: conf.SkipVerify,
+				InsecureSkipVerify: true,
 			},
 		},
 	}
