@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-tencentcloud-function
+  namespace: vanus
+spec:
+  selector:
+    app: sink-tencentcloud-function
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 32555
+      name: sink-tencentcloud-function
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-tencentcloud-function
+  namespace: vanus
+data:
+  config.yml: |-
+    v_port: 8080
+    function:
+      name: "vanus-cos-source-function-15171264617997407567"
+      region: "ap-beijing"
+      namespace: "default"
+    debug: false
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sink-tencentcloud-function
+  namespace: vanus
+type: Opaque
+data:
+  # cat secret.yml | base64
+  secret.yml: |
+    c2VjcmV0X2lkOiAiQUtJRFdxNDh5Y3J3blc2U2RjWEZtMzNvR1VnY1E0VnMxdmRIIgpzZWNyZXRf
+    a2V5OiAiVkNrQVp2ODdzNEVEcEVQVEwwU2ZlTjNYNjV1V3U1MWsiCg==
+immutable: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-tencentcloud-function
+  namespace: vanus
+  labels:
+    app: sink-tencentcloud-function
+spec:
+  selector:
+    matchLabels:
+      app: sink-tencentcloud-function
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-tencentcloud-function
+    spec:
+      containers:
+        - name: sink-tencentcloud-function
+          image: public.ecr.aws/vanus/connector/sink-tencentcloud-function:dev
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+            - name: secret
+              mountPath: /vance/secret
+          # env: see README for more about how to set env
+      volumes:
+        - name: secret
+          secret:
+            secretName: sink-tencentcloud-function
+        - name: config
+          configMap:
+            name: sink-tencentcloud-function

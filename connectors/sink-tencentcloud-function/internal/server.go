@@ -113,6 +113,10 @@ func (c *functionSink) Init(cfgPath, secretPath string) error {
 	}
 	c.cfg = cfg
 
+	if c.cfg.Debug {
+		c.logger.SetLevel("debug")
+	}
+
 	cli, err := v20180416.NewClient(&common.Credential{
 		SecretId:  c.cfg.Secret.SecretID,
 		SecretKey: c.cfg.Secret.SecretKey,
@@ -133,9 +137,6 @@ func (c *functionSink) Name() string {
 }
 
 func (c *functionSink) SetLogger(logger log.Logger) {
-	if c.cfg.Debug {
-		logger.SetLevel("debug")
-	}
 	c.logger = logger
 }
 

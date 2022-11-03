@@ -47,6 +47,3 @@ cdk-go
 **/*.pb.go
 
 connectors/**/*.json
-
-connectors/**/*.yaml
-connectors/**/*.yml
