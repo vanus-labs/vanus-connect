@@ -41,7 +41,7 @@ public class DebeziumRecordConsumer
     for (ChangeEvent<SourceRecord, SourceRecord> record : records) {
       LOGGER.debug("Received event '{}'", record);
       if (record.value() == null) {
-        latch.countDown();
+        commit(latch, record, committer);
         continue;
       }
       CloudEvent ceEvent = this.adapter.adapt(record.value());
@@ -51,11 +51,11 @@ public class DebeziumRecordConsumer
       responseFuture.onComplete(
           ar -> {
             if (ar.failed()) {
-              LOGGER.warn("Error to send record: {},error: {}", record, ar.cause());
+              LOGGER.warn("Error to send record: {}", record, ar.cause());
             } else if (ar.result().statusCode() == HTTP_OK
                 || ar.result().statusCode() == HTTP_NO_CONTENT
                 || ar.result().statusCode() == HTTP_ACCEPTED) {
-              LOGGER.debug("Success to send cloudEvent：{}", ceEvent.getId());
+              LOGGER.debug("Success to send cloudEvent：{}", ceEvent);
             } else {
               LOGGER.warn(
                   "Failed to send record: {},statusCode: {}, body: {}",
@@ -63,18 +63,23 @@ public class DebeziumRecordConsumer
                   ar.result().statusCode(),
                   ar.result().bodyAsString());
             }
-            try {
-              committer.markProcessed(record);
-            } catch (InterruptedException e) {
-              LOGGER.warn(
-                  "Failed to mark processed record: {},error: {}",
-                  record.value().sourceOffset(),
-                  e);
-            }
-            latch.countDown();
+            commit(latch, record, committer);
           });
     }
     latch.await();
     committer.markBatchFinished();
+  }
+
+  private void commit(
+      CountDownLatch latch,
+      ChangeEvent<SourceRecord, SourceRecord> record,
+      DebeziumEngine.RecordCommitter<ChangeEvent<SourceRecord, SourceRecord>> committer) {
+    try {
+      committer.markProcessed(record);
+    } catch (InterruptedException e) {
+      LOGGER.warn(
+          "Failed to mark processed record: {},error: {}", record.value().sourceOffset(), e);
+    }
+    latch.countDown();
   }
 }

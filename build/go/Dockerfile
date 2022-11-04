@@ -5,6 +5,7 @@ ARG TARGETARCH
 ARG connector
 COPY . /build/vance
 RUN cd /build/vance/connectors/${connector} && \
+    go mod tidy && \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vance/bin/${connector} ./cmd/main.go
 
 FROM centos:8.4.2105
@@ -19,7 +20,7 @@ ENV CONNECTOR=${connector}
 ENV EXECUTABLE_FILE=/vance/bin/${connector}
 ENV CONNECTOR_HOME=/vance
 ENV CONNECTOR_CONFIG=/vance/config/config.yml
-ENV CONNECTOR_SECRET=/vance/secret/secert.yml
+ENV CONNECTOR_SECRET=/vance/secret/secret.yml
 ENV CONNECTOR_SECRET_ENABLE=false
 
 RUN touch /vance/run.sh && \

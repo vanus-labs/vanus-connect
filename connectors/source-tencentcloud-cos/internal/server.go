@@ -52,14 +52,28 @@ var (
 )
 
 type Config struct {
-	Target         string  `json:"v_target" yaml:"v_target"`
-	BucketEndpoint string  `json:"bucket_endpoint" yaml:"bucket_endpoint"`
-	Code           Code    `json:"code" yaml:"code"`
-	Region         string  `json:"function_region" yaml:"function_region"`
-	Namespace      string  `json:"namespace" yaml:"namespace"`
-	Debug          bool    `json:"debug" yaml:"debug"`
-	Eventbus       string  `json:"eventbus" yaml:"eventbus"`
-	Secret         *Secret `json:"-" yaml:"-"`
+	Target   string   `json:"v_target" yaml:"v_target"`
+	B        Bucket   `json:"bucket" yaml:"bucket"`
+	F        Function `json:"function" yaml:"function"`
+	Debug    bool     `json:"debug" yaml:"debug"`
+	Eventbus string   `json:"eventbus" yaml:"eventbus"`
+	Secret   *Secret  `json:"-" yaml:"-"`
+}
+
+type Bucket struct {
+	Endpoint string      `json:"endpoint" yaml:"endpoint"`
+	Filters  interface{} `json:"filters" yaml:"filters"`
+}
+
+type Function struct {
+	Name      string `json:"name" yaml:"name"`
+	Namespace string `json:"namespace" yaml:"namespace"`
+	Region    string `json:"region"  yaml:"region"`
+	C         Code   `json:"code" yaml:"code"`
+}
+
+func (f Function) isValid() bool {
+	return f.Region != ""
 }
 
 type Code struct {
@@ -68,8 +82,8 @@ type Code struct {
 	Path   string `yaml:"path" json:"path"`
 }
 
-func (f Code) isValid() bool {
-	return f.Bucket != "" && f.Region != "" && f.Path != ""
+func (c Code) isValid() bool {
+	return c.Bucket != "" && c.Region != "" && c.Path != ""
 }
 
 type Secret struct {
@@ -85,7 +99,6 @@ type cosSource struct {
 	scfClient *v20180416.Client
 	logger    log.Logger
 	cfg       *Config
-	funcName  string
 	mutex     sync.Mutex
 }
 
@@ -101,27 +114,30 @@ func (c *cosSource) Init(cfgPath, secretPath string) error {
 	}
 	cfg.Secret = secret
 
-	if cfg.Namespace == "" {
-		cfg.Namespace = "default"
+	if cfg.F.Name == "" {
+		r := rand.New(rand.NewSource(time.Now().Unix()))
+		cfg.F.Name = fmt.Sprintf("%s-%d", functionNamePrefix, r.Uint64())
 	}
 
-	if !cfg.Code.isValid() {
-		cfg.Code = defaultFunction
+	if cfg.F.Namespace == "" {
+		cfg.F.Namespace = "default"
+	}
+
+	if !cfg.F.C.isValid() {
+		cfg.F.C = defaultFunction
 	}
 	c.cfg = cfg
 
 	cli, err := v20180416.NewClient(&common.Credential{
 		SecretId:  c.cfg.Secret.SecretID,
 		SecretKey: c.cfg.Secret.SecretKey,
-	}, c.cfg.Region, profile.NewClientProfile())
+	}, c.cfg.F.Region, profile.NewClientProfile())
 
 	if err != nil {
 		return err
 	}
 
 	c.scfClient = cli
-	r := rand.New(rand.NewSource(time.Now().Unix()))
-	c.funcName = fmt.Sprintf("%s-%d", functionNamePrefix, r.Uint64())
 
 	return nil
 }
@@ -141,12 +157,12 @@ func (c *cosSource) Run() error {
 	// TODO 检查cos配置
 	debugStr := strconv.FormatBool(c.cfg.Debug)
 	req := v20180416.NewCreateFunctionRequest()
-	req.FunctionName = &c.funcName
+	req.FunctionName = &c.cfg.F.Name
 	req.Description = &funcDesc
 	req.MemorySize = &funcMemSize
 	req.Runtime = &runtime
 	req.Handler = &handler
-	req.Namespace = &c.cfg.Namespace
+	req.Namespace = &c.cfg.F.Namespace
 	req.Environment = &v20180416.Environment{
 		Variables: []*v20180416.Variable{
 			{
@@ -155,7 +171,7 @@ func (c *cosSource) Run() error {
 			},
 			{
 				Key:   &EnvFuncName,
-				Value: &c.funcName,
+				Value: &c.cfg.F.Name,
 			},
 			{
 				Key:   &EnvVanusEventbus,
@@ -169,9 +185,9 @@ func (c *cosSource) Run() error {
 	}
 
 	req.Code = &v20180416.Code{
-		CosBucketName:   &c.cfg.Code.Bucket,
-		CosBucketRegion: &c.cfg.Code.Region,
-		CosObjectName:   &c.cfg.Code.Path,
+		CosBucketName:   &c.cfg.F.C.Bucket,
+		CosBucketRegion: &c.cfg.F.C.Region,
+		CosObjectName:   &c.cfg.F.C.Path,
 	}
 
 	res, err := c.scfClient.CreateFunction(req)
@@ -181,13 +197,13 @@ func (c *cosSource) Run() error {
 
 	log.Info("success to create function", map[string]interface{}{
 		"response":      res.ToJsonString(),
-		"function_name": c.funcName,
+		"function_name": c.cfg.F.Name,
 	})
 
 	for {
 		getReq := v20180416.NewGetFunctionRequest()
-		getReq.FunctionName = &c.funcName
-		getReq.Namespace = &c.cfg.Namespace
+		getReq.FunctionName = &c.cfg.F.Name
+		getReq.Namespace = &c.cfg.F.Namespace
 		getRes, err := c.scfClient.GetFunction(getReq)
 		if err != nil {
 			return err
@@ -196,20 +212,20 @@ func (c *cosSource) Run() error {
 			break
 		}
 		log.Info("function isn't ready", map[string]interface{}{
-			"function_name": c.funcName,
+			"function_name": c.cfg.F.Name,
 			"status":        *getRes.Response.Status,
 		})
 		time.Sleep(time.Second)
 	}
 
 	log.Info("function is ready to create trigger", map[string]interface{}{
-		"function_name": c.funcName,
+		"function_name": c.cfg.F.Name,
 	})
 
 	createTriggerReq := v20180416.NewCreateTriggerRequest()
-	createTriggerReq.FunctionName = &c.funcName
-	createTriggerReq.Namespace = &c.cfg.Namespace
-	createTriggerReq.TriggerName = &c.cfg.BucketEndpoint
+	createTriggerReq.FunctionName = &c.cfg.F.Name
+	createTriggerReq.Namespace = &c.cfg.F.Namespace
+	createTriggerReq.TriggerName = &c.cfg.B.Endpoint
 	createTriggerReq.Type = &triggerType
 	createTriggerReq.TriggerDesc = &triggerDesc
 	createTriggerReq.Enable = &triggerEnable
@@ -221,7 +237,7 @@ func (c *cosSource) Run() error {
 
 	log.Info("success to create trigger", map[string]interface{}{
 		"response":      createTriggerRes.ToJsonString(),
-		"function_name": c.funcName,
+		"function_name": c.cfg.F.Name,
 	})
 	return nil
 }
@@ -230,7 +246,7 @@ func (c *cosSource) Destroy() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	req := v20180416.NewDeleteFunctionRequest()
-	req.FunctionName = &c.funcName
+	req.FunctionName = &c.cfg.F.Name
 	res, err := c.scfClient.DeleteFunction(req)
 	if err != nil {
 		return err
@@ -238,7 +254,7 @@ func (c *cosSource) Destroy() error {
 
 	log.Info("success to delete function", map[string]interface{}{
 		"response":      res.ToJsonString(),
-		"function_name": c.funcName,
+		"function_name": c.cfg.F.Name,
 	})
 	return nil
 }

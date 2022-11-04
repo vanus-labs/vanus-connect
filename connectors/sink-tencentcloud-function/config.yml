@@ -1,0 +1,7 @@
+v_target: 35.87.170.130:8080
+v_port: 8080
+region: "ap-beijing"
+function:
+  name: "vanus-cos-source-function-3513950818025804220"
+secret_id: "AKIDWq48ycrwnW6SdcXFm33oGUgcQ4Vs1vdH"
+secret_key: "VCkAZv87s4EDpEPTL0SfeN3X65uWu51k"
