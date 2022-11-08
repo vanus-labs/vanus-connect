@@ -1,0 +1,13 @@
+{
+  "host": "localhost",
+  "port": "5432",
+  "username": "vance_test",
+  "password": "123456",
+  "db_name": "vance_test",
+  "schema_name": "public",
+  "include_table": "user",
+
+  "v_store_file": "/tmp/postgres/offset.dat",
+
+  "v_target": "http://localhost:8080"
+}

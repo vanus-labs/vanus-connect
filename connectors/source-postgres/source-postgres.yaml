@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-postgres-config
+  namespace: vance
+data:
+  config.json: |-
+    {
+      "host": "172.31.57.192",
+      "port": "5432",
+      "username": "vance_test",
+      "password": "123456",
+      "db_name": "vance_test",
+      "schema_name": "public",
+      "include_table": "user",
+    
+      "v_store_file": "/vance/data/offset.dat",
+    
+      "v_target": "http://vanus-gateway.vanus:8080/gateway/authing"
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: source-postgres-data
+  namespace: vance
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-postgres
+  namespace: vance
+  labels:
+    app: source-postgres
+spec:
+  selector:
+    matchLabels:
+      app: source-postgres
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-postgres
+    spec:
+      containers:
+        - name: source-postgres
+          image: vancehub/source-postgres:0.1
+          imagePullPolicy: IfNotPresent
+          #command: ['sh', '-c', 'sleep 360000']
+          env:
+            - name: LOG_LEVEL
+              value: DEBUG
+          volumeMounts:
+            - name: source-postgres-config
+              mountPath: /vance/config
+            - name: source-postgres-data
+              mountPath: /vance/data
+      volumes:
+        - name: source-postgres-config
+          configMap:
+            name: source-postgres-config
+        - name: source-postgres-data
+          persistentVolumeClaim:
+            claimName: source-postgres-data
