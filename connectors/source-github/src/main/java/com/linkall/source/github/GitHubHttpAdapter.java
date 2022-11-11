@@ -110,7 +110,7 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
                 break;
             default: adaptOtherEvent(req, buffer);
         }
-        JsonObject data = new JsonObject();
+        /*JsonObject data = new JsonObject();
         String contentType = req.getHeader("content-type");
         if(null != contentType && contentType.equals("application/json")){
             JsonObject body = buffer.toJsonObject();
@@ -120,8 +120,8 @@ public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
             JsonObject body = new JsonObject();
             data.put("data", myData);
             data.put("body", body);
-        }
-        template.withData(data.toBuffer().getBytes());
+        }*/
+        template.withData(buffer.getBytes());
         return template.build();
     }
 
