@@ -20,14 +20,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/linkall-labs/cdk-go/log"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	pkgurl "net/url"
 	"sync"
 	"time"
+
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/linkall-labs/cdk-go/log"
+	"github.com/pkg/errors"
 )
 
 type StreamLoad struct {
@@ -43,6 +44,7 @@ type StreamLoad struct {
 	lock         sync.Mutex
 	buffer       *bytes.Buffer
 	lastLoadTime time.Time
+	loadInterval time.Duration
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -50,18 +52,17 @@ type StreamLoad struct {
 }
 
 const (
-	maxSize      = 10 * 2 << 20
-	loadSize     = maxSize - 4*2<<10
-	loadInterval = 5 * time.Second
+	defaultMaxSize      = 10 * 2 << 20
+	defaultLoadSize     = defaultMaxSize - 4*2<<10
+	defaultLoadInterval = 5
+	defaultTimeout      = 30
 )
 
-func NewStreamLoad(config *Config, timeout time.Duration, logger log.Logger) *StreamLoad {
+func NewStreamLoad(config *Config, logger log.Logger) *StreamLoad {
 	l := &StreamLoad{
 		config:  config,
-		timeout: timeout,
 		logger:  logger,
 		eventCh: make(chan ce.Event, 100),
-		buffer:  bytes.NewBuffer(make([]byte, 0, maxSize)),
 	}
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 	return l
@@ -76,7 +77,23 @@ func (l *StreamLoad) WriteEvent(ctx context.Context, event ce.Event) error {
 	}
 }
 
+func (l *StreamLoad) initCfg() {
+	if l.config.Timeout == 0 {
+		l.config.Timeout = defaultTimeout
+	}
+	if l.config.loadInterval == 0 {
+		l.config.loadInterval = defaultLoadInterval
+	}
+	if l.config.loadSize == 0 {
+		l.config.loadSize = defaultLoadSize
+	}
+}
 func (l *StreamLoad) Start() error {
+	l.initCfg()
+	l.timeout = time.Second * time.Duration(l.config.Timeout)
+	l.loadInterval = time.Second * time.Duration(l.config.loadInterval)
+	l.buffer = bytes.NewBuffer(make([]byte, 0, l.config.loadSize+4*2<<10))
+
 	loadUrlStr := fmt.Sprintf("http://%s/api/%s/%s/_stream_load", l.config.Fenodes, l.config.DbName, l.config.TableName)
 	u, err := pkgurl.Parse(loadUrlStr)
 	if err != nil {
@@ -91,7 +108,7 @@ func (l *StreamLoad) Start() error {
 	l.wg.Add(1)
 	go func() {
 		defer l.wg.Done()
-		t := time.NewTicker(loadInterval)
+		t := time.NewTicker(l.loadInterval)
 		defer t.Stop()
 		for {
 			select {
@@ -129,7 +146,7 @@ func (l *StreamLoad) event2Buffer(event ce.Event) {
 	defer l.lock.Unlock()
 	l.buffer.Write(event.Data())
 	l.buffer.WriteString("\n")
-	if l.buffer.Len() >= loadSize {
+	if l.buffer.Len() >= l.config.loadSize {
 		l.loadAndReset()
 	}
 }
@@ -183,13 +200,15 @@ func (l *StreamLoad) load() error {
 }
 
 func (l *StreamLoad) makeRequest(label string) *http.Request {
+	buf := l.buffer.Bytes()
 	req := &http.Request{
 		Method:        http.MethodPut,
 		URL:           l.loadUrl,
 		Header:        make(http.Header),
 		ContentLength: int64(l.buffer.Len()),
+		Body:          io.NopCloser(l.buffer),
 		GetBody: func() (io.ReadCloser, error) {
-			r := bytes.NewReader(l.buffer.Bytes())
+			r := bytes.NewReader(buf)
 			return io.NopCloser(r), nil
 		},
 	}

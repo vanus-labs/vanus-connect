@@ -27,7 +27,9 @@ type Config struct {
 
 	StreamLoad map[string]string `json:"stream_load" yaml:"stream_load"`
 
-	Timeout int `json:"timeout" yaml:"timeout"`
+	Timeout      int `json:"timeout" yaml:"timeout"`
+	loadInterval int `json:"load_interval" yaml:"load_interval"`
+	loadSize     int `json:"load_size" yaml:"load_size"`
 }
 
 func (cfg *Config) Validate() error {

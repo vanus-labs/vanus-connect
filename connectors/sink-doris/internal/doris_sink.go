@@ -39,12 +39,8 @@ func (s *DorisSink) Init(cfgPath, secretPath string) error {
 	if err != nil {
 		return err
 	}
-	if cfg.Timeout == 0 {
-		cfg.Timeout = 30
-	}
-	timeout := time.Duration(cfg.Timeout) * time.Second
 	// init stream load
-	s.streamLoad = NewStreamLoad(cfg, timeout, s.logger)
+	s.streamLoad = NewStreamLoad(cfg, s.logger)
 	return s.streamLoad.Start()
 }
 
