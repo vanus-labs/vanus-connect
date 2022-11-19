@@ -108,12 +108,12 @@ func (l *StreamLoad) Start() error {
 	l.wg.Add(1)
 	go func() {
 		defer l.wg.Done()
-		t := time.NewTicker(l.loadInterval)
+		t := time.NewTicker(time.Second)
 		defer t.Stop()
 		for {
 			select {
 			case <-t.C:
-				l.checkAndLoad()
+				l.checkAndLoad(false)
 			case <-l.ctx.Done():
 				return
 			}
@@ -139,7 +139,7 @@ func (l *StreamLoad) Stop() {
 	l.cancel()
 	close(l.eventCh)
 	l.wg.Wait()
-	l.checkAndLoad()
+	l.checkAndLoad(true)
 }
 func (l *StreamLoad) event2Buffer(event ce.Event) {
 	l.lock.Lock()
@@ -151,11 +151,14 @@ func (l *StreamLoad) event2Buffer(event ce.Event) {
 	}
 }
 
-func (l *StreamLoad) checkAndLoad() {
+func (l *StreamLoad) checkAndLoad(force bool) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	size := l.buffer.Len()
 	if size == 0 {
+		return
+	}
+	if !force && time.Now().Sub(l.lastLoadTime) < l.loadInterval {
 		return
 	}
 	l.loadAndReset()

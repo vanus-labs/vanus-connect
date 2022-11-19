@@ -2,7 +2,8 @@
 
 ## Introduction
 
-The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster
+The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts
+the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster
 
 For example, if the incoming CloudEvent looks like:
 
@@ -42,18 +43,21 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ## Elasticsearch Sink Configs
 
-Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+Users can specify their configs by either setting environments variables or mount a config.yaml to
+`/vance/config/config.yaml` when they run the connector. Find examples of setting configs [here][config].
 
 ### Config Fields of Elasticsearch Sink
 
-| name       | requirement | description                                                                        |
-|------------|-------------|------------------------------------------------------------------------------------|
-| v_port     | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8080 |
-| address    | required    | elasticsearch cluster address, multi split by ","                                  |
-| index_name | required    | elasticsearch index name                                                           |
-| username   | optional    | elasticsearch cluster username                                                     |
-| password   | optional    | elasticsearch cluster password                                                     |
+| name        | requirement | description                                                                        |
+|-------------|-------------|------------------------------------------------------------------------------------|
+| v_port      | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8080 |
+| address     | required    | elasticsearch cluster address, multi split by ","                                  |
+| index_name  | required    | elasticsearch index name                                                           |
+| username    | optional    | elasticsearch cluster username                                                     |
+| password    | optional    | elasticsearch cluster password                                                     |
+| timeout     | optional    | elasticsearch index document timeout, unit millisecond, default 10000              |
+| insert_mode | optional    | elasticsearch index document type: insert or upsert, default insert                |
+| primary_key | optional    | elasticsearch index document primary key in event, example: data.id                |
 
 ## Elasticsearch Sink Image
 
@@ -66,7 +70,7 @@ You can run the sink codes of the Elasticsearch Sink locally as well.
 ### Building
 
 ```shell
-cd connectors/sink-elastisearch
+cd connectors/sink-elasticsearch
 go build -o bin/sink cmd/main.go
 ```
 
