@@ -1,6 +1,6 @@
 package com.linkall.sink.feishubot;
 
-import com.linkall.vance.common.env.EnvUtil;
+import com.linkall.vance.common.config.ConfigUtil;
 import com.linkall.vance.common.json.JsonMapper;
 import com.linkall.vance.core.Sink;
 import com.linkall.vance.core.http.HttpClient;
@@ -67,7 +67,7 @@ public class FeishuBotSink implements Sink {
         long timeStamp =  ts.getTime()/1000;
         String sign = null;
         try {
-             sign = GenSign(EnvUtil.getEnvOrConfig("feishu_secret"),timeStamp);
+             sign = GenSign(ConfigUtil.getString("feishu_secret"),timeStamp);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {

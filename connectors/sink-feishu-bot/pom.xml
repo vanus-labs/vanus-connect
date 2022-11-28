@@ -6,18 +6,18 @@
     <groupId>com.linkall</groupId>
     <modelVersion>4.0.0</modelVersion>
     <version>1.0-SNAPSHOT</version>
-    <artifactId>feishu-bot-sink</artifactId>
+    <artifactId>sink-feishu-bot</artifactId>
 
     <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
     </properties>
     <dependencies>
 
         <dependency>
             <groupId>com.linkall</groupId>
             <artifactId>cdk-java</artifactId>
-            <version>0.2.0</version>
+            <version>0.2.1</version>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
