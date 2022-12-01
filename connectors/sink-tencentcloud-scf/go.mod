@@ -4,8 +4,7 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.8.0
-	github.com/google/uuid v1.1.1
-	github.com/linkall-labs/cdk-go v0.0.0
+	github.com/linkall-labs/cdk-go v0.3.0
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.527
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/scf v1.0.527
 )
@@ -22,5 +21,3 @@ require (
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/linkall-labs/cdk-go => ../../../cdk-go
