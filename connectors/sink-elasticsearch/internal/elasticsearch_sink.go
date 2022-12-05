@@ -24,12 +24,10 @@ import (
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/protocol"
-	elasticsearch "github.com/elastic/go-elasticsearch/v7"
+	"github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
-	"github.com/linkall-labs/cdk-go/connector"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
-	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"github.com/pkg/errors"
 )
 
@@ -39,22 +37,10 @@ type ElasticsearchSink struct {
 
 	timeout    time.Duration
 	primaryKey PrimaryKey
-	logger     log.Logger
 }
 
-func NewElasticsearchSink() connector.Sink {
-	return &ElasticsearchSink{}
-}
-
-func (s *ElasticsearchSink) Init(cfgPath, secretPath string) error {
-	cfg := &Config{}
-	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
-		return err
-	}
-	err := cfg.Validate()
-	if err != nil {
-		return err
-	}
+func (s *ElasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*Config)
 	s.config = cfg
 	s.primaryKey = GetPrimaryKey(cfg.PrimaryKey)
 	if cfg.Timeout == 0 {
@@ -71,7 +57,7 @@ func (s *ElasticsearchSink) Init(cfgPath, secretPath string) error {
 		return errors.Wrap(err, "es info api error")
 	}
 	if !resp.IsError() {
-		s.logger.Info(context.TODO(), "es connect success", map[string]interface{}{
+		log.Info("es connect success", map[string]interface{}{
 			"esInfo": resp,
 		})
 	}
@@ -79,20 +65,18 @@ func (s *ElasticsearchSink) Init(cfgPath, secretPath string) error {
 	return nil
 }
 
-func (s *ElasticsearchSink) Name() string {
-	return "ElasticsearchSink"
+func (s *ElasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
+	for _, event := range events {
+		result := s.writeEvent(ctx, event)
+		if result == cdkgo.SuccessResult {
+			return result
+		}
+	}
+	return cdkgo.SuccessResult
 }
 
-func (s *ElasticsearchSink) SetLogger(logger log.Logger) {
-	s.logger = logger
-}
-
-func (s *ElasticsearchSink) Destroy() error {
-	return nil
-}
-
-func (s *ElasticsearchSink) Receive(ctx context.Context, event ce.Event) protocol.Result {
-	ctx, cancel := context.WithTimeout(ctx, s.timeout)
+func (s *ElasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdkgo.Result {
+	timeoutCtx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	var (
 		req          esapi.Request
@@ -104,11 +88,11 @@ func (s *ElasticsearchSink) Receive(ctx context.Context, event ce.Event) protoco
 	}
 	if s.config.InsertMode == Upsert {
 		if documentID == "" {
-			s.logger.Warning(ctx, "documentID is empty", map[string]interface{}{
+			log.Warning("documentID is empty", map[string]interface{}{
 				"event":      event,
 				"primaryKey": s.config.PrimaryKey,
 			})
-			return ce.NewHTTPResult(http.StatusBadRequest, "documentID is empty")
+			return cdkgo.NewResult(http.StatusBadRequest, "documentID is empty")
 		}
 		var body bytes.Buffer
 		body.WriteByte('{')
@@ -134,43 +118,50 @@ func (s *ElasticsearchSink) Receive(ctx context.Context, event ce.Event) protoco
 			DocumentType: documentType,
 		}
 	}
-	resp, err := req.Do(ctx, s.esClient)
+	resp, err := req.Do(timeoutCtx, s.esClient)
 	if err != nil {
-		s.logger.Warning(ctx, "es api do error", map[string]interface{}{
+		log.Warning("es api do error", map[string]interface{}{
 			log.KeyError: err,
 			"event":      event,
 		})
-		return ce.NewHTTPResult(http.StatusInternalServerError, "write to es error %s", err.Error())
+		return cdkgo.NewResult(http.StatusInternalServerError, "write to es error")
 	}
 	defer resp.Body.Close()
 	if resp.IsError() {
-		respStr := resp.String()
-		s.logger.Warning(ctx, "es api response error", map[string]interface{}{
-			"resp": resp,
+		log.Warning("es api response error", map[string]interface{}{
+			"resp": resp.String(),
 			"id":   event.ID(),
 		})
-		return ce.NewHTTPResult(http.StatusInternalServerError, "es api response error %s", respStr)
+		return cdkgo.NewResult(http.StatusInternalServerError, "es api response error ")
 	}
 	var res map[string]interface{}
 	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		s.logger.Warning(ctx, "parse response error", map[string]interface{}{
+		log.Warning("parse response error", map[string]interface{}{
 			log.KeyError: err,
 			"id":         event.ID(),
 		})
-		return ce.NewHTTPResult(http.StatusInternalServerError, "parse response error %s", err.Error())
+		return cdkgo.NewResult(http.StatusInternalServerError, "parse response error")
 	}
-	s.logger.Debug(ctx, "index api result ", map[string]interface{}{
+	log.Debug("index api result ", map[string]interface{}{
 		"result": res["result"],
 		"id":     event.ID(),
 	})
-	return ce.ResultACK
+	return cdkgo.SuccessResult
+}
+
+func (s *ElasticsearchSink) Name() string {
+	return "ElasticsearchSink"
+}
+
+func (s *ElasticsearchSink) Destroy() error {
+	return nil
 }
 
 func generateEsConfig(conf *Config) elasticsearch.Config {
 	config := elasticsearch.Config{
 		Addresses:     strings.Split(conf.Address, ","),
-		Username:      conf.Username,
-		Password:      conf.Password,
+		Username:      conf.Secret.Username,
+		Password:      conf.Secret.Password,
 		RetryOnStatus: []int{429, 502, 503, 504},
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{

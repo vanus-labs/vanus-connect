@@ -33,7 +33,7 @@ const (
 type PrimaryKey interface {
 	Name() string
 	Type() PrimaryKeyType
-	Value(event ce.Event) string
+	Value(event *ce.Event) string
 }
 
 type none struct {
@@ -47,7 +47,7 @@ func (p none) Name() string {
 	return ""
 }
 
-func (p none) Value(event ce.Event) string {
+func (p none) Value(event *ce.Event) string {
 	return ""
 }
 
@@ -63,7 +63,7 @@ func (p eventAttribute) Name() string {
 	return p.attr
 }
 
-func (p eventAttribute) Value(event ce.Event) string {
+func (p eventAttribute) Value(event *ce.Event) string {
 	switch p.attr {
 	case "id":
 		return event.ID()
@@ -96,7 +96,7 @@ func (p eventData) Name() string {
 	return p.path
 }
 
-func (p eventData) Value(event ce.Event) string {
+func (p eventData) Value(event *ce.Event) string {
 	result := gjson.GetBytes(event.Data(), p.path)
 	return result.String()
 }

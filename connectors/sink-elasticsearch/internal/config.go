@@ -15,6 +15,7 @@
 package internal
 
 import (
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/pkg/errors"
 )
 
@@ -26,24 +27,27 @@ const (
 )
 
 type Config struct {
-	Address  string `json:"address" yaml:"address"`
-	Username string `json:"username" yaml:"username"`
-	Password string `json:"password" yaml:"password"`
-
-	IndexName string `json:"index_name" yaml:"index_name"`
+	cdkgo.SinkConfig
+	Address   string `json:"address" yaml:"address" validate:"required"`
+	IndexName string `json:"index_name" yaml:"index_name" validate:"required"`
 
 	Timeout    int        `json:"timeout" yaml:"timeout"`
 	PrimaryKey string     `json:"primary_key" yaml:"primary_key"`
 	InsertMode InsertMode `json:"insert_mode" yaml:"insert_mode"`
+
+	Secret Secret
+}
+
+func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+	return &cfg.Secret
+}
+
+type Secret struct {
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
 }
 
 func (cfg *Config) Validate() error {
-	if cfg == nil {
-		return errors.New("cfg is nil")
-	}
-	if cfg.IndexName == "" {
-		return errors.New("config index name is empty")
-	}
 	if cfg.InsertMode == Upsert && cfg.PrimaryKey == "" {
 		return errors.New("insert mode is upsert but primary key is empty")
 	}
