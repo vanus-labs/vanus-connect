@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/cloudevents/sdk-go/v2"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/config"
 	"github.com/linkall-labs/cdk-go/connector"
 	"github.com/linkall-labs/cdk-go/log"
@@ -39,17 +40,23 @@ var (
 	functionNamePrefix = "vanus-cos-source-function"
 )
 
-var _ config.SinkConfigAccessor = &Config{}
+var _ config.SinkConfigAccessor = &scfConfig{}
 
-type Config struct {
-	config.SinkConfig
+type scfConfig struct {
+	cdkgo.SinkConfig
 	F      Function `json:"function" yaml:"function"`
 	Debug  bool     `json:"debug" yaml:"debug"`
-	Secret *Secret  `json:"-" yaml:"-"`
+	Secret *Secret  `json:"secret" yaml:"secret"`
 }
 
-func (c Config) GetSecret() config.SecretAccessor {
+func (c *scfConfig) GetSecret() cdkgo.SecretAccessor {
 	return c.Secret
+}
+
+func NewConfig() config.SinkConfigAccessor {
+	return &scfConfig{
+		Secret: &Secret{},
+	}
 }
 
 type Function struct {
@@ -75,11 +82,11 @@ var _ connector.Sink = &functionSink{}
 
 type functionSink struct {
 	scfClient *v20180416.Client
-	cfg       *Config
+	cfg       *scfConfig
 	funcName  string
 }
 
-func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) connector.Result {
+func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	req := v20180416.NewInvokeRequest()
 	req.FunctionName = &c.cfg.F.Name
 	req.Namespace = &c.cfg.F.Namespace
@@ -94,7 +101,7 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) connector
 			log.Debug("failed to invoke function", map[string]interface{}{
 				log.KeyError: err,
 			})
-			return connector.NewResult(http.StatusInternalServerError, err.Error())
+			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 		}
 		log.Debug("invoke function success", map[string]interface{}{
 			"response": res,
@@ -104,8 +111,8 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) connector
 	return connector.Success
 }
 
-func (c *functionSink) Initialize(_ context.Context, cfg config.ConfigAccessor) error {
-	_cfg, ok := cfg.(*Config)
+func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	_cfg, ok := cfg.(*scfConfig)
 	if !ok {
 		return nil
 	}

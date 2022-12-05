@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/config"
 	"github.com/pkg/errors"
 	"math/rand"
@@ -53,19 +54,25 @@ var (
 	triggerDesc   = `{"event":"cos:ObjectCreated:*"}`
 )
 
-var _ config.SourceConfigAccessor = &Config{}
+var _ config.SourceConfigAccessor = &cosConfig{}
 
-type Config struct {
-	config.SourceConfig
+type cosConfig struct {
+	cdkgo.SourceConfig
 	B        Bucket   `json:"bucket" yaml:"bucket"`
 	F        Function `json:"function" yaml:"function"`
 	Debug    bool     `json:"debug" yaml:"debug"`
 	Eventbus string   `json:"eventbus" yaml:"eventbus"`
-	Secret   *Secret  `json:"-" yaml:"-"`
+	Secret   *Secret  `json:"secret" yaml:"secret"`
 }
 
-func (c *Config) GetSecret() config.SecretAccessor {
+func (c *cosConfig) GetSecret() cdkgo.SecretAccessor {
 	return c.Secret
+}
+
+func NewConfig() config.SourceConfigAccessor {
+	return &cosConfig{
+		Secret: &Secret{},
+	}
 }
 
 type Bucket struct {
@@ -108,17 +115,17 @@ func NewCosSink() connector.Source {
 type cosSource struct {
 	scfClient *v20180416.Client
 	logger    log.Logger
-	cfg       *Config
+	cfg       *cosConfig
 	mutex     sync.Mutex
 }
 
-func (c *cosSource) Chan() <-chan *connector.Tuple {
+func (c *cosSource) Chan() <-chan *cdkgo.Tuple {
 	// It's unnecessary for COS Source
 	return make(chan *connector.Tuple, 0)
 }
 
-func (c *cosSource) Initialize(_ context.Context, cfg config.ConfigAccessor) error {
-	_cfg, ok := cfg.(*Config)
+func (c *cosSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	_cfg, ok := cfg.(*cosConfig)
 	if !ok {
 		return errors.New("invalid config")
 	}
