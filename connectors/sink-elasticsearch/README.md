@@ -69,7 +69,7 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ### Docker
 
-### create config file
+#### create config file
 
 refer [config](#Config) to create `config.yaml`. for example:
 
@@ -81,7 +81,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 "insert_mode": "upsert"
 ```
 
-### create secret file
+#### create secret file
 
 refer [secret](#Secret) to create `secret.yaml`. for example:
 
@@ -90,7 +90,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 "password": "elastic"
 ```
 
-### run
+#### run
 
 ```shell
  docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-elasticsearch
