@@ -1,15 +1,19 @@
-FROM golang:1.17 as builder
+FROM --platform=$BUILDPLATFORM golang:1.17-alpine AS builder
 WORKDIR /workspace
 
-COPY vance/connectors/source-alicloud-billing  source
-COPY cdk-go cdk-go
-WORKDIR /workspace/source
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
 ARG TARGETOS
 ARG TARGETARCH
-RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o bin/source cmd/main.go
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o bin/connector cmd/main.go
 
-FROM centos:8.4.2105
-RUN mkdir -p /vance
-COPY --from=builder /workspace/source/bin/source /vance/bin/source
+FROM alpine:3.15.4
 WORKDIR /vance
-ENTRYPOINT ["bin/source"]
+COPY --from=builder /workspace/bin/connector /vance/bin/connector
+
+ENV CONNECTOR_CONFIG=/vance/config/config.yaml
+ENV CONNECTOR_SECRET=/vance/secret/secret.yaml
+
+ENTRYPOINT ["/vance/bin/connector"]

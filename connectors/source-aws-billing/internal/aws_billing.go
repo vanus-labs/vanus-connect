@@ -24,9 +24,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer"
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	"github.com/linkall-labs/cdk-go/connector"
+
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 )
 
@@ -36,44 +36,62 @@ const (
 )
 
 type AwsBillingSource struct {
-	client   *costexplorer.Client
-	config   Config
-	ceClient ce.Client
-	events   chan ce.Event
-	ctx      context.Context
-	logger   logr.Logger
+	client *costexplorer.Client
+	config *Config
+	events chan *cdkgo.Tuple
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
-func NewAwsBillingSource(ctx context.Context, ceClient ce.Client) connector.Source {
-	config := getConfig(ctx)
+func NewAwsBillingSource() *AwsBillingSource {
 	return &AwsBillingSource{
-		config:   config,
-		client:   newCostExplorerClient(config),
-		ceClient: ceClient,
-		events:   make(chan ce.Event, 10),
-		ctx:      ctx,
-		logger:   log.FromContext(ctx),
+		events: make(chan *cdkgo.Tuple, 100),
 	}
 }
 
-func newCostExplorerClient(config Config) *costexplorer.Client {
+func newCostExplorerClient(config *Config) *costexplorer.Client {
 	opt := costexplorer.Options{
 		Region:           "us-east-1",
 		EndpointResolver: costexplorer.EndpointResolverFromURL(config.Endpoint),
 	}
-	opt.Credentials = credentials.NewStaticCredentialsProvider(config.AccessKeyID, config.SecretAccessKey, "")
+	opt.Credentials = credentials.NewStaticCredentialsProvider(config.Secret.AccessKeyID, config.Secret.SecretAccessKey, "")
 	return costexplorer.New(opt)
 }
 
-func (s *AwsBillingSource) Adapt(args ...interface{}) ce.Event {
-	return ce.Event{}
+func (s *AwsBillingSource) Name() string {
+	return "AwsBillingSource"
 }
 
-func (s *AwsBillingSource) Start() error {
-	var wg sync.WaitGroup
-	wg.Add(1)
+func (s *AwsBillingSource) Destroy() error {
+	s.wg.Wait()
+	close(s.events)
+	return nil
+}
+
+func (s *AwsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*Config)
+	s.config = cfg
+	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
+		cfg.PullHour = 2
+	}
+	if cfg.Endpoint == "" {
+		cfg.Endpoint = "https://ce.us-east-1.amazonaws.com"
+	}
+	s.ctx, s.cancel = context.WithCancel(context.TODO())
+	s.client = newCostExplorerClient(cfg)
+	s.start()
+	return nil
+}
+
+func (s *AwsBillingSource) Chan() <-chan *cdkgo.Tuple {
+	return s.events
+}
+
+func (s *AwsBillingSource) start() {
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer s.wg.Done()
 		for {
 			s.getCost()
 			now := time.Now()
@@ -87,20 +105,11 @@ func (s *AwsBillingSource) Start() error {
 			}
 		}
 	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		s.sendEvent()
-	}()
-	<-s.ctx.Done()
-	close(s.events)
-	wg.Wait()
-	return nil
 }
 
 func (s *AwsBillingSource) getCost() {
 	ctx := s.ctx
-	s.logger.Info("get cost begin")
+	log.Info("get cost begin", nil)
 	now := time.Now()
 	endDayFmt := FormatTimeDay(now)
 	dayFmt := FormatTimeDay(now.Add(time.Hour * 24 * -1))
@@ -125,7 +134,9 @@ func (s *AwsBillingSource) getCost() {
 		}
 		output, err := s.client.GetCostAndUsage(ctx, input)
 		if err != nil {
-			s.logger.Error(err, "get cost and usage error")
+			log.Error("get cost and usage error", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return
 		}
 		for _, result := range output.ResultsByTime {
@@ -145,12 +156,10 @@ func (s *AwsBillingSource) getCost() {
 				event.SetType(EventType)
 				event.SetSource(EventSource)
 				event.SetTime(now)
-				err = event.SetData(ce.ApplicationJSON, data)
-				if err != nil {
-					s.logger.Error(err, "set event data error")
-					continue
+				_ = event.SetData(ce.ApplicationJSON, data)
+				s.events <- &cdkgo.Tuple{
+					Event: &event,
 				}
-				s.events <- event
 			}
 		}
 		nextToken = output.NextPageToken
@@ -158,16 +167,5 @@ func (s *AwsBillingSource) getCost() {
 			break
 		}
 	}
-	s.logger.Info("get cost end")
-}
-
-func (s *AwsBillingSource) sendEvent() {
-	for event := range s.events {
-		result := s.ceClient.Send(s.ctx, event)
-		if !ce.IsACK(result) {
-			s.logger.Error(result, "send event fail")
-		} else {
-			s.logger.Info("send event success", "event", event)
-		}
-	}
+	log.Info("get cost end", nil)
 }
