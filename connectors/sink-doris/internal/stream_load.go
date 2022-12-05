@@ -32,7 +32,6 @@ import (
 )
 
 type StreamLoad struct {
-	logger       log.Logger
 	config       *Config
 	loadUrl      *pkgurl.URL
 	authEncoding string
@@ -40,7 +39,7 @@ type StreamLoad struct {
 	client  *http.Client
 	timeout time.Duration
 
-	eventCh      chan ce.Event
+	eventCh      chan *ce.Event
 	lock         sync.Mutex
 	buffer       *bytes.Buffer
 	lastLoadTime time.Time
@@ -58,17 +57,16 @@ const (
 	defaultTimeout      = 30
 )
 
-func NewStreamLoad(config *Config, logger log.Logger) *StreamLoad {
+func NewStreamLoad(config *Config) *StreamLoad {
 	l := &StreamLoad{
 		config:  config,
-		logger:  logger,
-		eventCh: make(chan ce.Event, 100),
+		eventCh: make(chan *ce.Event, 100),
 	}
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 	return l
 }
 
-func (l *StreamLoad) WriteEvent(ctx context.Context, event ce.Event) error {
+func (l *StreamLoad) WriteEvent(ctx context.Context, event *ce.Event) error {
 	select {
 	case l.eventCh <- event:
 		return nil
@@ -81,18 +79,18 @@ func (l *StreamLoad) initCfg() {
 	if l.config.Timeout == 0 {
 		l.config.Timeout = defaultTimeout
 	}
-	if l.config.loadInterval == 0 {
-		l.config.loadInterval = defaultLoadInterval
+	if l.config.LoadInterval == 0 {
+		l.config.LoadInterval = defaultLoadInterval
 	}
-	if l.config.loadSize == 0 {
-		l.config.loadSize = defaultLoadSize
+	if l.config.LoadSize == 0 {
+		l.config.LoadSize = defaultLoadSize
 	}
 }
 func (l *StreamLoad) Start() error {
 	l.initCfg()
 	l.timeout = time.Second * time.Duration(l.config.Timeout)
-	l.loadInterval = time.Second * time.Duration(l.config.loadInterval)
-	l.buffer = bytes.NewBuffer(make([]byte, 0, l.config.loadSize+4*2<<10))
+	l.loadInterval = time.Second * time.Duration(l.config.LoadInterval)
+	l.buffer = bytes.NewBuffer(make([]byte, 0, l.config.LoadSize+4*2<<10))
 
 	loadUrlStr := fmt.Sprintf("http://%s/api/%s/%s/_stream_load", l.config.Fenodes, l.config.DbName, l.config.TableName)
 	u, err := pkgurl.Parse(loadUrlStr)
@@ -100,7 +98,7 @@ func (l *StreamLoad) Start() error {
 		return err
 	}
 	l.loadUrl = u
-	l.authEncoding = base64.StdEncoding.EncodeToString([]byte(l.config.Username + ":" + l.config.Password))
+	l.authEncoding = base64.StdEncoding.EncodeToString([]byte(l.config.Secret.Username + ":" + l.config.Secret.Password))
 	l.lastLoadTime = time.Now()
 	l.client = &http.Client{
 		Timeout: l.timeout,
@@ -141,12 +139,12 @@ func (l *StreamLoad) Stop() {
 	l.wg.Wait()
 	l.checkAndLoad(true)
 }
-func (l *StreamLoad) event2Buffer(event ce.Event) {
+func (l *StreamLoad) event2Buffer(event *ce.Event) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 	l.buffer.Write(event.Data())
 	l.buffer.WriteString("\n")
-	if l.buffer.Len() >= l.config.loadSize {
+	if l.buffer.Len() >= l.config.LoadSize {
 		l.loadAndReset()
 	}
 }
@@ -167,7 +165,7 @@ func (l *StreamLoad) checkAndLoad(force bool) {
 func (l *StreamLoad) loadAndReset() {
 	err := l.load()
 	if err != nil {
-		l.logger.Warning(l.ctx, "load has error,will retry", map[string]interface{}{
+		log.Warning("stream load has error,will retry", map[string]interface{}{
 			log.KeyError: err,
 		})
 		return
@@ -198,7 +196,7 @@ func (l *StreamLoad) load() error {
 	if status != "Success" && status != "Publish Timeout" {
 		return fmt.Errorf("%s resp status is %s not success", label, status)
 	}
-	l.logger.Info(l.ctx, fmt.Sprintf("load success %s", label), nil)
+	log.Debug(fmt.Sprintf("load success %s", label), nil)
 	return nil
 }
 

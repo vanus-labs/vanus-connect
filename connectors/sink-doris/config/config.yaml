@@ -2,7 +2,5 @@
 "v_port": 8080
 # doris info
 "fenodes": "localhost:8030"
-"username": "vance_test"
-"password": "123456"
 "db_name": "vance_test"
 "table_name": "user"

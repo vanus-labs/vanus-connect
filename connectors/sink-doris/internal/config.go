@@ -15,38 +15,28 @@
 package internal
 
 import (
-	"github.com/pkg/errors"
+	cdkgo "github.com/linkall-labs/cdk-go"
 )
 
 type Config struct {
-	Fenodes   string `json:"fenodes" yaml:"fenodes"`
-	Username  string `json:"username" yaml:"username"`
-	Password  string `json:"password" yaml:"password"`
-	DbName    string `json:"db_name" yaml:"db_name"`
-	TableName string `json:"table_name" yaml:"table_name"`
+	cdkgo.SinkConfig
+	Fenodes   string `json:"fenodes" yaml:"fenodes" validate:"required"`
+	DbName    string `json:"db_name" yaml:"db_name" validate:"required"`
+	TableName string `json:"table_name" yaml:"table_name" validate:"required"`
 
 	StreamLoad map[string]string `json:"stream_load" yaml:"stream_load"`
 
 	Timeout      int `json:"timeout" yaml:"timeout"`
-	loadInterval int `json:"load_interval" yaml:"load_interval"`
-	loadSize     int `json:"load_size" yaml:"load_size"`
+	LoadInterval int `json:"load_interval" yaml:"load_interval"`
+	LoadSize     int `json:"load_size" yaml:"load_size"`
+	Secret       Secret
 }
 
-func (cfg *Config) Validate() error {
-	if cfg == nil {
-		return errors.New("cfg is nil")
-	}
-	if cfg.Fenodes == "" {
-		return errors.New("fenodes is mepty")
-	}
-	if cfg.DbName == "" {
-		return errors.New("db name is mepty")
-	}
-	if cfg.TableName == "" {
-		return errors.New("table name is mepty")
-	}
-	if cfg.Username == "" {
-		return errors.New("username is mepty")
-	}
-	return nil
+func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+	return &cfg.Secret
+}
+
+type Secret struct {
+	Username string `json:"username" yaml:"username" validate:"required"`
+	Password string `json:"password" yaml:"password" validate:"required"`
 }

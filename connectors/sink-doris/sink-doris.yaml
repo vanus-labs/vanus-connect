@@ -21,10 +21,18 @@ data:
   config.yaml: |-
     "v_port": 8080
     "fenodes": "172.31.57.192:8030"
-    "username": "vance_test"
-    "password": "123456"
     "db_name": "vance_test"
     "table_name": "user"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sink-doris-secret
+  namespace: vance
+data:
+  secret.yaml: |-
+    "username": "vance_test"
+    "password": "123456"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -45,7 +53,7 @@ spec:
     spec:
       containers:
         - name: sink-doris
-          image: vancehub/sink-doris:0.1
+          image: vancehub/sink-doris
           imagePullPolicy: IfNotPresent
           #command: ['sh', '-c', 'sleep 360000']
           env:
@@ -54,7 +62,12 @@ spec:
           volumeMounts:
             - name: sink-doris-config
               mountPath: /vance/config
+            - name: sink-doris-secret
+              mountPath: /vance/secret
       volumes:
         - name: sink-doris-config
           configMap:
             name: sink-doris-config
+        - name: sink-doris-secret
+          secret:
+            secretName: sink-doris-secret

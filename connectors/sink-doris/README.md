@@ -4,7 +4,7 @@
 
 The Doris Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data`
 part of the original event and deliver these extracted `data` to [Doris][doris]. The Sink use [Stream Load][stream load]
-way to import data. 
+way to import data.
 
 For example, if the incoming CloudEvent looks like:
 
@@ -36,46 +36,66 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 ## Doris Sink Configs
 
-Users can specify their configs by either setting environments variables or mount a config.yaml to
-`/vance/config/config.yaml` when they run the connector. Find examples of setting configs [here][config].
+### Config
 
-### Config Fields of Doris Sink
+| name          | requirement | default      | description                              |
+|---------------|-------------|--------------|------------------------------------------|
+| v_port        | optional    | 8080         | the port Doris Sink is listening on      |
+| fenodes       | required    |              | doris fenodes, example: "17.0.0.1:8003"  |
+| db_name       | required    |              | doris database name                      |
+| table_name    | required    |              | doris table name                         |
+| stream_load   | optional    |              | doris stream load properties, map struct |
+| load_interval | optional    | 5            | doris stream load interval, unit second  |
+| load_size     | optional    | 10*1024*1024 | doris stream load max body size          |
+| timeout       | optional    | 30           | doris stream load timeout, unit second   |
 
-| name          | requirement | description                                                                |
-|---------------|-------------|----------------------------------------------------------------------------|
-| v_port        | optional    | v_port is used to specify the port Doris Sink is listening on,default 8080 |
-| fenodes       | required    | doris fenodes, example: "17.0.0.1:8003"                                    |
-| username      | required    | doris username                                                             |
-| password      | optional    | doris password                                                             |
-| db_name       | required    | doris database name                                                        |
-| table_name    | required    | doris table name                                                           |
-| stream_load   | optional    | doris stream load properties, map struct                                   |
-| load_interval | optional    | doris stream load interval, unit second, default 5                         |
-| load_size     | optional    | doris stream load max body size, default 10 * 1024 * 1024                  |
-| timeout       | optional    | doris stream load timeout, unit second, default 30                         |
+### Secret
+
+| name          | requirement | default  | description    |
+|---------------|-------------|----------|----------------|
+| username      | required    |          | doris username |
+| password      | required    |          | doris password |
 
 ## Doris Sink Image
 
-> docker.io/vancehub/sink-doris
+> vancehub/sink-doris
 
-## Local Development
+## Deploy
 
-You can run the sink codes of the Doris Sink locally as well.
+### Docker
 
-### Building
+### create config file
 
-```shell
-cd connectors/sink-doris
-go build -o bin/sink cmd/main.go
+refer [config](#Config) to create `config.yaml`. for example:
+
+```yaml
+"v_port": 8080
+"fenodes": "172.31.57.192:8030"
+"db_name": "vance_test"
+"table_name": "user"
 ```
 
-### Running
+### create secret file
+
+refer [secret](#Secret) to create `secret.yaml`. for example:
+
+```yaml
+"username": "vance_test"
+"password": "123456"
+```
+
+### run
 
 ```shell
-bin/sink
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-doris
+```
+
+### K8S
+
+```shell
+  kubectl apply -f sink-doris.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
 [doris]: https://doris.apache.org/docs/summary/basic-summary
 [stream load]: https://doris.apache.org/docs/dev/data-operate/import/import-way/stream-load-manual/
