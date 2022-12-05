@@ -18,13 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/cloudevents/sdk-go/v2/protocol"
-	cdkutil "github.com/linkall-labs/cdk-go/utils"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/cloudevents/sdk-go/v2"
+	cdkgo "github.com/linkall-labs/cdk-go"
+	"github.com/linkall-labs/cdk-go/config"
 	"github.com/linkall-labs/cdk-go/connector"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
@@ -33,17 +33,30 @@ import (
 )
 
 const (
-	name = "Tencent Cloud COS Source"
+	name = "Tencent SCF Sink"
 )
 
 var (
 	functionNamePrefix = "vanus-cos-source-function"
 )
 
-type Config struct {
+var _ config.SinkConfigAccessor = &scfConfig{}
+
+type scfConfig struct {
+	cdkgo.SinkConfig
 	F      Function `json:"function" yaml:"function"`
 	Debug  bool     `json:"debug" yaml:"debug"`
-	Secret *Secret  `json:"-" yaml:"-"`
+	Secret *Secret  `json:"secret" yaml:"secret"`
+}
+
+func (c *scfConfig) GetSecret() cdkgo.SecretAccessor {
+	return c.Secret
+}
+
+func NewConfig() config.SinkConfigAccessor {
+	return &scfConfig{
+		Secret: &Secret{},
+	}
 }
 
 type Function struct {
@@ -65,56 +78,56 @@ func NewFunctionSink() connector.Sink {
 	return &functionSink{}
 }
 
+var _ connector.Sink = &functionSink{}
+
 type functionSink struct {
 	scfClient *v20180416.Client
-	logger    log.Logger
-	cfg       *Config
+	cfg       *scfConfig
 	funcName  string
 }
 
-func (c *functionSink) Receive(_ context.Context, event v2.Event) protocol.Result {
+func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	req := v20180416.NewInvokeRequest()
 	req.FunctionName = &c.cfg.F.Name
 	req.Namespace = &c.cfg.F.Namespace
-	payload := string(event.Data())
-	req.ClientContext = &payload
 
-	res, err := c.scfClient.Invoke(req)
-	if err != nil {
-		c.logger.Debug("failed to invoke function", map[string]interface{}{
-			log.KeyError: err,
+	for idx := range events {
+		e := events[idx]
+		payload := string(e.Data())
+		req.ClientContext = &payload
+
+		res, err := c.scfClient.Invoke(req)
+		if err != nil {
+			log.Debug("failed to invoke function", map[string]interface{}{
+				log.KeyError: err,
+			})
+			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+		}
+		log.Debug("invoke function success", map[string]interface{}{
+			"response": res,
 		})
-		return v2.NewHTTPResult(http.StatusInternalServerError, err.Error())
 	}
-	c.logger.Debug("invoke function success", map[string]interface{}{
-		"response": res,
-	})
-	return protocol.ResultACK
+
+	return connector.Success
 }
 
-func (c *functionSink) Init(cfgPath, secretPath string) error {
-	cfg := &Config{}
-	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
-		return err
+func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	_cfg, ok := cfg.(*scfConfig)
+	if !ok {
+		return nil
 	}
 
-	if cfg.F.Namespace == "" {
-		cfg.F.Namespace = "default"
+	if _cfg.F.Namespace == "" {
+		_cfg.F.Namespace = "default"
 	}
 
-	secret := &Secret{}
-	if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
-		return err
-	}
-	cfg.Secret = secret
-
-	if !cfg.F.isValid() {
+	if !_cfg.F.isValid() {
 		return errors.New("invalid function configuration")
 	}
-	c.cfg = cfg
+	c.cfg = _cfg
 
 	if c.cfg.Debug {
-		c.logger.SetLevel("debug")
+		// log.SetLevel("debug")
 	}
 
 	cli, err := v20180416.NewClient(&common.Credential{
@@ -134,10 +147,6 @@ func (c *functionSink) Init(cfgPath, secretPath string) error {
 
 func (c *functionSink) Name() string {
 	return name
-}
-
-func (c *functionSink) SetLogger(logger log.Logger) {
-	c.logger = logger
 }
 
 func (c *functionSink) Destroy() error {

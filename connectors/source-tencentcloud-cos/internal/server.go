@@ -15,8 +15,11 @@
 package internal
 
 import (
+	"context"
 	"fmt"
-	cdkutil "github.com/linkall-labs/cdk-go/utils"
+	cdkgo "github.com/linkall-labs/cdk-go"
+	"github.com/linkall-labs/cdk-go/config"
+	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -51,13 +54,25 @@ var (
 	triggerDesc   = `{"event":"cos:ObjectCreated:*"}`
 )
 
-type Config struct {
-	Target   string   `json:"v_target" yaml:"v_target"`
+var _ config.SourceConfigAccessor = &cosConfig{}
+
+type cosConfig struct {
+	cdkgo.SourceConfig
 	B        Bucket   `json:"bucket" yaml:"bucket"`
 	F        Function `json:"function" yaml:"function"`
 	Debug    bool     `json:"debug" yaml:"debug"`
 	Eventbus string   `json:"eventbus" yaml:"eventbus"`
-	Secret   *Secret  `json:"-" yaml:"-"`
+	Secret   *Secret  `json:"secret" yaml:"secret"`
+}
+
+func (c *cosConfig) GetSecret() cdkgo.SecretAccessor {
+	return c.Secret
+}
+
+func NewConfig() config.SourceConfigAccessor {
+	return &cosConfig{
+		Secret: &Secret{},
+	}
 }
 
 type Bucket struct {
@@ -91,6 +106,8 @@ type Secret struct {
 	SecretKey string `json:"secret_key" yaml:"secret_key"`
 }
 
+var _ connector.Source = &cosSource{}
+
 func NewCosSink() connector.Source {
 	return &cosSource{}
 }
@@ -98,35 +115,34 @@ func NewCosSink() connector.Source {
 type cosSource struct {
 	scfClient *v20180416.Client
 	logger    log.Logger
-	cfg       *Config
+	cfg       *cosConfig
 	mutex     sync.Mutex
 }
 
-func (c *cosSource) Init(cfgPath, secretPath string) error {
-	cfg := &Config{}
-	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
-		return err
+func (c *cosSource) Chan() <-chan *cdkgo.Tuple {
+	// It's unnecessary for COS Source
+	return make(chan *connector.Tuple, 0)
+}
+
+func (c *cosSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	_cfg, ok := cfg.(*cosConfig)
+	if !ok {
+		return errors.New("invalid config")
 	}
 
-	secret := &Secret{}
-	if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
-		return err
-	}
-	cfg.Secret = secret
-
-	if cfg.F.Name == "" {
+	if _cfg.F.Name == "" {
 		r := rand.New(rand.NewSource(time.Now().Unix()))
-		cfg.F.Name = fmt.Sprintf("%s-%d", functionNamePrefix, r.Uint64())
+		_cfg.F.Name = fmt.Sprintf("%s-%d", functionNamePrefix, r.Uint64())
 	}
 
-	if cfg.F.Namespace == "" {
-		cfg.F.Namespace = "default"
+	if _cfg.F.Namespace == "" {
+		_cfg.F.Namespace = "default"
 	}
 
-	if !cfg.F.C.isValid() {
-		cfg.F.C = defaultFunction
+	if !_cfg.F.C.isValid() {
+		_cfg.F.C = defaultFunction
 	}
-	c.cfg = cfg
+	c.cfg = _cfg
 
 	cli, err := v20180416.NewClient(&common.Credential{
 		SecretId:  c.cfg.Secret.SecretID,
@@ -139,15 +155,11 @@ func (c *cosSource) Init(cfgPath, secretPath string) error {
 
 	c.scfClient = cli
 
-	return nil
+	return c.Run()
 }
 
 func (c *cosSource) Name() string {
 	return name
-}
-
-func (c *cosSource) SetLogger(logger log.Logger) {
-	c.logger = logger
 }
 
 func (c *cosSource) Run() error {
@@ -251,7 +263,6 @@ func (c *cosSource) Destroy() error {
 	if err != nil {
 		return err
 	}
-
 	log.Info("success to delete function", map[string]interface{}{
 		"response":      res.ToJsonString(),
 		"function_name": c.cfg.F.Name,
