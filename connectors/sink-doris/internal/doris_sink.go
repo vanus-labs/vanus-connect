@@ -22,29 +22,33 @@ import (
 	cdkgo "github.com/linkall-labs/cdk-go"
 )
 
-type DorisSink struct {
+type dorisSink struct {
 	streamLoad *StreamLoad
 }
 
-func (s *DorisSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
-	cfg := config.(*Config)
+func Sink() cdkgo.Sink {
+	return &dorisSink{}
+}
+
+func (s *dorisSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*dorisConfig)
 	// init stream load
 	s.streamLoad = NewStreamLoad(cfg)
 	return s.streamLoad.Start()
 }
 
-func (s *DorisSink) Name() string {
+func (s *dorisSink) Name() string {
 	return "DorisSink"
 }
 
-func (s *DorisSink) Destroy() error {
+func (s *dorisSink) Destroy() error {
 	if s.streamLoad != nil {
 		s.streamLoad.Stop()
 	}
 	return nil
 }
 
-func (s *DorisSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
+func (s *dorisSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
 	for _, event := range events {
 		err := s.streamLoad.WriteEvent(ctx, event)
 		if err != nil {

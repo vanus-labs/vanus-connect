@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/costexplorer v1.18.4
 	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/google/uuid v1.1.2
-	github.com/linkall-labs/cdk-go v0.3.0
+	github.com/linkall-labs/cdk-go v0.3.1
 )
 
 require (

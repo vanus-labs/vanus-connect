@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(&internal.Config{}, internal.NewAwsBillingSource())
+	cdkgo.RunSource(internal.Config, internal.Source)
 }
