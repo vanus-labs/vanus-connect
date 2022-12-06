@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.3.0
+	github.com/linkall-labs/cdk-go v0.3.1
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.527
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/scf v1.0.527
 )

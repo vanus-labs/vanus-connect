@@ -24,8 +24,6 @@ import (
 
 	"github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/config"
-	"github.com/linkall-labs/cdk-go/connector"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -40,7 +38,7 @@ var (
 	functionNamePrefix = "vanus-cos-source-function"
 )
 
-var _ config.SinkConfigAccessor = &scfConfig{}
+var _ cdkgo.SinkConfigAccessor = &scfConfig{}
 
 type scfConfig struct {
 	cdkgo.SinkConfig
@@ -53,7 +51,7 @@ func (c *scfConfig) GetSecret() cdkgo.SecretAccessor {
 	return c.Secret
 }
 
-func NewConfig() config.SinkConfigAccessor {
+func NewConfig() cdkgo.SinkConfigAccessor {
 	return &scfConfig{
 		Secret: &Secret{},
 	}
@@ -74,11 +72,11 @@ type Secret struct {
 	SecretKey string `json:"secret_key" yaml:"secret_key"`
 }
 
-func NewFunctionSink() connector.Sink {
+func NewFunctionSink() cdkgo.Sink {
 	return &functionSink{}
 }
 
-var _ connector.Sink = &functionSink{}
+var _ cdkgo.Sink = &functionSink{}
 
 type functionSink struct {
 	scfClient *v20180416.Client
@@ -108,7 +106,7 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Res
 		})
 	}
 
-	return connector.Success
+	return cdkgo.SuccessResult
 }
 
 func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {

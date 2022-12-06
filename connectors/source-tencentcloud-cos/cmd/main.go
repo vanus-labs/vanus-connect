@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewConfig(), internal.NewCosSink())
+	cdkgo.RunSource(internal.NewConfig, internal.NewCosSink)
 }
