@@ -36,23 +36,23 @@ const (
 	EventSource = "cloud.alicloud.billing"
 )
 
-type AlicloudBillingSource struct {
+type alicloudBillingSource struct {
 	client *bssopenapi.Client
-	config *Config
+	config *billingConfig
 	events chan *cdkgo.Tuple
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
-func NewAlicloudBillingSource() *AlicloudBillingSource {
-	return &AlicloudBillingSource{
+func Source() cdkgo.Source {
+	return &alicloudBillingSource{
 		events: make(chan *cdkgo.Tuple, 10),
 	}
 }
 
-func (s *AlicloudBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAccessor) error {
-	cfg := config.(*Config)
+func (s *alicloudBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*billingConfig)
 	s.config = cfg
 	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
 		cfg.PullHour = 2
@@ -75,21 +75,21 @@ func (s *AlicloudBillingSource) Initialize(ctx context.Context, config cdkgo.Con
 	return nil
 }
 
-func (s *AlicloudBillingSource) Name() string {
+func (s *alicloudBillingSource) Name() string {
 	return "AwsBillingSource"
 }
 
-func (s *AlicloudBillingSource) Destroy() error {
+func (s *alicloudBillingSource) Destroy() error {
 	s.wg.Wait()
 	close(s.events)
 	return nil
 }
 
-func (s *AlicloudBillingSource) Chan() <-chan *cdkgo.Tuple {
+func (s *alicloudBillingSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *AlicloudBillingSource) start() {
+func (s *alicloudBillingSource) start() {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -109,7 +109,7 @@ func (s *AlicloudBillingSource) start() {
 	}()
 }
 
-func (s *AlicloudBillingSource) queryAccountBill() {
+func (s *alicloudBillingSource) queryAccountBill() {
 	log.Info("query account bill begin", nil)
 	now := time.Now()
 	opt := &tutil.RuntimeOptions{}
@@ -177,7 +177,7 @@ func (s *AlicloudBillingSource) queryAccountBill() {
 	log.Info("get account bill end", nil)
 }
 
-func (s *AlicloudBillingSource) getInstanceBill() {
+func (s *alicloudBillingSource) getInstanceBill() {
 	log.Info("get instance bill begin", nil)
 	opt := &tutil.RuntimeOptions{}
 	opt.SetAutoretry(true)

@@ -35,22 +35,22 @@ const (
 	EventSource = "cloud.aws.billing"
 )
 
-type AwsBillingSource struct {
+type awsBillingSource struct {
 	client *costexplorer.Client
-	config *Config
+	config *billingConfig
 	events chan *cdkgo.Tuple
 	ctx    context.Context
 	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
-func NewAwsBillingSource() *AwsBillingSource {
-	return &AwsBillingSource{
+func Source() cdkgo.Source {
+	return &awsBillingSource{
 		events: make(chan *cdkgo.Tuple, 100),
 	}
 }
 
-func newCostExplorerClient(config *Config) *costexplorer.Client {
+func newCostExplorerClient(config *billingConfig) *costexplorer.Client {
 	opt := costexplorer.Options{
 		Region:           "us-east-1",
 		EndpointResolver: costexplorer.EndpointResolverFromURL(config.Endpoint),
@@ -59,18 +59,18 @@ func newCostExplorerClient(config *Config) *costexplorer.Client {
 	return costexplorer.New(opt)
 }
 
-func (s *AwsBillingSource) Name() string {
+func (s *awsBillingSource) Name() string {
 	return "AwsBillingSource"
 }
 
-func (s *AwsBillingSource) Destroy() error {
+func (s *awsBillingSource) Destroy() error {
 	s.wg.Wait()
 	close(s.events)
 	return nil
 }
 
-func (s *AwsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
-	cfg := config.(*Config)
+func (s *awsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*billingConfig)
 	s.config = cfg
 	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
 		cfg.PullHour = 2
@@ -84,11 +84,11 @@ func (s *AwsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAcce
 	return nil
 }
 
-func (s *AwsBillingSource) Chan() <-chan *cdkgo.Tuple {
+func (s *awsBillingSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *AwsBillingSource) start() {
+func (s *awsBillingSource) start() {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
@@ -107,7 +107,7 @@ func (s *AwsBillingSource) start() {
 	}()
 }
 
-func (s *AwsBillingSource) getCost() {
+func (s *awsBillingSource) getCost() {
 	ctx := s.ctx
 	log.Info("get cost begin", nil)
 	now := time.Now()

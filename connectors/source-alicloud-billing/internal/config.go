@@ -18,7 +18,7 @@ import (
 	cdkgo "github.com/linkall-labs/cdk-go"
 )
 
-type Config struct {
+type billingConfig struct {
 	cdkgo.SourceConfig
 	AccessKeyID     string `json:"access_key_id"`
 	SecretAccessKey string `json:"secret_access_key"`
@@ -27,7 +27,11 @@ type Config struct {
 	Secret          Secret
 }
 
-func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+func Config() cdkgo.SourceConfigAccessor {
+	return &billingConfig{}
+}
+
+func (cfg *billingConfig) GetSecret() cdkgo.SecretAccessor {
 	return &cfg.Secret
 }
 

@@ -32,7 +32,7 @@ import (
 )
 
 type StreamLoad struct {
-	config       *Config
+	config       *dorisConfig
 	loadUrl      *pkgurl.URL
 	authEncoding string
 
@@ -57,7 +57,7 @@ const (
 	defaultTimeout      = 30
 )
 
-func NewStreamLoad(config *Config) *StreamLoad {
+func NewStreamLoad(config *dorisConfig) *StreamLoad {
 	l := &StreamLoad{
 		config:  config,
 		eventCh: make(chan *ce.Event, 100),
