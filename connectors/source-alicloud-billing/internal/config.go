@@ -15,40 +15,23 @@
 package internal
 
 import (
-	"context"
-	"strconv"
-
-	"github.com/linkall-labs/cdk-go/config"
-	"github.com/linkall-labs/cdk-go/log"
+	cdkgo "github.com/linkall-labs/cdk-go"
 )
 
 type Config struct {
+	cdkgo.SourceConfig
 	AccessKeyID     string `json:"access_key_id"`
 	SecretAccessKey string `json:"secret_access_key"`
-	Endpoint        string `json:"endpoint"`
-	PullHour        int    `json:"pull_hour"`
+	Endpoint        string `json:"endpoint" yaml:"endpoint"`
+	PullHour        int    `json:"pull_hour" yaml:"pull_hour"`
+	Secret          Secret
 }
 
-func getConfig(ctx context.Context) Config {
-	c := config.Accessor
-	conf := Config{
-		AccessKeyID:     c.Get("access_key_id"),
-		SecretAccessKey: c.Get("secret_access_key"),
-		Endpoint:        c.Get("endpoint"),
-	}
-	if conf.Endpoint == "" {
-		conf.Endpoint = "business.aliyuncs.com"
-	}
-	if c.Get("pull_hour") != "" {
-		pullHour, err := strconv.Atoi(c.Get("pull_hour"))
-		if err != nil {
-			log.FromContext(ctx).Info("pull hour parse to int error", "error", err)
-		} else {
-			conf.PullHour = pullHour
-		}
-	}
-	if conf.PullHour <= 0 || conf.PullHour >= 24 {
-		conf.PullHour = 2
-	}
-	return conf
+func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+	return &cfg.Secret
+}
+
+type Secret struct {
+	AccessKeyID     string `json:"access_key_id" yaml:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key" yaml:"secret_access_key"`
 }

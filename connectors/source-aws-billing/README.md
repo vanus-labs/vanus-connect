@@ -2,9 +2,8 @@
 
 ## Introduction
 
-The AWS Billing Source is a [Vance Connector][vc] which use [AWS Cost Explorer][awsbill] api pull yesterday billing data by fix time.The data group by aws service
-
-For example,billing data output a CloudEvent looks like:
+The AWS Billing Source is a [Vance Connector][vc] which use [AWS Cost Explorer][awsbill] api pull yesterday billing data
+by fix time.The data group by aws service For example,billing data output a CloudEvent looks like:
 
 ```json
 {
@@ -27,41 +26,58 @@ For example,billing data output a CloudEvent looks like:
 
 ## AWS Billing Source Configs
 
-Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+### Config
 
-### Config Fields of the AWS Billing Source
+| name              | requirement | default                            | description                                          |
+|-------------------|-------------|------------------------------------|------------------------------------------------------|
+| v_target          | required    |                                    | target URL will send CloudEvents to                  |
+| endpoint          | optional    | https://ce.us-east-1.amazonaws.com | the aws cost explorer api endpoint                   |
+| pull_hour         | optional    | 2                                  | aws billing source pull billing data time(unit hour) |
 
-| name              | requirement | description                                                                     |
-|-------------------|-------------|---------------------------------------------------------------------------------|
-| v_target          | required    | target URL will send CloudEvents to                                             |
-| access_key_id     | required    | the aws account [accessKeyID][accessKey]                                        |
-| secret_access_Key | required    | the aws account [secretAccessKey][accessKey]                                    |
-| endpoint          | optional    | the aws cost explorer api endpoint,default <https://ce.us-east-1.amazonaws.com> |
-| pull_hour         | optional    | aws billing source pull billing data time(unit hour),default 2                  |
+### Secret
+
+| name              | requirement | default  | description                                  |
+|-------------------|-------------|----------|----------------------------------------------|
+| access_key_id     | required    |          | the aws account [accessKeyID][accessKey]     |
+| secret_access_Key | required    |          | the aws account [secretAccessKey][accessKey] |
 
 ## AWS Billing Source Image
 
-> docker.io/vancehub/source-aws-billing
+> vancehub/source-aws-billing
 
-## Local Development
+## Deploy
 
-You can run the source codes of the AWS Billing Source locally as well.
+### Docker
 
-### Building
+#### create config file
 
-```shell
-cd connectors/source-aws-billing
-go build -o bin/source cmd/main.go
+refer [config](#Config) to create `config.yaml`. for example:
+
+```yaml
+"v_target": "http://localhost:8080"
 ```
 
-### Running
+#### create secret file
+
+refer [secret](#Secret) to create `secret.yaml`. for example:
+
+```yaml
+"access_key_id": "xxxxxx"
+"secret_access_key": "xxxxxx"
+```
+
+#### run
 
 ```shell
-bin/source
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/source-aws-billing
+```
+
+### K8S
+
+```shell
+  kubectl apply -f source-aws-billing.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
 [awsbill]: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html
 [accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html

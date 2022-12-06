@@ -21,11 +21,19 @@ data:
   config.yaml: |-
     "v_port": 8080
     "address": "http://localhost:9200"
-    "username": "elastic"
-    "password": "elastic"
     "index_name": "vance_test"
     "primary_key": "data.id"
     "insert_mode": "upsert"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sink-es-secret
+  namespace: vance
+data:
+  secret.yaml: |-
+    "username": "elastic"
+    "password": "elastic"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -55,7 +63,12 @@ spec:
           volumeMounts:
             - name: sink-es-config
               mountPath: /vance/config
+            - name: sink-es-secret
+              mountPath: /vance/secret
       volumes:
         - name: sink-es-config
           configMap:
             name: sink-es-config
+        - name: sink-es-secret
+          secret:
+            secretName: sink-es-secret

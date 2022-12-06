@@ -15,10 +15,10 @@
 package main
 
 import (
-	"github.com/linkall-labs/cdk-go/connector"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/sink-doris/internal"
 )
 
 func main() {
-	connector.RunSink(&internal.DorisSink{})
+	cdkgo.RunSink(&internal.Config{}, &internal.DorisSink{})
 }

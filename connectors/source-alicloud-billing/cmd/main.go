@@ -15,10 +15,10 @@
 package main
 
 import (
-	"github.com/linkall-labs/cdk-go/connector"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/source-alicloud-billing/internal"
 )
 
 func main() {
-	connector.RunSource("AwsBillingSource", internal.NewAlicloudBillingSource)
+	cdkgo.RunSource(&internal.Config{}, internal.NewAlicloudBillingSource())
 }

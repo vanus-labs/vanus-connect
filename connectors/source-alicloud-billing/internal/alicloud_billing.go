@@ -25,9 +25,9 @@ import (
 	tutil "github.com/alibabacloud-go/tea-utils/service"
 	"github.com/alibabacloud-go/tea/tea"
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/go-logr/logr"
 	"github.com/google/uuid"
-	"github.com/linkall-labs/cdk-go/connector"
+
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 )
 
@@ -37,30 +37,30 @@ const (
 )
 
 type AlicloudBillingSource struct {
-	client   *bssopenapi.Client
-	config   Config
-	ceClient ce.Client
-	events   chan ce.Event
-	ctx      context.Context
-	logger   logr.Logger
+	client *bssopenapi.Client
+	config *Config
+	events chan *cdkgo.Tuple
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
 }
 
-func NewAlicloudBillingSource(ctx context.Context, ceClient ce.Client) connector.Source {
-	config := getConfig(ctx)
+func NewAlicloudBillingSource() *AlicloudBillingSource {
 	return &AlicloudBillingSource{
-		ctx:      ctx,
-		logger:   log.FromContext(ctx),
-		config:   config,
-		ceClient: ceClient,
-		events:   make(chan ce.Event, 10),
+		events: make(chan *cdkgo.Tuple, 10),
 	}
 }
 
-func (s *AlicloudBillingSource) Adapt(args ...interface{}) ce.Event {
-	return ce.Event{}
-}
-
-func (s *AlicloudBillingSource) Start() error {
+func (s *AlicloudBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*Config)
+	s.config = cfg
+	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
+		cfg.PullHour = 2
+	}
+	if cfg.Endpoint == "" {
+		cfg.Endpoint = "business.aliyuncs.com"
+	}
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	conf := &openapi.Config{
 		AccessKeyId:     tea.String(s.config.AccessKeyID),
 		AccessKeySecret: tea.String(s.config.SecretAccessKey),
@@ -71,11 +71,28 @@ func (s *AlicloudBillingSource) Start() error {
 		return err
 	}
 	s.client = client
-	ctx := s.ctx
-	var wg sync.WaitGroup
-	wg.Add(1)
+	s.start()
+	return nil
+}
+
+func (s *AlicloudBillingSource) Name() string {
+	return "AwsBillingSource"
+}
+
+func (s *AlicloudBillingSource) Destroy() error {
+	s.wg.Wait()
+	close(s.events)
+	return nil
+}
+
+func (s *AlicloudBillingSource) Chan() <-chan *cdkgo.Tuple {
+	return s.events
+}
+
+func (s *AlicloudBillingSource) start() {
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer s.wg.Done()
 		for {
 			//先执行一次，之后每天2点执行一次
 			s.queryAccountBill()
@@ -84,26 +101,16 @@ func (s *AlicloudBillingSource) Start() error {
 			next = time.Date(next.Year(), next.Month(), next.Day(), s.config.PullHour, 0, 0, 0, next.Location())
 			t := time.NewTimer(next.Sub(now))
 			select {
-			case <-ctx.Done():
+			case <-s.ctx.Done():
 				return
 			case <-t.C:
-
 			}
 		}
 	}()
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		s.sendEvent()
-	}()
-	<-ctx.Done()
-	close(s.events)
-	wg.Wait()
-	return nil
 }
 
 func (s *AlicloudBillingSource) queryAccountBill() {
-	s.logger.Info("query account bill begin")
+	log.Info("query account bill begin", nil)
 	now := time.Now()
 	opt := &tutil.RuntimeOptions{}
 	opt.SetAutoretry(true)
@@ -124,24 +131,26 @@ func (s *AlicloudBillingSource) queryAccountBill() {
 		}
 		resp, err := s.client.QueryAccountBillWithOptions(request, opt)
 		if err != nil {
-			s.logger.Error(err, "query account bill error")
+			log.Error("query account bill error", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return
 		}
 		if resp.Body == nil {
-			s.logger.Info("resp body is nil")
+			log.Info("resp body is nil", nil)
 			return
 		}
 		if resp.Body.Success == nil {
-			s.logger.Info("resp body success is nil")
+			log.Info("resp body success is nil", nil)
 			break
 		}
 		if !*resp.Body.Success {
-			s.logger.Info("resp body success is false")
+			log.Info("resp body success is false", nil)
 			break
 		}
 		data := resp.Body.Data
 		if data == nil {
-			s.logger.Info("resp body data is nil")
+			log.Info("resp body data is nil", nil)
 			break
 		}
 
@@ -151,27 +160,25 @@ func (s *AlicloudBillingSource) queryAccountBill() {
 			event.SetType(EventType)
 			event.SetTime(now)
 			event.SetID(uuid.New().String())
-			err = event.SetData(ce.ApplicationJSON, BillingData{
+			_ = event.SetData(ce.ApplicationJSON, BillingData{
 				VanceSource: EventSource,
 				VanceType:   EventType,
 				QueryAccountBillResponseBodyDataItemsItem: *item,
 			})
-			if err != nil {
-				s.logger.Error(err, "set event data error")
-				continue
+			s.events <- &cdkgo.Tuple{
+				Event: &event,
 			}
-			s.events <- event
 		}
 		totalSize += *data.PageSize
 		if totalSize >= *data.TotalCount {
 			break
 		}
 	}
-	s.logger.Info("get account bill end")
+	log.Info("get account bill end", nil)
 }
 
 func (s *AlicloudBillingSource) getInstanceBill() {
-	s.logger.Info("get instance bill begin")
+	log.Info("get instance bill begin", nil)
 	opt := &tutil.RuntimeOptions{}
 	opt.SetAutoretry(true)
 	now := time.Now()
@@ -189,23 +196,25 @@ func (s *AlicloudBillingSource) getInstanceBill() {
 		}
 		resp, err := s.client.DescribeInstanceBillWithOptions(request, opt)
 		if err != nil {
-			s.logger.Error(err, "get instance bill error")
+			log.Error("get instance bill error", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return
 		}
 		if resp.Body == nil {
-			s.logger.Info("resp body is nil")
+			log.Info("resp body is nil", nil)
 			return
 		}
 		if resp.Body.Success == nil {
-			s.logger.Info("resp body success is nil")
+			log.Info("resp body success is nil", nil)
 			break
 		}
 		if !*resp.Body.Success {
-			s.logger.Info("resp body success is false")
+			log.Info("resp body success is false", nil)
 			break
 		}
 		if resp.Body.Data == nil {
-			s.logger.Info("resp body data is nil")
+			log.Info("resp body data is nil", nil)
 			break
 		}
 		for _, item := range resp.Body.Data.Items {
@@ -214,28 +223,15 @@ func (s *AlicloudBillingSource) getInstanceBill() {
 			event.SetType(EventType)
 			event.SetTime(now)
 			event.SetID(fmt.Sprintf("%s-%s", dayFmt, tea.StringValue(item.InstanceID)))
-			err = event.SetData(ce.ApplicationJSON, item)
-			if err != nil {
-				s.logger.Error(err, "set event data error")
-				continue
+			_ = event.SetData(ce.ApplicationJSON, item)
+			s.events <- &cdkgo.Tuple{
+				Event: &event,
 			}
-			s.events <- event
 		}
 		nextToken = resp.Body.Data.NextToken
 		if nextToken == nil || *nextToken == "" {
 			break
 		}
 	}
-	s.logger.Info("get instance bill end")
-}
-
-func (s *AlicloudBillingSource) sendEvent() {
-	for event := range s.events {
-		result := s.ceClient.Send(s.ctx, event)
-		if !ce.IsACK(result) {
-			s.logger.Error(result, "send event fail")
-		} else {
-			s.logger.Info("send event success", "event", event)
-		}
-	}
+	log.Info("get instance bill end", nil)
 }

@@ -43,43 +43,64 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ## Elasticsearch Sink Configs
 
-Users can specify their configs by either setting environments variables or mount a config.yaml to
-`/vance/config/config.yaml` when they run the connector. Find examples of setting configs [here][config].
+### Config
 
-### Config Fields of Elasticsearch Sink
+| name        | requirement | default | description                                                         |
+|-------------|-------------|---------|---------------------------------------------------------------------|
+| v_port      | optional    | 8080    | the port Elasticsearch Sink is listening on                         |
+| address     | required    |         | elasticsearch cluster address, multi split by ","                   |
+| index_name  | required    |         | elasticsearch index name                                            |
+| timeout     | optional    | 10000   | elasticsearch index document timeout, unit millisecond              |
+| insert_mode | optional    | insert  | elasticsearch index document type: insert or upsert                 |
+| primary_key | optional    |         | elasticsearch index document primary key in event, example: data.id |
 
-| name        | requirement | description                                                                        |
-|-------------|-------------|------------------------------------------------------------------------------------|
-| v_port      | optional    | v_port is used to specify the port Elasticsearch Sink is listening on,default 8080 |
-| address     | required    | elasticsearch cluster address, multi split by ","                                  |
-| index_name  | required    | elasticsearch index name                                                           |
-| username    | optional    | elasticsearch cluster username                                                     |
-| password    | optional    | elasticsearch cluster password                                                     |
-| timeout     | optional    | elasticsearch index document timeout, unit millisecond, default 10000              |
-| insert_mode | optional    | elasticsearch index document type: insert or upsert, default insert                |
-| primary_key | optional    | elasticsearch index document primary key in event, example: data.id                |
+### Secret
 
-## Elasticsearch Sink Image
+| name        | requirement | default  | description                     |
+|-------------|-------------|----------|---------------------------------|
+| username    | optional    |          | elasticsearch cluster username  |
+| password    | optional    |          | elasticsearch cluster password  |
 
-> docker.io/vancehub/sink-elasticsearch
+## Image
 
-## Local Development
+> vancehub/sink-elasticsearch
 
-You can run the sink codes of the Elasticsearch Sink locally as well.
+## Deploy
 
-### Building
+### Docker
 
-```shell
-cd connectors/sink-elasticsearch
-go build -o bin/sink cmd/main.go
+#### create config file
+
+refer [config](#Config) to create `config.yaml`. for example:
+
+```yaml
+"v_port": 8080
+"address": "http://localhost:9200"
+"index_name": "vance_test"
+"primary_key": "data.id"
+"insert_mode": "upsert"
 ```
 
-### Running
+#### create secret file
+
+refer [secret](#Secret) to create `secret.yaml`. for example:
+
+```yaml
+"username": "elastic"
+"password": "elastic"
+```
+
+#### run
 
 ```shell
-bin/sink
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-elasticsearch
+```
+
+### K8S
+
+```shell
+  kubectl apply -f sink-es.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
 [es]: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
