@@ -17,17 +17,15 @@ package internal
 import (
 	"context"
 	"fmt"
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/config"
-	"github.com/pkg/errors"
 	"math/rand"
 	"strconv"
 	"sync"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/linkall-labs/cdk-go/connector"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
+	"github.com/pkg/errors"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
 	v20180416 "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/scf/v20180416"
@@ -54,7 +52,7 @@ var (
 	triggerDesc   = `{"event":"cos:ObjectCreated:*"}`
 )
 
-var _ config.SourceConfigAccessor = &cosConfig{}
+var _ cdkgo.SourceConfigAccessor = &cosConfig{}
 
 type cosConfig struct {
 	cdkgo.SourceConfig
@@ -69,7 +67,7 @@ func (c *cosConfig) GetSecret() cdkgo.SecretAccessor {
 	return c.Secret
 }
 
-func NewConfig() config.SourceConfigAccessor {
+func NewConfig() cdkgo.SourceConfigAccessor {
 	return &cosConfig{
 		Secret: &Secret{},
 	}
@@ -106,9 +104,9 @@ type Secret struct {
 	SecretKey string `json:"secret_key" yaml:"secret_key"`
 }
 
-var _ connector.Source = &cosSource{}
+var _ cdkgo.Source = &cosSource{}
 
-func NewCosSink() connector.Source {
+func NewCosSink() cdkgo.Source {
 	return &cosSource{}
 }
 
@@ -121,7 +119,7 @@ type cosSource struct {
 
 func (c *cosSource) Chan() <-chan *cdkgo.Tuple {
 	// It's unnecessary for COS Source
-	return make(chan *connector.Tuple, 0)
+	return make(chan *cdkgo.Tuple, 0)
 }
 
 func (c *cosSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {

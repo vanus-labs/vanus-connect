@@ -18,7 +18,7 @@ import (
 	cdkgo "github.com/linkall-labs/cdk-go"
 )
 
-type Config struct {
+type dorisConfig struct {
 	cdkgo.SinkConfig
 	Fenodes   string `json:"fenodes" yaml:"fenodes" validate:"required"`
 	DbName    string `json:"db_name" yaml:"db_name" validate:"required"`
@@ -32,7 +32,11 @@ type Config struct {
 	Secret       Secret
 }
 
-func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+func Config() cdkgo.SinkConfigAccessor {
+	return &dorisConfig{}
+}
+
+func (cfg *dorisConfig) GetSecret() cdkgo.SecretAccessor {
 	return &cfg.Secret
 }
 

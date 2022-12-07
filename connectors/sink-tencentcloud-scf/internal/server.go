@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -24,8 +23,6 @@ import (
 
 	"github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/config"
-	"github.com/linkall-labs/cdk-go/connector"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/profile"
@@ -40,7 +37,7 @@ var (
 	functionNamePrefix = "vanus-cos-source-function"
 )
 
-var _ config.SinkConfigAccessor = &scfConfig{}
+var _ cdkgo.SinkConfigAccessor = &scfConfig{}
 
 type scfConfig struct {
 	cdkgo.SinkConfig
@@ -53,20 +50,16 @@ func (c *scfConfig) GetSecret() cdkgo.SecretAccessor {
 	return c.Secret
 }
 
-func NewConfig() config.SinkConfigAccessor {
+func NewConfig() cdkgo.SinkConfigAccessor {
 	return &scfConfig{
 		Secret: &Secret{},
 	}
 }
 
 type Function struct {
-	Name      string `yaml:"name" json:"name"`
+	Name      string `yaml:"name" json:"name" validate:"required"`
 	Region    string `yaml:"region" json:"region"`
 	Namespace string `yaml:"namespace" json:"namespace" default:"default"`
-}
-
-func (f Function) isValid() bool {
-	return f.Name != ""
 }
 
 type Secret struct {
@@ -74,11 +67,11 @@ type Secret struct {
 	SecretKey string `json:"secret_key" yaml:"secret_key"`
 }
 
-func NewFunctionSink() connector.Sink {
+func NewFunctionSink() cdkgo.Sink {
 	return &functionSink{}
 }
 
-var _ connector.Sink = &functionSink{}
+var _ cdkgo.Sink = &functionSink{}
 
 type functionSink struct {
 	scfClient *v20180416.Client
@@ -108,7 +101,7 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Res
 		})
 	}
 
-	return connector.Success
+	return cdkgo.SuccessResult
 }
 
 func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -121,9 +114,6 @@ func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) e
 		_cfg.F.Namespace = "default"
 	}
 
-	if !_cfg.F.isValid() {
-		return errors.New("invalid function configuration")
-	}
 	c.cfg = _cfg
 
 	if c.cfg.Debug {

@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSink(&internal.Config{}, &internal.ElasticsearchSink{})
+	cdkgo.RunSink(internal.Config, internal.Sink)
 }

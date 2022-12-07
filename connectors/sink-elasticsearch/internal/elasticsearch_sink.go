@@ -31,16 +31,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ElasticsearchSink struct {
-	config   *Config
+type elasticsearchSink struct {
+	config   *esConfig
 	esClient *elasticsearch.Client
 
 	timeout    time.Duration
 	primaryKey PrimaryKey
 }
 
-func (s *ElasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
-	cfg := config.(*Config)
+func Sink() cdkgo.Sink {
+	return &elasticsearchSink{}
+}
+
+func (s *elasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+	cfg := config.(*esConfig)
 	s.config = cfg
 	s.primaryKey = GetPrimaryKey(cfg.PrimaryKey)
 	if cfg.Timeout == 0 {
@@ -65,7 +69,7 @@ func (s *ElasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAcc
 	return nil
 }
 
-func (s *ElasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
+func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
 	for _, event := range events {
 		result := s.writeEvent(ctx, event)
 		if result == cdkgo.SuccessResult {
@@ -75,7 +79,7 @@ func (s *ElasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	return cdkgo.SuccessResult
 }
 
-func (s *ElasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdkgo.Result {
+func (s *elasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdkgo.Result {
 	timeoutCtx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
 	var (
@@ -149,15 +153,15 @@ func (s *ElasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdk
 	return cdkgo.SuccessResult
 }
 
-func (s *ElasticsearchSink) Name() string {
+func (s *elasticsearchSink) Name() string {
 	return "ElasticsearchSink"
 }
 
-func (s *ElasticsearchSink) Destroy() error {
+func (s *elasticsearchSink) Destroy() error {
 	return nil
 }
 
-func generateEsConfig(conf *Config) elasticsearch.Config {
+func generateEsConfig(conf *esConfig) elasticsearch.Config {
 	config := elasticsearch.Config{
 		Addresses:     strings.Split(conf.Address, ","),
 		Username:      conf.Secret.Username,

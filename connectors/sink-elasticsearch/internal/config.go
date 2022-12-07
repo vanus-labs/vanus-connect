@@ -26,7 +26,7 @@ const (
 	Upsert InsertMode = "upsert"
 )
 
-type Config struct {
+type esConfig struct {
 	cdkgo.SinkConfig
 	Address   string `json:"address" yaml:"address" validate:"required"`
 	IndexName string `json:"index_name" yaml:"index_name" validate:"required"`
@@ -38,7 +38,11 @@ type Config struct {
 	Secret Secret
 }
 
-func (cfg *Config) GetSecret() cdkgo.SecretAccessor {
+func Config() cdkgo.SinkConfigAccessor {
+	return &esConfig{}
+}
+
+func (cfg *esConfig) GetSecret() cdkgo.SecretAccessor {
 	return &cfg.Secret
 }
 
@@ -47,7 +51,7 @@ type Secret struct {
 	Password string `json:"password" yaml:"password"`
 }
 
-func (cfg *Config) Validate() error {
+func (cfg *esConfig) Validate() error {
 	if cfg.InsertMode == Upsert && cfg.PrimaryKey == "" {
 		return errors.New("insert mode is upsert but primary key is empty")
 	}
