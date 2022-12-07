@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -58,13 +57,9 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 }
 
 type Function struct {
-	Name      string `yaml:"name" json:"name"`
+	Name      string `yaml:"name" json:"name" validate:"required"`
 	Region    string `yaml:"region" json:"region"`
 	Namespace string `yaml:"namespace" json:"namespace" default:"default"`
-}
-
-func (f Function) isValid() bool {
-	return f.Name != ""
 }
 
 type Secret struct {
@@ -119,9 +114,6 @@ func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) e
 		_cfg.F.Namespace = "default"
 	}
 
-	if !_cfg.F.isValid() {
-		return errors.New("invalid function configuration")
-	}
 	c.cfg = _cfg
 
 	if c.cfg.Debug {
