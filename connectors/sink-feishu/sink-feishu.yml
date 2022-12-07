@@ -6,10 +6,9 @@ metadata:
 spec:
   selector:
     app: sink-feishu
-  type: NodePort
+  clusterIP: None
   ports:
     - port: 8080
-      targetPort: 8080
       name: sink-feishu
 ---
 apiVersion: v1
@@ -21,9 +20,11 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
-      endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
+      # write right webook
+      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
     secret:
-      bot_secret_key: "xxxxx"
+      # write right bot_signature
+      bot_signature: "xxxxx"
 
 ---
 apiVersion: apps/v1
@@ -45,7 +46,16 @@ spec:
     spec:
       containers:
         - name: sink-feishu
+#          For China mainland
+#          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
           image: public.ecr.aws/vanus/connector/sink-feishu:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           imagePullPolicy: Always
           ports:
             - name: http

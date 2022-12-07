@@ -19,7 +19,8 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"net/http"
+	"github.com/linkall-labs/cdk-go/log"
+	"github.com/tidwall/gjson"
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
@@ -40,12 +41,17 @@ func (c *functionSink) sendTextToFeishuBot(e *v2.Event) error {
 	if err != nil {
 		return err
 	}
-	// {"code":19021,"data":{},"msg":"sign match fail or timestamp is not within one hour from current time"}
-	if res.StatusCode() != http.StatusOK {
-		return fmt.Errorf("failed call feishu: %s with HTTP Code %d",
-			string(res.Body()), res.StatusCode())
+
+	// docs: https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN?lang=zh-CN#756b882f
+	obj := gjson.ParseBytes(res.Body())
+	if obj.Get("StatusCode").Int() == 0 &&
+		obj.Get("StatusMessage").String() == "success" {
+		log.Debug("success send message to Feishu Bot", map[string]interface{}{
+			"id": e.ID(),
+		})
+		return nil
 	}
-	return nil
+	return fmt.Errorf("failed call feishu: %s", string(res.Body()))
 }
 
 func (c *functionSink) genSignature(t time.Time) string {
