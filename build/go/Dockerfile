@@ -21,7 +21,6 @@ ENV EXECUTABLE_FILE=/vance/bin/${connector}
 ENV CONNECTOR_HOME=/vance
 ENV CONNECTOR_CONFIG=/vance/config/config.yml
 ENV CONNECTOR_SECRET=/vance/secret/secret.yml
-ENV CONNECTOR_SECRET_ENABLE=false
 
 RUN touch /vance/run.sh && \
     echo '#!/bin/sh' >> /vance/run.sh && \

@@ -20,6 +20,8 @@ build-go-image:
 	docker build $(DOCKER_BUILD_ARG) -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/go/Dockerfile \
 		--build-arg connector=${CONNECTOR} .
 
+# 1. Push to aws
+# make push-go-image DOCKER_REPO=public.ecr.aws/vanus CONNECTOR=sink-feishu
 push-go-image:
 	docker buildx build $(DOCKER_BUILD_ARG) -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/go/Dockerfile \
 		--platform ${DOCKER_PLATFORM} \

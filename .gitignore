@@ -45,3 +45,7 @@ cdk-go
 # generated proto file
 **/src/proto
 **/*.pb.go
+
+# local config, use config.yml.example, secret.yml.example
+**/config.yml
+**/secret.yml

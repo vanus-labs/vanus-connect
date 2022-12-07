@@ -1,5 +1,0 @@
-{
-  "v_target": "$(BOT_WEBHOOK_ADDRESS)",
-  "v_port": "8080",
-  "feishu_secret": "$(BOT_SECRET)"
-}
