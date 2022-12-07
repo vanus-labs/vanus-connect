@@ -73,7 +73,7 @@ docker run -d --rm \
 
 ### Test
 
-```json
+```shell
 curl --location --request POST '127.0.0.1:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
@@ -97,11 +97,11 @@ now, you cloud see a notice in your chat group.
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell Feishu Sink.
 
-| Name     | Required | Default | Description                                     |
-|:---------|:--------:|:-------:|-------------------------------------------------|
-| secret.bot_signature | **YES**  |    -    |  Feishu Bot signature.| "https://open.feishu.cn/open-apis/bot/v2/hook/......                       |
-| enable     | **YES**  |    -    | which services you want Feishu Sink are enabled |
-| bot.webhook     | **YES**  |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/...... |
+| Name                 | Required | Default | Description                                                                              |
+|:---------------------|:--------:|:-------:|------------------------------------------------------------------------------------------|
+| secret.bot_signature | **YES**  |    -    | Feishu Bot signature.                                                                    | 
+| enable               | **YES**  |    -    | which services you want Feishu Sink are enabled                                          |
+| bot.webhook          | **YES**  |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/... |
 
 ### Secret(Optional)
 If you want separate secret information to an independent file, you could create a file like:
@@ -115,3 +115,66 @@ then mount it into your container. The default path of it is `/vance/config/secr
 you can set env `CONNECTOR_SECRET` to tell Feishu Sink.
 
 This feature is very useful when you want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in Kubernetes
+
+## Run in Kubernetes
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-feishu
+  namespace: vanus
+spec:
+  selector:
+    app: sink-feishu
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sink-feishu
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-feishu
+  namespace: vanus
+data:
+  config.yml: |-
+    enable: ["bot"]
+    bot:
+      endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
+    bot_secret_key: "xxxxx"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-feishu
+  namespace: vanus
+  labels:
+    app: sink-feishu
+spec:
+  selector:
+    matchLabels:
+      app: sink-feishu
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-feishu
+    spec:
+      containers:
+        - name: sink-feishu
+          image: public.ecr.aws/vanus/connector/sink-feishu:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-feishu
+```
