@@ -26,18 +26,18 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 )
 
-func (c *functionSink) sendTextToFeishuBot(e *v2.Event) error {
+func (f *feishuSink) sendTextToFeishuBot(e *v2.Event) error {
 	t := time.Now()
 
 	payload := map[string]interface{}{
-		"sign":      c.genSignature(t),
+		"sign":      f.genSignature(t),
 		"timestamp": t.Unix(),
 		"msg_type":  "text",
 		"content": map[string]interface{}{
 			"text": string(e.Data()),
 		},
 	}
-	res, err := c.httpClient.R().SetBody(payload).Post(c.cfg.Bot.Webhook)
+	res, err := f.httpClient.R().SetBody(payload).Post(f.cfg.Bot.Webhook)
 	if err != nil {
 		return err
 	}
@@ -51,11 +51,11 @@ func (c *functionSink) sendTextToFeishuBot(e *v2.Event) error {
 		})
 		return nil
 	}
-	return fmt.Errorf("failed call feishu: %s", string(res.Body()))
+	return fmt.Errorf("failed to call feishu: %s", string(res.Body()))
 }
 
-func (c *functionSink) genSignature(t time.Time) string {
-	strToSign := fmt.Sprintf("%d\n%s", t.Unix(), c.cfg.Secret.BotSignature)
+func (f *feishuSink) genSignature(t time.Time) string {
+	strToSign := fmt.Sprintf("%d\n%s", t.Unix(), f.cfg.Secret.BotSignature)
 	h := hmac.New(sha256.New, []byte(strToSign))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }

@@ -24,7 +24,7 @@ For example, if the incoming CloudEvent looks like:
 
 ### Supported Feishu Service
 
-- Bot: pushing a message to Group Chat
+- Bot: pushing a message to Group Chat (text)
 
 ## Quick Start
 
