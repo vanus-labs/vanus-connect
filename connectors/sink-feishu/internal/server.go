@@ -17,7 +17,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sync/atomic"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/pkg/errors"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
