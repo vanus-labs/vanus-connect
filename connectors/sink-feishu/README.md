@@ -66,16 +66,15 @@ EOF
 ### Start Using Docker
 
 ```shell
-docker run -d --rm \
-  --network host \
+docker run -d -p 31080:8080 --rm \
   -v ${PWD}:/vance/config \
-  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu:dev
+  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu:latest
 ```
 
 ### Test
 
 ```shell
-curl --location --request POST '127.0.0.1:8080' \
+curl --location --request POST '127.0.0.1:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
   "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -91,6 +90,12 @@ curl --location --request POST '127.0.0.1:8080' \
 
 now, you cloud see a notice in your chat group.
 ![received-notification](received-message.png)
+
+### Clean
+
+```shell
+docker stop sink-feishu
+```
 
 ## Configuration
 
