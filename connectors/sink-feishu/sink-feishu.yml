@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-feishu
+  namespace: vanus
+spec:
+  selector:
+    app: sink-feishu
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sink-feishu
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-feishu
+  namespace: vanus
+data:
+  config.yml: |-
+    enable: ["bot"]
+    bot:
+      endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/9c48f353-c968-450d-b139-f0743ed85bfb"
+    bot_secret_key: "lJIelosupOg0L8zqb0Sft"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-feishu
+  namespace: vanus
+  labels:
+    app: sink-feishu
+spec:
+  selector:
+    matchLabels:
+      app: sink-feishu
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-feishu
+    spec:
+      containers:
+        - name: sink-feishu
+          image: public.ecr.aws/vanus/connector/sink-feishu:dev
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+            - name: secret
+              mountPath: /vance/secret
+      volumes:
+        - name: secret
+          secret:
+            secretName: sink-feishu
+        - name: config
+          configMap:
+            name: sink-feishu

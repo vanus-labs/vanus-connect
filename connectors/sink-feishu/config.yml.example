@@ -1,0 +1,5 @@
+secret:
+  bot_signature: "xxxxxxxx"
+enable: ["bot"]
+bot:
+  webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxx"
