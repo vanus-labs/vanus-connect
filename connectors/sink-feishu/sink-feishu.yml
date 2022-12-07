@@ -22,7 +22,8 @@ data:
     enable: ["bot"]
     bot:
       endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
-    bot_secret_key: "xxxxx"
+    secret:
+      bot_secret_key: "xxxxx"
 
 ---
 apiVersion: apps/v1

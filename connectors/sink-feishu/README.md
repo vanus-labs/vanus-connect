@@ -89,7 +89,7 @@ curl --location --request POST '127.0.0.1:8080' \
 ```
 
 now, you cloud see a notice in your chat group.
-[received-notification](received-message.png)
+![received-notification](received-message.png)
 
 
 ## Configuration
@@ -103,7 +103,7 @@ tell Feishu Sink.
 | enable               | **YES**  |    -    | which services you want Feishu Sink are enabled                                          |
 | bot.webhook          | **YES**  |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/... |
 
-### Secret(Optional)
+### Separate Secret(Optional)
 If you want separate secret information to an independent file, you could create a file like:
 
 ```shell
@@ -143,7 +143,8 @@ data:
     enable: ["bot"]
     bot:
       endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
-    bot_secret_key: "xxxxx"
+    secret:
+      bot_secret_key: "xxxxx"
 
 ---
 apiVersion: apps/v1
