@@ -135,7 +135,7 @@ metadata:
 spec:
   selector:
     app: sink-feishu
-  clusterIP: None
+  type: ClusterIP
   ports:
     - port: 8080
       name: sink-feishu
