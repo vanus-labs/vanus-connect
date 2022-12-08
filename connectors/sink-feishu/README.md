@@ -1,4 +1,4 @@
-# Feishu Sink 
+# Feishu Sink
 
 ## Introduction
 
@@ -24,7 +24,7 @@ For example, if the incoming CloudEvent looks like:
 
 ### Supported Feishu Service
 
-- Bot: pushing a message to Group Chat
+- Bot: pushing a message to Group Chat (text)
 
 ## Quick Start
 
@@ -48,9 +48,10 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 
 ![bot-config](https://github.com/linkall-labs/vance-docs/raw/main/resources/connectors/sink-feishu-bot/feishu-config.png)
 
->  ⚠️ You must set your signature verification to make sure push messages work.
+> ⚠️ You must set your signature verification to make sure push messages work.
 
 ### Create Config file
+
 ```shell
 cat << EOF > config.yml
 # change the webhook and bot_signature to your.
@@ -65,16 +66,15 @@ EOF
 ### Start Using Docker
 
 ```shell
-docker run -d --rm \
-  --network host \
+docker run -d -p 31080:8080 --rm \
   -v ${PWD}:/vance/config \
-  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu:dev
+  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu:latest
 ```
 
 ### Test
 
 ```shell
-curl --location --request POST '127.0.0.1:8080' \
+curl --location --request POST '127.0.0.1:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
   "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -91,19 +91,26 @@ curl --location --request POST '127.0.0.1:8080' \
 now, you cloud see a notice in your chat group.
 ![received-notification](received-message.png)
 
+### Clean
+
+```shell
+docker stop sink-feishu
+```
 
 ## Configuration
 
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell Feishu Sink.
 
+
 | Name                 | Required | Default | Description                                                                              |
-|:---------------------|:--------:|:-------:|------------------------------------------------------------------------------------------|
-| secret.bot_signature | **YES**  |    -    | Feishu Bot signature.                                                                    | 
-| enable               | **YES**  |    -    | which services you want Feishu Sink are enabled                                          |
-| bot.webhook          | **YES**  |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/... |
+| :--------------------- | :--------: | :-------: | ------------------------------------------------------------------------------------------ |
+| secret.bot_signature | **YES** |    -    | Feishu Bot signature.                                                                    |
+| enable               | **YES** |    -    | which services you want Feishu Sink are enabled                                          |
+| bot.webhook          | **YES** |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/... |
 
 ### Separate Secret(Optional)
+
 If you want separate secret information to an independent file, you could create a file like:
 
 ```shell
@@ -111,6 +118,7 @@ cat << EOF > secret.yml
 bot_signature: "xxxxxx"
 EOF
 ```
+
 then mount it into your container. The default path of it is `/vance/config/secret.yml`. if you want to change the default path,
 you can set env `CONNECTOR_SECRET` to tell Feishu Sink.
 
@@ -127,10 +135,9 @@ metadata:
 spec:
   selector:
     app: sink-feishu
-  type: NodePort
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
       name: sink-feishu
 ---
 apiVersion: v1
@@ -142,9 +149,11 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
-      endpoint: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
+      # write right webook
+      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
     secret:
-      bot_secret_key: "xxxxx"
+      # write right bot_signature
+      bot_signature: "xxxxx"
 
 ---
 apiVersion: apps/v1
@@ -166,7 +175,16 @@ spec:
     spec:
       containers:
         - name: sink-feishu
+#          For China mainland
+#          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
           image: public.ecr.aws/vanus/connector/sink-feishu:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           imagePullPolicy: Always
           ports:
             - name: http

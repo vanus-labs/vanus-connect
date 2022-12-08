@@ -17,7 +17,6 @@ package internal
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/strings/slices"
 	"net/http"
 	"sync/atomic"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/pkg/errors"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -95,26 +95,26 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 }
 
 func NewFeishuSink() cdkgo.Sink {
-	return &functionSink{
+	return &feishuSink{
 		httpClient: resty.New(),
 	}
 }
 
-var _ cdkgo.Sink = &functionSink{}
+var _ cdkgo.Sink = &feishuSink{}
 
-type functionSink struct {
+type feishuSink struct {
 	cfg        *feishuConfig
 	count      int64
 	httpClient *resty.Client
 }
 
-func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
+func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	// optimize(wenfeng) give an argument to control if this sink support batch?
 	if len(events) != 1 {
 		return errFeishuSinkWrongEventNumber
 	}
 
-	atomic.AddInt64(&c.count, int64(len(events)))
+	atomic.AddInt64(&f.count, int64(len(events)))
 
 	e := events[0]
 	val, exist := e.Extensions()[vanceServiceNameAttribute]
@@ -126,13 +126,13 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Res
 	if !ok {
 		return errFeishuSinkEventMissingServiceName
 	}
-	if !slices.Contains(c.cfg.Enable, service) {
+	if !slices.Contains(f.cfg.Enable, service) {
 		return errFeishuSinkUnsupportedService
 	}
 
 	switch service {
 	case botService:
-		if err := c.sendTextToFeishuBot(e); err != nil {
+		if err := f.sendTextToFeishuBot(e); err != nil {
 			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 		}
 	default:
@@ -142,21 +142,21 @@ func (c *functionSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Res
 	return cdkgo.SuccessResult
 }
 
-func (c *functionSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (f *feishuSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	_cfg, ok := cfg.(*feishuConfig)
 	if !ok {
 		return nil
 	}
-	c.cfg = _cfg
+	f.cfg = _cfg
 
 	return nil
 }
 
-func (c *functionSink) Name() string {
+func (f *feishuSink) Name() string {
 	return name
 }
 
-func (c *functionSink) Destroy() error {
+func (f *feishuSink) Destroy() error {
 	// nothing to do
 	return nil
 }
