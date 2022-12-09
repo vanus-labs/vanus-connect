@@ -31,7 +31,7 @@ const (
 	botService = "bot"
 
 	name                      = "Feishu Sink"
-	vanceServiceNameAttribute = "vancefeishusinkservice"
+	vanceServiceNameAttribute = "xvfeishuservice"
 )
 
 var (
