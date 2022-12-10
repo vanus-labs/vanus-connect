@@ -108,6 +108,9 @@ tell HTTP Source.
 |:-------|:--------:|:-------:|-------------------------------------|
 | target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
 
+## Query Parameters Mapping
+
+
 ## Run in Kubernetes
 
 ```yaml
