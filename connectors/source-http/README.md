@@ -1,90 +1,152 @@
-# HTTP Source 
+# HTTP Source
 
-## Overview
+## Introduction
 
-A [Vance Connector][vc] which transforms HTTP requests to CloudEvents and deliver them to the target URL.
+The HTTP Source is a [Vance Connector](../README.md) which aims to convert incoming HTTP Request to a CloudEvent.
 
-## User Guidelines
+For example, if the incoming HTTP Request looks like:
 
-### Connector Introduction
-
-The HTTP Source is a [Vance Connector][vc] which aims to generate CloudEvents in a way that wraps all headers and body of the 
-original request into the `data` field of a new CloudEvent.
-
-For example, if an original request looks like:
-
-```http
-> POST /payload HTTP/2
-
-> Host: localhost:8080
-> User-Agent: VanceCDK-HttpClient/1.0.0
-> Content-Type: application/json
-> Content-Length: 39
-
-> {
->    "myData" : "simulation event data <1>"
-> }
+```bash
+curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "test":"demo"
+}'
 ```
 
-This POST HTTP request will be transformed into a CloudEvent looks like:
+which is converted to
 
-``` json
+```json
 {
-  "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
-  "source" : "vance-http-source",
-  "specversion" : "V1",
-  "type" : "http",
-  "datacontenttype" : "application/json",
-  "time" : "2022-05-17T18:44:02.681+08:00",
-  "data" : {
-    "headers" : {
-      "user-agent" : "VanceCDK-HttpClient/1.0.0",
-      "content-type" : "application/json",
-      "content-length" : "39",
-      "host" : "localhost:8080"
-    },
-    "body" : {
-      "myData" : "simulation event data <1>"
-    }
-  }
+  "specversion":"1.0",
+  "id":"abc",
+  "source":"123",
+  "type":"456",
+  "subject":"def",
+  "datacontenttype":"application/json",
+  "data":{
+    "test":"demo"
+  },
+  "xvhttpuseragent":"curl/7.77.0",
+  "xvhttpremoteip":"::1",
+  "xvhttpremoteaddr":"[::1]:62734"
 }
 ```
 
-## HTTP Source Configs
+## Quick Start
 
-Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+in this section, we show how to use HTTP Source push a message to your group chat.
 
-### Config Fields of the HTTP Source
-
-| Configs   | Description                                                                     | Example                 |
-|:----------|:--------------------------------------------------------------------------------|:------------------------|
-| v_target  | v_target is used to specify the target URL HTTP Source will send CloudEvents to | "http://localhost:8081" |
-| v_port    | v_port is used to specify the port HTTP Source is listening on                  | "8080"                  |
-
-## HTTP Source Image
-
-> docker.io/vancehub/source-http
-
-## Local Development
-
-You can run the source codes of the HTTP Source locally as well.
-
-### Building via Maven
+### Create Config file
 
 ```shell
-$ cd connectors/source-http
-$ mvn clean package
+cat << EOF > config.yml
+# Assuming you use Vanus(https://github.com/linkall-labs/vanus) as CloudEvent recevier, if you have other receiver, just set target to your endpoint.
+target: http://<url>:<port>/gateway/<eventbus>
+EOF
 ```
 
-### Running via Maven
+### Start Using Docker
 
 ```shell
-$ mvn exec:java -Dexec.mainClass="com.linkall.source.http.Entrance"
+# mapping 8080 to 31080 in order to avoid port conflict.
+docker run -d -p 31080:8080 --rm \
+  -v ${PWD}:/vance/config \
+  --name source-http public.ecr.aws/vanus/connector/source-http:latest
 ```
 
-⚠️ NOTE: For better local development and test, the connector can also read configs from `main/resources/config.json`. So, you don't need to 
-declare any environment variables or mount a config file to `/vance/config/config.json`.
+### Test
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
+```shell
+curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=456&subject=def' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "test":"demo"
+}'
+```
+
+now, you could use `vsctl get event <eventbus> --number 10` to view event just sent
+
+```
+~> vsctl get event <eventbus> --number 10
++-----+-------------------------------------------------+
+|     | Context Attributes,                             |
+|     |   specversion: 1.0                              |
+|     |   type: 456                                     |
+|     |   source: 123                                   |
+|     |   subject: def                                  |
+|     |   id: abc                                       |
+|     |   time: 2022-12-10T09:59:10.806608Z             |
+|     |   datacontenttype: application/json             |
+|     | Extensions,                                     |
+|  0  |   xvanuseventbus: wwf                           |
+|     |   xvanuslogoffset: AAAAAAAAAAg=                 |
+|     |   xvanusstime: 2022-12-10T09:59:11.574Z         |
+|     |   xvhttpremoteaddr: [::1]:62734                 |
+|     |   xvhttpremoteip: ::1                           |
+|     |   xvhttpuseragent: curl/7.77.0                  |
+|     | Data,                                           |
+|     |   {                                             |
+|     |     "xxxx": "aaa"                               |
+|     |   }                                             |
+|     |                                                 |
++-----+-------------------------------------------------+
+```
+
+### Clean
+
+```shell
+docker stop sink-feishu
+```
+
+## Configuration
+
+The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
+tell HTTP Source.
+
+| Name   | Required | Default | Description                         |
+|:-------|:--------:|:-------:|-------------------------------------|
+| target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
+
+## Run in Kubernetes
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-http
+  namespace: vanus
+data:
+  config.yml: |-
+    target: http://<url>:<port>/gateway/<eventbus>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-http
+  namespace: vanus
+  labels:
+    app: source-http
+spec:
+  selector:
+    matchLabels:
+      app: source-http
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-http
+    spec:
+      containers:
+        - name: source-http
+          image: public.ecr.aws/vanus/connector/source-http:latest
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-http
+```

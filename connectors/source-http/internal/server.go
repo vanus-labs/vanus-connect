@@ -31,14 +31,17 @@ import (
 )
 
 const (
-	name          = "HTTP Source"
-	defaultPort   = 8080
-	reqSource     = "source"
-	reqType       = "type"
-	reqID         = "id"
-	reqSubject    = "subject"
-	defaultSource = "vanus-http-source"
-	defaultType   = "naive-http-request"
+	name                       = "HTTP Source"
+	defaultPort                = 8080
+	reqSource                  = "source"
+	reqType                    = "type"
+	reqID                      = "id"
+	reqSubject                 = "subject"
+	defaultSource              = "vanus-http-source"
+	defaultType                = "naive-http-request"
+	extendAttributesUserAgent  = "xvhttpuseragent"
+	extendAttributesRemoteIP   = "xvhttpremoteip"
+	extendAttributesRemoteAddr = "xvhttpremoteaddr"
 )
 
 var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
@@ -154,6 +157,10 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 			e.SetSubject(string(args.Peek(reqSubject)))
 		}
 
+		e.SetExtension(extendAttributesUserAgent, string(ctx.UserAgent()))
+		e.SetExtension(extendAttributesRemoteIP, ctx.RemoteIP().String())
+		e.SetExtension(extendAttributesRemoteAddr, ctx.RemoteAddr().String())
+
 		// try to convert request.Body to json
 		m := map[string]interface{}{}
 		err := json.Unmarshal(ctx.PostBody(), &m)
@@ -168,6 +175,9 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 			ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
 			return
 		}
+		log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
+			"event": e.String(),
+		})
 		wg := sync.WaitGroup{}
 		wg.Add(1)
 		c.ch <- &cdkgo.Tuple{

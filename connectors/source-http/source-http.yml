@@ -5,25 +5,8 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_target: "xxxx"
-    eventbus: "xxxxx"
-    bucket:
-      endpoint: "xxxxx.cos.ap-beijing.myqcloud.com"
-    function:
-      region: "ap-beijing"
+    target: http://<url>:<port>/gateway/<eventbus>
 
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: source-http
-  namespace: vanus
-type: Opaque
-data:
-  # cat secret.yml | base64
-  secret.yml: |
-    xxxxx
-immutable: true
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -44,17 +27,12 @@ spec:
     spec:
       containers:
         - name: source-http
-          image: public.ecr.aws/vanus/connector/source-http:dev
+          image: public.ecr.aws/vanus/connector/source-http:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: config
               mountPath: /vance/config
-            - name: secret
-              mountPath: /vance/secret
       volumes:
-        - name: secret
-          secret:
-            secretName: source-http
         - name: config
           configMap:
             name: source-http
