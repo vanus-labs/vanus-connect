@@ -16,9 +16,9 @@ package main
 
 import (
 	"github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/source/tencent-cloud/cos/internal"
+	"github.com/linkall-labs/connector/source/http/internal"
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewConfig, internal.NewCosSink)
+	cdkgo.RunSource(internal.NewConfig, internal.NewHTTPSource)
 }
