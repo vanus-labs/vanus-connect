@@ -35,7 +35,7 @@ which is converted to
 
 ## Quick Start
 
-in this section, we show how to use HTTP Source push a message to your group chat.
+in this section, we show how HTTP Source convert HTTP request(made by cURL) to CloudEvent.
 
 ### Create Config file
 
