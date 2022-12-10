@@ -29,6 +29,9 @@ spec:
         - name: source-http
           image: public.ecr.aws/vanus/connector/source-http:latest
           imagePullPolicy: Always
+          env:
+            - name: LOG_LEVEL
+              value: INFO
           volumeMounts:
             - name: config
               mountPath: /vance/config

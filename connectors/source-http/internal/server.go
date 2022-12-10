@@ -37,6 +37,7 @@ const (
 	reqType                    = "type"
 	reqID                      = "id"
 	reqSubject                 = "subject"
+	reqSchema                  = "dataschema"
 	defaultSource              = "vanus-http-source"
 	defaultType                = "naive-http-request"
 	extendAttributesUserAgent  = "xvhttpuseragent"
@@ -155,6 +156,10 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 
 		if args.Has(reqSubject) && len(args.Peek(reqSubject)) > 0 {
 			e.SetSubject(string(args.Peek(reqSubject)))
+		}
+
+		if args.Has(reqSchema) && len(args.Peek(reqSchema)) > 0 {
+			e.SetDataSchema(string(args.Peek(reqSchema)))
 		}
 
 		e.SetExtension(extendAttributesUserAgent, string(ctx.UserAgent()))

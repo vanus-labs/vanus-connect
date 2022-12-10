@@ -39,17 +39,21 @@ in this section, we show how to use HTTP Source push a message to your group cha
 
 ### Create Config file
 
+Assuming you use Vanus(https://github.com/linkall-labs/vanus) as CloudEvent receiver, if you have other receiver,
+just set target to your endpoint.
+
 ```shell
 cat << EOF > config.yml
-# Assuming you use Vanus(https://github.com/linkall-labs/vanus) as CloudEvent recevier, if you have other receiver, just set target to your endpoint.
+# change url, port and eventbus to yours
 target: http://<url>:<port>/gateway/<eventbus>
 EOF
 ```
 
 ### Start Using Docker
 
+mapping 8080 to 31080 in order to avoid port conflict.
+
 ```shell
-# mapping 8080 to 31080 in order to avoid port conflict.
 docker run -d -p 31080:8080 --rm \
   -v ${PWD}:/vance/config \
   --name source-http public.ecr.aws/vanus/connector/source-http:latest
@@ -65,10 +69,11 @@ curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=4
 }'
 ```
 
-now, you could use `vsctl get event <eventbus> --number 10` to view event just sent
+now, you could use `vsctl event get <eventbus>` to view event just sent. If you can't see event you sent,
+try to use `--offset` to get event. (`vsctl` default retrieves event from earliest)
 
 ```
-~> vsctl get event <eventbus> --number 10
+~> vsctl event get <eventbus>
 +-----+-------------------------------------------------+
 |     | Context Attributes,                             |
 |     |   specversion: 1.0                              |
@@ -96,7 +101,7 @@ now, you could use `vsctl get event <eventbus> --number 10` to view event just s
 ### Clean
 
 ```shell
-docker stop sink-feishu
+docker stop source-http
 ```
 
 ## Configuration
@@ -104,12 +109,26 @@ docker stop sink-feishu
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell HTTP Source.
 
+
 | Name   | Required | Default | Description                         |
 |:-------|:--------:|:-------:|-------------------------------------|
 | target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
 
-## Query Parameters Mapping
+## Attributes
 
+if you want change default attributes of `id`,`source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes))
+to you own, you could use query parameter to set them.
+
+| Attribute  |      Default       | Query Parameter | Example                                 |
+|:----------:|:------------------:|:----------------|:----------------------------------------|
+|     id     |        UUID        | ?id=xxx         | http://url:port/webhook?id=xxxx         |
+|   source   | vanus-http-source  | ?source=xxx     | http://url:port/webhook?source=xxxx     |
+|    type    | naive-http-request | ?type=xxx       | http://url:port/webhook?type=xxxx       |
+|  subject   |       empty        | ?subject=xxx    | http://url:port/webhook?subject=xxxx    |
+| dataschema |       empty        | ?dataschema=xxx | http://url:port/webhook?dataschema=xxxx |
+
+`datacontenttype` will be auto infer based on request body, if body can be converted to `JSON`, the `application/json` will be set,
+otherwise `text/plain` will be set.
 
 ## Run in Kubernetes
 
@@ -145,6 +164,9 @@ spec:
         - name: source-http
           image: public.ecr.aws/vanus/connector/source-http:latest
           imagePullPolicy: Always
+          env:
+            - name: LOG_LEVEL
+              value: INFO
           volumeMounts:
             - name: config
               mountPath: /vance/config
