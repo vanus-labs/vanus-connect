@@ -41,8 +41,6 @@ const (
 	defaultType   = "naive-http-request"
 )
 
-var ()
-
 var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
 
 type httpSourceConfig struct {
@@ -180,6 +178,7 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 			},
 			Failed: func() {
 				ctx.Response.SetStatusCode(http.StatusInternalServerError)
+				ctx.Response.SetBody([]byte("failed to send event to remote server"))
 				wg.Done()
 			},
 		}
