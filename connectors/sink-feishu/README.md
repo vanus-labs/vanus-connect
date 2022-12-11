@@ -65,6 +65,8 @@ EOF
 
 ### Start Using Docker
 
+mapping 8080 to 31080 in order to avoid port conflict.
+
 ```shell
 docker run -d -p 31080:8080 --rm \
   -v ${PWD}:/vance/config \
@@ -149,7 +151,7 @@ curl --location --request POST 'localhost:31080' \
 
 #### Post Message
 ```shell
-curl --location --request POST 'localhost:8001' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -187,7 +189,7 @@ curl --location --request POST 'localhost:8001' \
 
 #### ShareChat Message
 ```shell
-curl --location --request POST 'localhost:8001' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -206,7 +208,7 @@ curl --location --request POST 'localhost:8001' \
 #### Image Message
 
 ```shell
-curl --location --request POST 'localhost:8001' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -227,7 +229,7 @@ curl --location --request POST 'localhost:8001' \
 #### Interactive Message
 
 ```shell
-curl --location --request POST 'localhost:8001' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",

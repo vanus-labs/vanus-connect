@@ -189,6 +189,19 @@ HTTP Source provides some [CloudEvents Extension Attributes](https://github.com/
 
 ```yaml
 apiVersion: v1
+kind: Service
+metadata:
+  name: source-http
+  namespace: vanus
+spec:
+  selector:
+    app: source-http
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-http
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: source-http
