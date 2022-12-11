@@ -173,8 +173,7 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 		ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
 		return
 	}
-	d, _ := e.MarshalJSON()
-	println(string(d))
+
 	log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
 		"event": e.String(),
 	})
