@@ -61,9 +61,6 @@ func (fc *feishuConfig) Validate() error {
 	for _, s := range fc.Enable {
 		switch s {
 		case botService:
-			if err := fc.Bot.Validate(); err != nil {
-				return err
-			}
 		default:
 			return fmt.Errorf("unsupported service %s in enable parameter", s)
 		}

@@ -76,33 +76,8 @@ type WebHook struct {
 	ChatGroup string `json:"chat_group" yaml:"chat_group" validate:"required"`
 }
 
-func (wh WebHook) Validate() error {
-	if wh.Address == "" {
-		return errors.New("webhook address is nil")
-	}
-	if wh.Signature == "" {
-		return errors.New("webhook signature is nil")
-	}
-	if wh.ChatGroup == "" {
-		return errors.New("webhook chat_group is nil")
-	}
-	return nil
-}
-
 type BotConfig struct {
-	Webhooks []WebHook `json:"webhooks" yaml:"webhooks"`
-}
-
-func (bc BotConfig) Validate() error {
-	if len(bc.Webhooks) == 0 {
-		return errors.New("feishu: bot webhooks can't be empty")
-	}
-	for _, v := range bc.Webhooks {
-		if err := v.Validate(); err != nil {
-			return err
-		}
-	}
-	return nil
+	Webhooks []WebHook `json:"webhooks" yaml:"webhooks" validate:"gt=0,dive"`
 }
 
 func (b *bot) sendMessage(e *v2.Event) error {
