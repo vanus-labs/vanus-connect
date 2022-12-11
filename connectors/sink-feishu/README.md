@@ -127,6 +127,8 @@ to determine how to process event
 
 ### Feishu Bot
 
+you could find official docs of Feishu bot in https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN?lang=zh-CN#132a114c.
+
 #### Text Message
 ```shell
 curl --location --request POST 'localhost:31080' \
