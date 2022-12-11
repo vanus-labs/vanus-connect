@@ -22,7 +22,6 @@ import (
 	"sync"
 	"time"
 
-	ce "github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/pkg/errors"
@@ -266,8 +265,4 @@ func (c *cosSource) Destroy() error {
 		"function_name": c.cfg.F.Name,
 	})
 	return nil
-}
-
-func (c *cosSource) Adapt(_ ...interface{}) ce.Event {
-	panic(fmt.Sprintf("%s doesn't support adaptor", name))
 }

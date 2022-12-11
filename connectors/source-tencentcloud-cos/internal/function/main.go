@@ -17,14 +17,15 @@ package main
 import (
 	"context"
 	"fmt"
-	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/uuid"
-	"github.com/linkall-labs/connector/sink/tencent-cloud/cos/internal"
-	"github.com/tencentyun/scf-go-lib/cloudfunction"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/uuid"
+	"github.com/linkall-labs/connector/source/tencent-cloud/cos/internal"
+	"github.com/tencentyun/scf-go-lib/cloudfunction"
 )
 
 const (
