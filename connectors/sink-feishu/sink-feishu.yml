@@ -20,11 +20,13 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
-      # write right webook
-      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
-    secret:
-      # write right bot_signature
-      bot_signature: "xxxxx"
+      webhooks:
+        - chat_group: "bot1"
+          signature: "xxxxxxxxxx"
+          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
+        - chat_group: "bot2"
+          signature: "xxxxxxxxxx"
+          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
 
 ---
 apiVersion: apps/v1
