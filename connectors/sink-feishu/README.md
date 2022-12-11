@@ -24,11 +24,11 @@ For example, if the incoming CloudEvent looks like:
 
 ### Supported Feishu Service
 
-- Bot: pushing a message to Group Chat (text)
+- Bot: pushing a message to Group Chat with message of text, post, share_chat, image, and interactive.
 
 ## Quick Start
 
-in this section, we show how to use Feishu Sink push a message to your group chat.
+in this section, we show how to use Feishu Sink push a text message to your group chat.
 
 ### Add a bot to your group chat
 
@@ -51,15 +51,15 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 > ⚠️ You must set your signature verification to make sure push messages work.
 
 ### Create Config file
-
+replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
 ```shell
 cat << EOF > config.yml
-# change the webhook and bot_signature to your.
-secret:
-  bot_signature: "xxxxxx"
 enable: ["bot"]
 bot:
-  webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx"
+  webhooks:
+    - chat_group: "bot1"
+      signature: "xxxxxxx"
+      address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxx"
 EOF
 ```
 
@@ -74,17 +74,19 @@ docker run -d -p 31080:8080 --rm \
 ### Test
 
 ```shell
-curl --location --request POST '127.0.0.1:31080' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
-  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-  "source": "sink-feishu-quickstart",
-  "specversion": "1.0",
-  "type": "hello",
-  "datacontenttype": "application/json",
-  "time": "2022-10-26T10:38:29.345Z",
-  "vancefeishusinkservice": "bot",
-  "data": "Hello Feishu!"
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "text",
+    "data": "Hello Feishu"
 }'
 ```
 
@@ -97,32 +99,175 @@ now, you cloud see a notice in your chat group.
 docker stop sink-feishu
 ```
 
-## Configuration
+## How to use
 
+### Configuration
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell Feishu Sink.
 
+| Name                 | Required | Default | Description                                  |
+|:---------------------|:--------:|:-------:|----------------------------------------------|
+| enable               | **YES**  |    -    | service list you want Feishu Sink is enabled |
+| bot.webhooks         | **YES**  |    -    | list of chat-group's configuration           |
 
-| Name                 | Required | Default | Description                                                                              |
-| :--------------------- | :--------: | :-------: | ------------------------------------------------------------------------------------------ |
-| secret.bot_signature | **YES** |    -    | Feishu Bot signature.                                                                    |
-| enable               | **YES** |    -    | which services you want Feishu Sink are enabled                                          |
-| bot.webhook          | **YES** |    -    | HTTP endpoint of Feishu Bot, looks like https://open.feishu.cn/open-apis/bot/v2/hook/... |
+### Extension Attributes
+Feishu Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+to determine how to process event
 
-### Separate Secret(Optional)
+| Attribute         | Required | Default | Description                                                                                            |
+|:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
+| xvfeishuservice   | **YES**  |    -    | which Feishu Service the event sent for                                                                |
+| xvfeishumsgtype   | **YES**  |    -    | which Message Type the event convert to                                                                |
+| xvfeishuchatgroup | **YES**  |    -    | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration |
 
-If you want separate secret information to an independent file, you could create a file like:
+## Examples
 
+### Feishu Bot
+
+#### Text Message
 ```shell
-cat << EOF > secret.yml
-bot_signature: "xxxxxx"
-EOF
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "text",
+    "data": "Hello Feishu"
+}'
 ```
 
-then mount it into your container. The default path of it is `/vance/config/secret.yml`. if you want to change the default path,
-you can set env `CONNECTOR_SECRET` to tell Feishu Sink.
+#### Post Message
+```shell
+curl --location --request POST 'localhost:8001' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "post",
+    "data": {
+        "zh_cn": {
+				"title": "项目更新通知",
+				"content": [
+					[{
+							"tag": "text",
+							"text": "项目有更新: "
+						},
+						{
+							"tag": "a",
+							"text": "请查看",
+							"href": "http://www.baidu.com/"
+						},
+						{
+							"tag": "at",
+							"user_id": "abcdefgh"
+						}
+					]
+				]
+			}
+    }
+}'
+```
 
-This feature is very useful when you want to use [Secrets](https://kubernetes.io/docs/concepts/configuration/secret/) in Kubernetes
+#### ShareChat Message
+```shell
+curl --location --request POST 'localhost:8001' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "share_chat",
+    "data": "oc_ad6c99f9"
+}'
+```
+
+#### Image Message
+
+```shell
+curl --location --request POST 'localhost:8001' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "image",
+    "data": {
+        "target": "feishu"
+    }
+}'
+```
+
+#### Interactive Message
+
+```shell
+curl --location --request POST 'localhost:8001' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishuchatgroup": "bot1",
+    "xvfeishumsgtype": "interactive",
+    "data": {
+        "elements": [
+            {
+                "tag": "div",
+                "text": {
+                    "content": "**西湖**，位于浙江省杭州市西湖区龙井路1号，杭州市区西部，景区总面积49平方千米，汇水面积为21.22平方千米，湖面面积为6.38平方千米。",
+                    "tag": "lark_md"
+                }
+            },
+            {
+                "actions": [
+                    {
+                        "tag": "button",
+                        "text": {
+                            "content": "更多景点介绍 :玫瑰:",
+                            "tag": "lark_md"
+                        },
+                        "url": "https://www.example.com",
+                        "type": "default",
+                        "value": {}
+                    }
+                ],
+                "tag": "action"
+            }
+        ],
+        "header": {
+            "title": {
+                "content": "今日旅游推荐",
+                "tag": "plain_text"
+            }
+        }
+    }
+}'
+```
 
 ## Run in Kubernetes
 
@@ -149,11 +294,13 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
-      # write right webook
-      webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxx"
-    secret:
-      # write right bot_signature
-      bot_signature: "xxxxx"
+      webhooks:
+        - chat_group: "bot1"
+          signature: "xxxxxxxxxx"
+          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
+        - chat_group: "bot1"
+          signature: "xxxxxxxxxx"
+          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
 
 ---
 apiVersion: apps/v1
@@ -175,8 +322,8 @@ spec:
     spec:
       containers:
         - name: sink-feishu
-#          For China mainland
-#          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
+          #          For China mainland
+          #          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
           image: public.ecr.aws/vanus/connector/sink-feishu:latest
           resources:
             requests:
