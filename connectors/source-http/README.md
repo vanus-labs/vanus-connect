@@ -7,7 +7,7 @@ The HTTP Source is a [Vance Connector](../README.md) which aims to convert incom
 For example, if the incoming HTTP Request looks like:
 
 ```bash
-curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def' \
+curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def&test=demo' \
 --header 'Content-Type: text/plain' \
 --data-raw '{
     "test":"demo"
@@ -25,11 +25,32 @@ which is converted to
   "subject":"def",
   "datacontenttype":"application/json",
   "data":{
-    "test":"demo"
+    "body":{
+      "xxxx":"aaa"
+    },
+    "headers":{
+      "Accept":"*/*",
+      "Accept-Encoding":"gzip, deflate, br",
+      "Connection":"keep-alive",
+      "Content-Length":"20",
+      "Content-Type":"text/plain",
+      "Host":"localhost:12321",
+      "Postman-Token":"6abb2398-d4f3-4eb1-9c57-65b6934b84c1",
+      "User-Agent":"PostmanRuntime/7.29.2"
+    },
+    "method":"POST",
+    "path":"/webhook",
+    "query_args":{
+      "id":"abc",
+      "source":"123",
+      "subject":"def",
+      "test":"demo",
+      "type":"456"
+    }
   },
-  "xvhttpuseragent":"curl/7.77.0",
   "xvhttpremoteip":"::1",
-  "xvhttpremoteaddr":"[::1]:62734"
+  "xvhttpremoteaddr":"[::1]:57822",
+  "xvhttpbodyisjson":true
 }
 ```
 
@@ -74,28 +95,49 @@ try to use `--offset` to get event. (`vsctl` default retrieves event from earlie
 
 ```
 ~> vsctl event get <eventbus>
-+-----+-------------------------------------------------+
-|     | Context Attributes,                             |
-|     |   specversion: 1.0                              |
-|     |   type: 456                                     |
-|     |   source: 123                                   |
-|     |   subject: def                                  |
-|     |   id: abc                                       |
-|     |   time: 2022-12-10T09:59:10.806608Z             |
-|     |   datacontenttype: application/json             |
-|     | Extensions,                                     |
-|  0  |   xvanuseventbus: wwf                           |
-|     |   xvanuslogoffset: AAAAAAAAAAg=                 |
-|     |   xvanusstime: 2022-12-10T09:59:11.574Z         |
-|     |   xvhttpremoteaddr: [::1]:62734                 |
-|     |   xvhttpremoteip: ::1                           |
-|     |   xvhttpuseragent: curl/7.77.0                  |
-|     | Data,                                           |
-|     |   {                                             |
-|     |     "xxxx": "aaa"                               |
-|     |   }                                             |
-|     |                                                 |
-+-----+-------------------------------------------------+
++-----+----------------------------------------------------------------+
+|     | Context Attributes,                                            |
+|     |   specversion: 1.0                                             |
+|     |   type: 456                                                    |
+|     |   source: 123                                                  |
+|     |   subject: def                                                 |
+|     |   id: abc                                                      |
+|     |   time: 2022-12-11T11:42:50.135762Z                            |
+|     |   datacontenttype: application/json                            |
+|     | Extensions,                                                    |
+|     |   xvanuseventbus: wwf                                          |
+|     |   xvanuslogoffset: AAAAAAAAAAQ=                                |
+|     |   xvanusstime: 2022-12-11T11:42:50.874Z                        |
+|     |   xvhttpbodyisjson: true                                       |
+|     |   xvhttpremoteaddr: [::1]:57822                                |
+|     |   xvhttpremoteip: ::1                                          |
+|     | Data,                                                          |
+|     |   {                                                            |
+|     |     "body": {                                                  |
+|     |       "xxxx": "aaa"                                            |
+|     |     },                                                         |
+|  0  |     "headers": {                                               |
+|     |       "Accept": "*/*",                                         |
+|     |       "Accept-Encoding": "gzip, deflate, br",                  |
+|     |       "Connection": "keep-alive",                              |
+|     |       "Content-Length": "20",                                  |
+|     |       "Content-Type": "text/plain",                            |
+|     |       "Host": "localhost:12321",                               |
+|     |       "Postman-Token": "6abb2398-d4f3-4eb1-9c57-65b6934b84c1", |
+|     |       "User-Agent": "PostmanRuntime/7.29.2"                    |
+|     |     },                                                         |
+|     |     "method": "POST",                                          |
+|     |     "path": "/webhook",                                        |
+|     |     "query_args": {                                            |
+|     |       "id": "abc",                                             |
+|     |       "source": "123",                                         |
+|     |       "subject": "def",                                        |
+|     |       "test": "demo",                                          |
+|     |       "type": "456"                                            |
+|     |     }                                                          |
+|     |   }                                                            |
+|     |                                                                |
++-----+----------------------------------------------------------------+
 ```
 
 ### Clean
@@ -104,7 +146,9 @@ try to use `--offset` to get event. (`vsctl` default retrieves event from earlie
 docker stop source-http
 ```
 
-## Configuration
+## How to use
+
+### Configuration
 
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell HTTP Source.
@@ -114,8 +158,9 @@ tell HTTP Source.
 |:-------|:--------:|:-------:|-------------------------------------|
 | target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
 
-## Attributes
+### Attributes
 
+#### Changing Default Required Attributes
 if you want change default attributes of `id`,`source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes))
 to you own, you could use query parameter to set them.
 
@@ -129,6 +174,16 @@ to you own, you could use query parameter to set them.
 
 `datacontenttype` will be auto infer based on request body, if body can be converted to `JSON`, the `application/json` will be set,
 otherwise `text/plain` will be set.
+
+#### Extension Attributes
+HTTP Source provides some [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+
+|    Attribute     |  Type   | Description                                                                                                                      |
+|:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
+| xvhttpbodyisjson | boolean | HTTP Sink will validate if request body is JSON format data, if it is, this attribute is `true`, otherwise `false`               |
+|  xvhttpremoteip  | string  | The IP of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP      |
+| xvhttpremoteaddr | string  | The address of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP |
+
 
 ## Run in Kubernetes
 

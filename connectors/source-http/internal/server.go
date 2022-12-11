@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -22,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
@@ -40,12 +43,30 @@ const (
 	reqSchema                  = "dataschema"
 	defaultSource              = "vanus-http-source"
 	defaultType                = "naive-http-request"
-	extendAttributesUserAgent  = "xvhttpuseragent"
+	extendAttributesBodyIsJSON = "xvhttpbodyisjson"
 	extendAttributesRemoteIP   = "xvhttpremoteip"
 	extendAttributesRemoteAddr = "xvhttpremoteaddr"
 )
 
 var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
+
+type HTTPEvent struct {
+	Path      string            `json:"path"`
+	Method    string            `json:"method"`
+	QueryArgs map[string]string `json:"query_args"`
+	Headers   map[string]string `json:"headers"`
+	Body      interface{}       `json:"body"`
+}
+
+func (he *HTTPEvent) toMap() map[string]interface{} {
+	return map[string]interface{}{
+		"path":       he.Path,
+		"method":     he.Method,
+		"query_args": he.QueryArgs,
+		"headers":    he.Headers,
+		"body":       he.Body,
+	}
+}
 
 type httpSourceConfig struct {
 	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
@@ -125,81 +146,126 @@ func (c *httpSource) Destroy() error {
 }
 
 func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
-	path := string(ctx.Path())
 
-	if !ctx.IsPost() {
+	he := &HTTPEvent{
+		Path:      string(ctx.Path()),
+		Method:    string(ctx.Method()),
+		QueryArgs: getQueryArgs(ctx),
+		Headers:   getHeaders(ctx),
+	}
+
+	e := v2.NewEvent()
+	mappingAttributes(ctx, &e)
+
+	// try to convert request.Body to json
+	m := map[string]interface{}{}
+	err := json.Unmarshal(ctx.Request.Body(), &m)
+	if err == nil {
+		he.Body = m
+		e.SetExtension(extendAttributesBodyIsJSON, true)
+	} else {
+		he.Body = string(ctx.Request.Body())
+		e.SetExtension(extendAttributesBodyIsJSON, false)
+	}
+
+	if err = e.SetData(v2.ApplicationJSON, he.toMap()); err != nil {
 		ctx.Response.SetStatusCode(http.StatusBadRequest)
-		ctx.Response.SetBody([]byte("invalid request method, only POST is allowed"))
+		ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
+		return
+	}
+	d, _ := e.MarshalJSON()
+	println(string(d))
+	log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
+		"event": e.String(),
+	})
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	c.ch <- &cdkgo.Tuple{
+		Event: &e,
+		Success: func() {
+			ctx.Response.SetStatusCode(http.StatusOK)
+			wg.Done()
+		},
+		Failed: func() {
+			ctx.Response.SetStatusCode(http.StatusInternalServerError)
+			ctx.Response.SetBody([]byte("failed to send event to remote server"))
+			wg.Done()
+		},
+	}
+	wg.Wait()
+}
+
+func mappingAttributes(ctx *fasthttp.RequestCtx, e *v2.Event) {
+	args := ctx.QueryArgs()
+	if args.Has(reqID) && len(args.Peek(reqID)) > 0 {
+		e.SetID(string(args.Peek(reqID)))
+	} else {
+		e.SetID(uuid.NewString())
 	}
 
-	switch path {
-	case "/webhook":
-		args := ctx.QueryArgs()
-		e := v2.NewEvent()
-		if args.Has(reqID) && len(args.Peek(reqID)) > 0 {
-			e.SetID(string(args.Peek(reqID)))
-		} else {
-			e.SetID(uuid.NewString())
+	if args.Has(reqSource) && len(args.Peek(reqSource)) > 0 {
+		e.SetSource(string(args.Peek(reqSource)))
+	} else {
+		e.SetSource(defaultSource)
+	}
+
+	if args.Has(reqType) && len(args.Peek(reqType)) > 0 {
+		e.SetType(string(args.Peek(reqType)))
+	} else {
+		e.SetType(defaultType)
+	}
+
+	if args.Has(reqSubject) && len(args.Peek(reqSubject)) > 0 {
+		e.SetSubject(string(args.Peek(reqSubject)))
+	}
+
+	if args.Has(reqSchema) && len(args.Peek(reqSchema)) > 0 {
+		e.SetDataSchema(string(args.Peek(reqSchema)))
+	}
+
+	e.SetExtension(extendAttributesRemoteIP, ctx.RemoteIP().String())
+	e.SetExtension(extendAttributesRemoteAddr, ctx.RemoteAddr().String())
+}
+
+func getQueryArgs(ctx *fasthttp.RequestCtx) map[string]string {
+	m := map[string]string{}
+	args := strings.Split(ctx.QueryArgs().String(), "&")
+	for _, arg := range args {
+		kv := strings.Split(arg, "=")
+		if len(kv) == 2 {
+			m[kv[0]] = kv[1]
 		}
+	}
+	return m
+}
 
-		if args.Has(reqSource) && len(args.Peek(reqSource)) > 0 {
-			e.SetSource(string(args.Peek(reqSource)))
-		} else {
-			e.SetSource(defaultSource)
-		}
-
-		if args.Has(reqType) && len(args.Peek(reqType)) > 0 {
-			e.SetType(string(args.Peek(reqType)))
-		} else {
-			e.SetType(defaultType)
-		}
-
-		if args.Has(reqSubject) && len(args.Peek(reqSubject)) > 0 {
-			e.SetSubject(string(args.Peek(reqSubject)))
-		}
-
-		if args.Has(reqSchema) && len(args.Peek(reqSchema)) > 0 {
-			e.SetDataSchema(string(args.Peek(reqSchema)))
-		}
-
-		e.SetExtension(extendAttributesUserAgent, string(ctx.UserAgent()))
-		e.SetExtension(extendAttributesRemoteIP, ctx.RemoteIP().String())
-		e.SetExtension(extendAttributesRemoteAddr, ctx.RemoteAddr().String())
-
-		// try to convert request.Body to json
-		m := map[string]interface{}{}
-		err := json.Unmarshal(ctx.PostBody(), &m)
-		if err == nil {
-			err = e.SetData(v2.ApplicationJSON, m)
-		} else {
-			err = e.SetData(v2.TextPlain, string(ctx.PostBody()))
-		}
-
+func getHeaders(ctx *fasthttp.RequestCtx) map[string]string {
+	m := map[string]string{}
+	r := bufio.NewReader(bytes.NewReader(ctx.Request.Header.Header()))
+	for {
+		l, isPrefix, err := r.ReadLine()
 		if err != nil {
-			ctx.Response.SetStatusCode(http.StatusBadRequest)
-			ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
-			return
+			break
 		}
-		log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
-			"event": e.String(),
-		})
-		wg := sync.WaitGroup{}
-		wg.Add(1)
-		c.ch <- &cdkgo.Tuple{
-			Event: &e,
-			Success: func() {
-				ctx.Response.SetStatusCode(http.StatusOK)
-				wg.Done()
-			},
-			Failed: func() {
-				ctx.Response.SetStatusCode(http.StatusInternalServerError)
-				ctx.Response.SetBody([]byte("failed to send event to remote server"))
-				wg.Done()
-			},
+		var _l []byte
+		for isPrefix {
+			_l, isPrefix, err = r.ReadLine()
+			if err != nil {
+				break
+			}
+			l = append(l, _l...)
 		}
-		wg.Wait()
-	default:
-		ctx.Response.SetStatusCode(http.StatusNotFound)
-		ctx.Response.SetBody([]byte("invalid request path, only /webhook is allowed"))
+		str := string(l)
+		idx := strings.Index(str, ":")
+		if idx == -1 {
+			// ignore something like POST /webhook?source=123&id=1234sda&type=xxxxx&subject=12eqsd&asdax=asdasd HTTP/1.1
+			continue
+		}
+		if idx+2 < len(str)-1 {
+			m[str[0:idx]] = str[idx+2:]
+		}
 	}
+
+	return m
 }
