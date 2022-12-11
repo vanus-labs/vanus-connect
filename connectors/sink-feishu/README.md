@@ -105,10 +105,13 @@ docker stop sink-feishu
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell Feishu Sink.
 
-| Name                 | Required | Default | Description                                  |
-|:---------------------|:--------:|:-------:|----------------------------------------------|
-| enable               | **YES**  |    -    | service list you want Feishu Sink is enabled |
-| bot.webhooks         | **YES**  |    -    | list of chat-group's configuration           |
+| Name                       | Required | Default | Description                                                                       |
+|:---------------------------|:--------:|:-------:|-----------------------------------------------------------------------------------|
+| enable                     | **YES**  |    -    | service list you want Feishu Sink is enabled                                      |
+| bot.webhooks               | **YES**  |    -    | list of chat-group's configuration                                                |
+| bot.webhooks.[].chat_group | **YES**  |    -    | the chat_group name, you can set any value to it                                  |
+| bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign reqeust, you can get it when you create Chat Bot            |
+| bot.webhooks.[].address    | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
 ### Extension Attributes
 Feishu Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
@@ -158,24 +161,24 @@ curl --location --request POST 'localhost:8001' \
     "xvfeishumsgtype": "post",
     "data": {
         "zh_cn": {
-				"title": "项目更新通知",
-				"content": [
-					[{
-							"tag": "text",
-							"text": "项目有更新: "
-						},
-						{
-							"tag": "a",
-							"text": "请查看",
-							"href": "http://www.baidu.com/"
-						},
-						{
-							"tag": "at",
-							"user_id": "abcdefgh"
-						}
-					]
-				]
-			}
+            "title": "项目更新通知",
+            "content": [
+                [{
+                        "tag": "text",
+                        "text": "项目有更新: "
+                    },
+                    {
+                        "tag": "a",
+                        "text": "请查看",
+                        "href": "http://www.baidu.com/"
+                    },
+                    {
+                        "tag": "at",
+                        "user_id": "abcdefgh"
+                    }
+                ]
+            ]
+        }
     }
 }'
 ```
