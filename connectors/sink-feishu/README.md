@@ -298,7 +298,7 @@ data:
         - chat_group: "bot1"
           signature: "xxxxxxxxxx"
           address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
-        - chat_group: "bot1"
+        - chat_group: "bot2"
           signature: "xxxxxxxxxx"
           address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
 

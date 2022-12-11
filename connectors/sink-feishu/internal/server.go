@@ -17,11 +17,12 @@ package internal
 import (
 	"context"
 	"fmt"
-	"github.com/go-resty/resty/v2"
+	"github.com/pkg/errors"
 	"net/http"
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
+	"github.com/go-resty/resty/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"k8s.io/utils/strings/slices"
 )
@@ -50,7 +51,6 @@ type feishuConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 	Enable           []string  `json:"enable" yaml:"enable"`
 	Bot              BotConfig `json:"bot" yaml:"bot"`
-	Secret           Secret    `json:"secret" yaml:"secret"`
 }
 
 func (fc *feishuConfig) Validate() error {
@@ -72,7 +72,7 @@ func (fc *feishuConfig) Validate() error {
 }
 
 func (fc *feishuConfig) GetSecret() cdkgo.SecretAccessor {
-	return &fc.Secret
+	return nil
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
@@ -132,11 +132,9 @@ func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Resul
 func (f *feishuSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	_cfg, ok := cfg.(*feishuConfig)
 	if !ok {
-		return nil
+		return errors.New("feishu: invalid configuration type")
 	}
-	if err := _cfg.Validate(); err != nil {
-		return err
-	}
+
 	f.cfg = _cfg
 	return f.b.init(_cfg.Bot)
 }

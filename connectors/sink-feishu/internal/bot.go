@@ -71,9 +71,9 @@ func (b *bot) init(cfg BotConfig) error {
 }
 
 type WebHook struct {
-	Address   string `json:"address" yaml:"address"`
-	Signature string `json:"signature" yaml:"signature"`
-	ChatGroup string `json:"chat_group" yaml:"chat_group"`
+	Address   string `json:"address" yaml:"address" validate:"required"`
+	Signature string `json:"signature" yaml:"signature" validate:"required"`
+	ChatGroup string `json:"chat_group" yaml:"chat_group" validate:"required"`
 }
 
 func (wh WebHook) Validate() error {
