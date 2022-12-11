@@ -17,13 +17,12 @@ package internal
 import (
 	"context"
 	"fmt"
+	"github.com/go-resty/resty/v2"
 	"net/http"
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/go-resty/resty/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/pkg/errors"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -36,27 +35,15 @@ const (
 
 var (
 	errFeishuSinkWrongEventNumber = cdkgo.NewResult(http.StatusBadRequest,
-		"sink: the event number must be 1")
+		"feishu: the event number must be 1")
 	errFeishuSinkEventMissingServiceName = cdkgo.NewResult(http.StatusBadRequest,
-		"sink: missing or invalid service name, please check vancefeishusinkservice in attributes")
-	errFeishuSinkUnsupportedService = cdkgo.NewResult(http.StatusBadRequest, "sink: unsupported service")
+		"feishu: missing or invalid service name, please check xvfeishuservice in attributes")
+	errFeishuSinkUnsupportedService = cdkgo.NewResult(http.StatusBadRequest, "feishu: unsupported service")
 )
 
 var _ cdkgo.SinkConfigAccessor = &feishuConfig{}
 
 type Secret struct {
-	BotSignature string `json:"bot_signature" yaml:"bot_signature"`
-}
-
-type BotConfig struct {
-	Webhook string `json:"webhook" yaml:"webhook"`
-}
-
-func (bc BotConfig) Validate() error {
-	if bc.Webhook == "" {
-		return errors.New("feishu: bot webhook can't be empty")
-	}
-	return nil
 }
 
 type feishuConfig struct {
@@ -64,10 +51,13 @@ type feishuConfig struct {
 	Enable           []string  `json:"enable" yaml:"enable"`
 	Bot              BotConfig `json:"bot" yaml:"bot"`
 	Secret           Secret    `json:"secret" yaml:"secret"`
-	Debug            bool      `json:"debug" yaml:"debug"`
 }
 
 func (fc *feishuConfig) Validate() error {
+	if err := fc.SinkConfig.Validate(); err != nil {
+		return err
+	}
+
 	for _, s := range fc.Enable {
 		switch s {
 		case botService:
@@ -78,11 +68,6 @@ func (fc *feishuConfig) Validate() error {
 			return fmt.Errorf("unsupported service %s in enable parameter", s)
 		}
 	}
-
-	if fc.Secret.BotSignature == "" {
-		return errors.New("feishu: secret can't be empty")
-	}
-
 	return nil
 }
 
@@ -96,16 +81,18 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 
 func NewFeishuSink() cdkgo.Sink {
 	return &feishuSink{
-		httpClient: resty.New(),
+		b: &bot{
+			httpClient: resty.New(),
+		},
 	}
 }
 
 var _ cdkgo.Sink = &feishuSink{}
 
 type feishuSink struct {
-	cfg        *feishuConfig
-	count      int64
-	httpClient *resty.Client
+	cfg   *feishuConfig
+	count int64
+	b     *bot
 }
 
 func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
@@ -132,7 +119,7 @@ func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Resul
 
 	switch service {
 	case botService:
-		if err := f.sendTextToFeishuBot(e); err != nil {
+		if err := f.b.sendMessage(e); err != nil {
 			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 		}
 	default:
@@ -147,9 +134,11 @@ func (f *feishuSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) err
 	if !ok {
 		return nil
 	}
+	if err := _cfg.Validate(); err != nil {
+		return err
+	}
 	f.cfg = _cfg
-
-	return nil
+	return f.b.init(_cfg.Bot)
 }
 
 func (f *feishuSink) Name() string {
