@@ -17,13 +17,13 @@ package internal
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"net/http"
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
+	"github.com/pkg/errors"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -68,10 +68,6 @@ func (fc *feishuConfig) Validate() error {
 			return fmt.Errorf("unsupported service %s in enable parameter", s)
 		}
 	}
-	return nil
-}
-
-func (fc *feishuConfig) GetSecret() cdkgo.SecretAccessor {
 	return nil
 }
 
