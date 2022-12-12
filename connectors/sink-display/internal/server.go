@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
@@ -62,7 +61,9 @@ func (ds *displaySink) Arrived(_ context.Context, events ...*v2.Event) connector
 	for idx := range events {
 		e := events[idx]
 		atomic.AddInt64(&ds.count, 1)
-		fmt.Printf("receive a new event, in total: %d\n", atomic.LoadInt64(&ds.count))
+		log.Info("receive a new event", map[string]interface{}{
+			"in_total": atomic.LoadInt64(&ds.count),
+		})
 		d, err := e.MarshalJSON()
 		if err != nil {
 			log.Warning("received a new event, but failed to marshal to JSON", map[string]interface{}{
