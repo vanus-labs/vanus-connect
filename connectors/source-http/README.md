@@ -231,6 +231,13 @@ spec:
       containers:
         - name: source-http
           image: public.ecr.aws/vanus/connector/source-http:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           imagePullPolicy: Always
           env:
             - name: LOG_LEVEL

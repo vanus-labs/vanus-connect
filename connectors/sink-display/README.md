@@ -4,9 +4,7 @@
 
 A [Vance Connector][vc] which prints received CloudEvents. This is commonly used as a logger to check incoming data.
 
-## User Guidelines
-
-### Connector introduction
+## Introduction
 
 The Display Sink is a single function [Connector][vc] which aims to print incoming CloudEvents in JSON format.
 
@@ -14,49 +12,119 @@ For example, it will print the incoming CloudEvent looks like:
 
 ```http
 {
-  "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
-  "source" : "vance-http-source",
-  "specversion" : "V1",
-  "type" : "http",
-  "datacontenttype" : "application/json",
-  "time" : "2022-05-17T18:44:02.681+08:00",
-  "data" : {
-    "myData" : "simulation event data <1>"
+  "specversion": "1.0",
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "myData": "simulation event data"
   }
 }
 ```
 
-## Display Sink Configs
+## Quick Start
 
-Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+### Start Using Docker
 
-### Config Fields of the Display Sink
-
-| Configs   | Required | Description                                                            | Example                 |
-|:----------|:----|:-----------------------------------------------------------------------|:------------------------|
-| v_port    |   false   | v_port is used to specify the port Display Sink is listening on           | "8080"                  |
-
-## Display Sink Image
-
-> docker.io/vancehub/display
-
-## Local Development
-
-You can run the sink codes of the Display Sink locally as well.
-
-### Building via Maven
+mapping 8080 to 31080 in order to avoid port conflict.
 
 ```shell
-$ cd sink-http
-$ mvn clean package
+docker run -d -p 31080:8080 --rm \
+  -v ${PWD}:/vance/config \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display:latest
 ```
 
-### Running via Maven
+### Test
+1. make a HTTP request
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "data": {
+        "myData": "simulation event data"
+    }
+}'
+```
+
+2. view logs
+```shell
+docker logs sink-display
+```
 
 ```shell
-$ mvn exec:java -Dexec.mainClass="com.linkall.sink.display.Entrance"
+time="2022-12-12T02:20:07.532592849Z" level=info msg="logger level is set" log_level=INFO
+time="2022-12-12T02:20:07.53882172Z" level=info msg="the connector started" connector-name="Display Sink" listening=8080
+receive a new event, in total: 1
+{
+  "specversion": "1.0",
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "myData": "simulation event data"
+  }
+}
+```
+### Clean
+
+```shell
+docker stop sink-display
+```
+
+## How to use
+
+### Run in Kubernetes
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-display
+  namespace: vanus
+spec:
+  selector:
+    app: sink-display
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-display
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-display
+  namespace: vanus
+  labels:
+    app: sink-display
+spec:
+  selector:
+    matchLabels:
+      app: sink-display
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-display
+    spec:
+      containers:
+        - name: sink-display
+          image: public.ecr.aws/vanus/connector/sink-display:latest
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md

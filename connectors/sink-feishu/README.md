@@ -136,7 +136,7 @@ to determine how to process event.
 
 ### Chat Bot Dynamic Webhook
 
-In some cases, users can't make how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to
+In some cases, users can't make sure how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to
 Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
 
 in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xvfeishuboturls` and `xvfeishubotsigns` will be ignored.
@@ -145,7 +145,7 @@ in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xvf
 enable: ["bot"]
 bot:
   dynamic_route: true
-    webhooks:
+  webhooks:
     - chat_group: "bot_predefined"
       url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxx"
       signature: "xxxxxx"
