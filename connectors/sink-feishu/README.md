@@ -196,8 +196,6 @@ this request will also send message to `bot_predefined`.
 
 Note: Specified chat group was represented by `xvfeishuchatgroup` will be ignored if it wasn't be found in configuration.
 
-#### Hybrid Dynamic Webhook with
-
 ## Examples
 
 ### Feishu Bot
