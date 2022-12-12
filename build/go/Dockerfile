@@ -28,6 +28,7 @@ RUN touch /vance/run.sh && \
     echo $EXECUTABLE_FILE >> /vance/run.sh && \
     chmod a+x /vance/bin/${connector} && \
     chmod a+x /vance/run.sh && \
+    mkdir /vance/config && \
     touch /vance/config/config.yml
 
 EXPOSE 8080
