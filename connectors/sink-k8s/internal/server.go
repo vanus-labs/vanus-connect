@@ -18,14 +18,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/cloudevents/sdk-go/v2/protocol"
-	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/linkall-labs/cdk-go/connector"
-
 	ce "github.com/cloudevents/sdk-go/v2"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
-	cdkutil "github.com/linkall-labs/cdk-go/utils"
-
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -49,7 +44,18 @@ const (
 )
 
 type Config struct {
-	Secret *Secret `json:"-" yaml:"-"`
+	cdkgo.SinkConfig
+	Secret *Secret `json:"secret" yaml:"secret"`
+}
+
+func NewKubernetesConfig() cdkgo.SinkConfigAccessor {
+	return &Config{
+		Secret: &Secret{},
+	}
+}
+
+func (c *Config) GetSecret() cdkgo.SecretAccessor {
+	return c.Secret
 }
 
 type Secret struct {
@@ -64,67 +70,46 @@ type k8sSink struct {
 	logger log.Logger
 }
 
-func NewKubernetesSink() connector.Sink {
+func NewKubernetesSink() cdkgo.Sink {
 	return &k8sSink{}
 }
 
-func (s *k8sSink) Init(cfgPath, secretPath string) error {
-	cfg := &Config{}
-	if err := cdkutil.ParseConfig(cfgPath, cfg); err != nil {
-		return err
-	}
-
-	if connector.IsSecretEnable() {
-		secret := &Secret{}
-		if err := cdkutil.ParseConfig(secretPath, secret); err != nil {
-			return err
-		}
-		cfg.Secret = secret
-	}
-
+func (s *k8sSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.cfg = cfg.(*Config)
 	kubeconfig := GetKubeConfigFromEnv()
 	config, err := GetInClusterOrKubeConfig(kubeconfig)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	s.client = kubernetes.NewForConfigOrDie(config)
-	s.cfg = cfg
 	return nil
 }
 
-func (s *k8sSink) Name() string {
-	return "kubernetes-sink"
-}
-
-func (s *k8sSink) SetLogger(logger log.Logger) {
-	s.logger = logger
-}
-
-func (s *k8sSink) Destroy() error {
-	return nil
-}
-
-func (s *k8sSink) Receive(ctx context.Context, event ce.Event) protocol.Result {
+func (s *k8sSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
+	if len(events) != 1 {
+		return cdkgo.NewResult(http.StatusInternalServerError, "the event number must be 1")
+	}
+	event := events[0]
 	var err error
-	log.Info(ctx, "receive an event", map[string]interface{}{
+	log.Info("receive an event", map[string]interface{}{
 		"event_id": event.ID(),
 	})
 	data := event.Data()
 	reader, err := NewResourceReader(data)
 	if err != nil {
-		log.Info(ctx, "new resource reader failed", map[string]interface{}{
+		log.Info("new resource reader failed", map[string]interface{}{
 			log.KeyError: err,
 		})
-		return cehttp.NewResult(http.StatusBadRequest, "")
+		return cdkgo.NewResult(http.StatusBadRequest, "resource read failed")
 	}
 
 	uObj, err := Fetch(reader)
 	if err != nil {
-		log.Info(ctx, "FetchArtifact failed", map[string]interface{}{
+		log.Info("FetchArtifact failed", map[string]interface{}{
 			log.KeyError: err,
 		})
-		return cehttp.NewResult(http.StatusBadRequest, "")
+		return cdkgo.NewResult(http.StatusBadRequest, "fetch artifact failed")
 	}
 
 	gvk := GetGroupVersionKind(uObj)
@@ -132,16 +117,23 @@ func (s *k8sSink) Receive(ctx context.Context, event ce.Event) protocol.Result {
 	case Pod:
 		err = s.handlePod(ctx, data)
 		if err != nil {
-			return cehttp.NewResult(http.StatusInternalServerError, "")
+			return cdkgo.NewResult(http.StatusInternalServerError, "handle resource error")
 		}
 	case Job:
 		err = s.handleJob(ctx, data)
 		if err != nil {
-			return cehttp.NewResult(http.StatusInternalServerError, "")
+			return cdkgo.NewResult(http.StatusInternalServerError, "handler resource error")
 		}
 	default:
-		return cehttp.NewResult(http.StatusNotAcceptable, "")
+		return cdkgo.NewResult(http.StatusNotAcceptable, "can't handle resource")
 	}
+	return cdkgo.SuccessResult
+}
 
-	return cehttp.NewResult(http.StatusOK, "")
+func (s *k8sSink) Name() string {
+	return "kubernetes-sink"
+}
+
+func (s *k8sSink) Destroy() error {
+	return nil
 }

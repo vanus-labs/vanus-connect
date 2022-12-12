@@ -56,9 +56,9 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of Kubernetes Sink
 
-| name       | requirement | description                                                                        |
-|------------|-------------|------------------------------------------------------------------------------------|
-| vPort      | required    | vPort is used to specify the port Kubernetes Sink is listening on, default 8080    |
+| name | requirement | description                                                                    |
+|------|-------------|--------------------------------------------------------------------------------|
+| port | required    | port is used to specify the port Kubernetes Sink is listening on, default 8080 |
 
 ## Elasticsearch Sink Image
 
