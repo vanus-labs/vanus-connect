@@ -129,17 +129,17 @@ to determine how to process event.
 | xvfeishuservice   | **YES**  | bot                    | which Feishu Service the event sent for                                                                                                                      |
 | xvfeishumsgtype   | **YES**  | text                   | which Message Type the event convert to                                                                                                                      |
 | xvfeishuchatgroup |    NO    | test_bot               | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration, if `dynamic_route=false`, this attribute can't empty |
-| xveishuboturls    |    NO    | bot1,bot2,bot3         | dynamic webhook urls, use  `,` to separate multiple urls.                                                                                                    |
+| xvfeishuboturls   |    NO    | bot1,bot2,bot3         | dynamic webhook urls, use  `,` to separate multiple urls.                                                                                                    |
 | xvfeishubotsigns  |    NO    | signature1,,signature3 | dynamic webhook signatures, use  `,` to separate multiple signatures.                                                                                        |
 
-**the number of urls represented by `xveishuboturls` must equal to the number of signatures represented by `xveishuboturls`**
+**the number of urls represented by `xvfeishuboturls` must equal to the number of signatures represented by `xvfeishuboturls`**
 
 ### Chat Bot Dynamic Webhook
 
 In some cases, users can't make how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to
 Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
 
-in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xveishuboturls` and `xvfeishubotsigns` will be ignored.
+in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xvfeishuboturls` and `xvfeishubotsigns` will be ignored.
 
 ```yaml
 enable: ["bot"]
@@ -163,7 +163,7 @@ curl --location --request POST 'localhost:31080' \
     "time": "2022-10-26T10:38:29.345Z",
     "xvfeishuservice": "bot",
     "xvfeishumsgtype": "text",
-    "xveishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
+    "xvfeishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
     "xvfeishubotsigns": "signature1,,signature3",
     "data": "Hello Feishu"
 }'
@@ -186,7 +186,7 @@ curl --location --request POST 'localhost:31080' \
     "xvfeishuservice": "bot",
     "xvfeishumsgtype": "text",
     "xvfeishuchatgroup": "bot_predefined",
-    "xveishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
+    "xvfeishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
     "xvfeishubotsigns": "signature1,,signature3",
     "data": "Hello Feishu"
 }'
