@@ -119,11 +119,76 @@ tell Feishu Sink.
 Feishu Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 to determine how to process event
 
-| Attribute         | Required | Default | Description                                                                                            |
-|:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
-| xvfeishuservice   | **YES**  |    -    | which Feishu Service the event sent for                                                                |
-| xvfeishumsgtype   | **YES**  |    -    | which Message Type the event convert to                                                                |
-| xvfeishuchatgroup | **YES**  |    -    | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration |
+| Attribute         | Required | Examples | Description                                                                                                                                                  |
+|:------------------|:--------:|:--:                     |--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| xvfeishuservice   | **YES**  |  bot                    | which Feishu Service the event sent for                                                                                                                      |
+| xvfeishumsgtype   | **YES**  |  text                   | which Message Type the event convert to                                                                                                                      |
+| xvfeishuchatgroup |    NO    |  test_bot               | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration, if `dynamic_route=false`, this attribute can't empty |
+| xveishuboturls    |    NO    |  bot1,bot2,bot3         | dynamic webhook urls                                                                                                                                         |
+| xvfeishubotsigns  |    NO    |  signature1,,signature3 | dynamic webhook signatures                                                                                                                                   |
+
+**the number of `xveishuboturls` presents must equal to `xveishuboturls`**
+
+### Chat Bot Dynamic Webhook
+In some cases, users can't make how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to 
+Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
+
+in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xveishuboturls` and `xvfeishubotsigns` will be ignored.
+```yaml
+enable: ["bot"]
+bot:
+  dynamic_route: true
+    webhooks:
+    - chat_group: "bot_predefined"
+      url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxx"
+      signature: "xxxxxx"
+```
+
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishumsgtype": "text",
+    "xveishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
+    "xvfeishubotsigns": "signature1,,signature3",
+    "data": "Hello Feishu"
+}'
+```
+
+this request means send a text message to three chat groups, and the second group hasn't signature.
+
+Moreover, dynamic webhooks can work together with `xvfeishuchatgroup` attribute.
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "sink-feishu-quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvfeishuservice": "bot",
+    "xvfeishumsgtype": "text",
+    "xvfeishuchatgroup": "bot_predefined",
+    "xveishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
+    "xvfeishubotsigns": "signature1,,signature3",
+    "data": "Hello Feishu"
+}'
+```
+
+this request will also send message to `bot_predefined`.
+
+Note: Specified chat group present by `xvfeishuchatgroup` will be ignored if it wasn't be found in configuration.
+
+#### Hybrid Dynamic Webhook with 
 
 ## Examples
 
@@ -301,13 +366,14 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
+      dynamic_route: false
       webhooks:
         - chat_group: "bot1"
+          url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
           signature: "xxxxxxxxxx"
-          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
         - chat_group: "bot2"
           signature: "xxxxxxxxxx"
-          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
+          url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
 
 ---
 apiVersion: apps/v1

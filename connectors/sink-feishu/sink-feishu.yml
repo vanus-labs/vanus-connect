@@ -20,13 +20,14 @@ data:
   config.yml: |-
     enable: ["bot"]
     bot:
+      dynamic_route: false
       webhooks:
         - chat_group: "bot1"
+          url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
           signature: "xxxxxxxxxx"
-          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
         - chat_group: "bot2"
           signature: "xxxxxxxxxx"
-          address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
+          url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"
 
 ---
 apiVersion: apps/v1
