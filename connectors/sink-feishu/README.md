@@ -51,7 +51,9 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 > ⚠️ You must set your signature verification to make sure push messages work.
 
 ### Create Config file
+
 replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
+
 ```shell
 cat << EOF > config.yml
 enable: ["bot"]
@@ -104,8 +106,10 @@ docker stop sink-feishu
 ## How to use
 
 ### Configuration
+
 The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
 tell Feishu Sink.
+
 
 | Name                       | Required | Default | Description                                                                       |
 |:---------------------------|:--------:|:-------:|-----------------------------------------------------------------------------------|
@@ -116,24 +120,27 @@ tell Feishu Sink.
 | bot.webhooks.[].address    | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
 ### Extension Attributes
+
 Feishu Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
-to determine how to process event
+to determine how to process event.
 
-| Attribute         | Required | Examples | Description                                                                                                                                                  |
-|:------------------|:--------:|:--:                     |--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| xvfeishuservice   | **YES**  |  bot                    | which Feishu Service the event sent for                                                                                                                      |
-| xvfeishumsgtype   | **YES**  |  text                   | which Message Type the event convert to                                                                                                                      |
-| xvfeishuchatgroup |    NO    |  test_bot               | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration, if `dynamic_route=false`, this attribute can't empty |
-| xveishuboturls    |    NO    |  bot1,bot2,bot3         | dynamic webhook urls                                                                                                                                         |
-| xvfeishubotsigns  |    NO    |  signature1,,signature3 | dynamic webhook signatures                                                                                                                                   |
+| Attribute         | Required | Examples               | Description                                                                                                                                                  |
+|:------------------|:--------:|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| xvfeishuservice   | **YES**  | bot                    | which Feishu Service the event sent for                                                                                                                      |
+| xvfeishumsgtype   | **YES**  | text                   | which Message Type the event convert to                                                                                                                      |
+| xvfeishuchatgroup |    NO    | test_bot               | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration, if `dynamic_route=false`, this attribute can't empty |
+| xveishuboturls    |    NO    | bot1,bot2,bot3         | dynamic webhook urls, use  `,` to separate multiple urls.                                                                                                    |
+| xvfeishubotsigns  |    NO    | signature1,,signature3 | dynamic webhook signatures, use  `,` to separate multiple signatures.                                                                                        |
 
-**the number of `xveishuboturls` presents must equal to `xveishuboturls`**
+**the number of urls represented by `xveishuboturls` must equal to the number of signatures represented by `xveishuboturls`**
 
 ### Chat Bot Dynamic Webhook
-In some cases, users can't make how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to 
+
+In some cases, users can't make how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to
 Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
 
 in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xveishuboturls` and `xvfeishubotsigns` will be ignored.
+
 ```yaml
 enable: ["bot"]
 bot:
@@ -165,6 +172,7 @@ curl --location --request POST 'localhost:31080' \
 this request means send a text message to three chat groups, and the second group hasn't signature.
 
 Moreover, dynamic webhooks can work together with `xvfeishuchatgroup` attribute.
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -186,9 +194,9 @@ curl --location --request POST 'localhost:31080' \
 
 this request will also send message to `bot_predefined`.
 
-Note: Specified chat group present by `xvfeishuchatgroup` will be ignored if it wasn't be found in configuration.
+Note: Specified chat group was represented by `xvfeishuchatgroup` will be ignored if it wasn't be found in configuration.
 
-#### Hybrid Dynamic Webhook with 
+#### Hybrid Dynamic Webhook with
 
 ## Examples
 
@@ -197,6 +205,7 @@ Note: Specified chat group present by `xvfeishuchatgroup` will be ignored if it 
 you could find official docs of Feishu bot in https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN?lang=zh-CN#132a114c.
 
 #### Text Message
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -215,6 +224,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 #### Post Message
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -253,6 +263,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 #### ShareChat Message
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
