@@ -67,7 +67,6 @@ type Secret struct {
 type k8sSink struct {
 	cfg    *Config
 	client *kubernetes.Clientset
-	logger log.Logger
 }
 
 func NewKubernetesSink() cdkgo.Sink {
