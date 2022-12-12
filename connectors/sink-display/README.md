@@ -1,18 +1,12 @@
 # Display Sink 
 
-## Overview
+## Introduction
 
-A [Vance Connector][vc] which prints received CloudEvents. This is commonly used as a logger to check incoming data.
+The Display Sink is a [Vance Connector][vc] which prints received CloudEvents. This is commonly used as a logger to check incoming data.
 
-## User Guidelines
+For example, it will print the incoming CloudEvents looks like:
 
-### Connector introduction
-
-The Display Sink is a single function [Connector][vc] which aims to print incoming CloudEvents in JSON format.
-
-For example, it will print the incoming CloudEvent looks like:
-
-```http
+```json
 {
   "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
   "source" : "vance-http-source",
@@ -28,34 +22,38 @@ For example, it will print the incoming CloudEvent looks like:
 
 ## Display Sink Configs
 
-Users can specify their configs by either setting environments variables or mount a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+### Config
 
-### Config Fields of the Display Sink
-
-| Configs   | Required | Description                                                            | Example                 |
-|:----------|:----|:-----------------------------------------------------------------------|:------------------------|
-| v_port    |   false   | v_port is used to specify the port Display Sink is listening on           | "8080"                  |
+| Name | Required | Default | Description                                                   |
+|:-----|:---------|:--------|:--------------------------------------------------------------|
+| port | false    | 8080    | port is used to specify the port Display Sink is listening on |
 
 ## Display Sink Image
 
-> docker.io/vancehub/display
+> vancehub/sink-display
 
-## Local Development
+## Deploy
 
-You can run the sink codes of the Display Sink locally as well.
+### Docker
 
-### Building via Maven
+#### create config file
 
-```shell
-$ cd sink-http
-$ mvn clean package
+refer [config](#Config) to create `config.yaml`. for example:
+
+```yaml
+"port": 8080
 ```
 
-### Running via Maven
+#### run
 
 ```shell
-$ mvn exec:java -Dexec.mainClass="com.linkall.sink.display.Entrance"
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-display
+```
+
+### K8S
+
+```shell
+  kubectl apply -f sink-display.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

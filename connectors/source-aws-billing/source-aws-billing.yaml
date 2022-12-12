@@ -5,7 +5,7 @@ metadata:
   namespace: vance
 data:
   config.yaml: |-
-    "v_target": "http://vanus-gateway.vanus:8080/gateway/vance_eb"
+    "target": "http://vanus-gateway.vanus:8080/gateway/vance_eb"
 ---
 apiVersion: v1
 kind: Secret

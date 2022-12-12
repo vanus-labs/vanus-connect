@@ -10,7 +10,7 @@ This connector for capturing Tencent COS event
 
 ```shell
 cat << EOF > config.yml
-v_target: "35.87.170.130:8080"
+target: "35.87.170.130:8080"
 eventbus: "xxx"
 bucket:
   endpoint: "xxx.cos.<region>.myqcloud.com"
@@ -102,7 +102,7 @@ docker stop source-tencentcloud-cos
 ### config
 
 ```yml
-v_target: "x.x.x.x:8080"
+target: "x.x.x.x:8080"
 eventbus: "xxxx"
 bucket:
   endpoint: "xxxx.cos.ap-beijing.myqcloud.com"
@@ -121,7 +121,7 @@ secret_key: "xxxxx"
 
 | Name                 | Required |              Default               | Description                                                                      |
 |:---------------------|:--------:|:----------------------------------:|----------------------------------------------------------------------------------|
-| v_target             | **YES**  |                 -                  | Target URL will send CloudEvents to                                              |
+| target               | **YES**  |                 -                  | Target URL will send CloudEvents to                                              |
 | eventbus             | **YES**  |                 -                  | target eventbus                                                                  |
 | bucket.endpoint      | **YES**  |                 -                  | which bucket you want to capture.                                                |
 | function.region      | **YES**  |                 -                  | which region the helper function will be deployed, suggest keep same with bucket |
@@ -153,7 +153,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_target: "xxxx"
+    target: "xxxx"
     eventbus: "xxxxx"
     bucket:
       endpoint: "xxxxx.cos.ap-beijing.myqcloud.com"

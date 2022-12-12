@@ -45,14 +45,14 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ### Config
 
-| name        | requirement | default | description                                                         |
-|-------------|-------------|---------|---------------------------------------------------------------------|
-| v_port      | optional    | 8080    | the port Elasticsearch Sink is listening on                         |
-| address     | required    |         | elasticsearch cluster address, multi split by ","                   |
-| index_name  | required    |         | elasticsearch index name                                            |
-| timeout     | optional    | 10000   | elasticsearch index document timeout, unit millisecond              |
-| insert_mode | optional    | insert  | elasticsearch index document type: insert or upsert                 |
-| primary_key | optional    |         | elasticsearch index document primary key in event, example: data.id |
+| name        | requirement  | default  | description                                                          |
+|:------------|:-------------|:---------|:---------------------------------------------------------------------|
+| port        | optional     | 8080     | the port Elasticsearch Sink is listening on                          |
+| address     | required     |          | elasticsearch cluster address, multi split by ","                    |
+| index_name  | required     |          | elasticsearch index name                                             |
+| timeout     | optional     | 10000    | elasticsearch index document timeout, unit millisecond               |
+| insert_mode | optional     | insert   | elasticsearch index document type: insert or upsert                  |
+| primary_key | optional     |          | elasticsearch index document primary key in event, example: data.id  |
 
 ### Secret
 
@@ -74,7 +74,7 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 refer [config](#Config) to create `config.yaml`. for example:
 
 ```yaml
-"v_port": 8080
+"port": 8080
 "address": "http://localhost:9200"
 "index_name": "vance_test"
 "primary_key": "data.id"

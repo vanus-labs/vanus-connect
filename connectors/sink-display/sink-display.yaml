@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-display
+  namespace: vance
+spec:
+  selector:
+    app: sink-display
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sink-display
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-display-config
+  namespace: vance
+data:
+  config.yaml: |-
+    "port": 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-display
+  namespace: vance
+  labels:
+    app: sink-display
+spec:
+  selector:
+    matchLabels:
+      app: sink-display
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-display
+    spec:
+      containers:
+        - name: sink-display
+          image: vancehub/sink-display
+          imagePullPolicy: IfNotPresent
+          #command: ['sh', '-c', 'sleep 360000']
+          env:
+            - name: LOG_LEVEL
+              value: DEBUG
+          volumeMounts:
+            - name: sink-display-config
+              mountPath: /vance/config
+      volumes:
+        - name: sink-display-config
+          configMap:
+            name: sink-display-config

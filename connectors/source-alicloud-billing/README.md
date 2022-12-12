@@ -48,11 +48,11 @@ For example,billing data output a CloudEvent looks like:
 
 ### Config
 
-| name              | requirement | default               | description                                               |
-|-------------------|-------------|-----------------------|-----------------------------------------------------------|
-| v_target          | required    |                       | target URL will send CloudEvents to                       |
-| endpoint          | optional    | business.aliyuncs.com | the AliCloud business api endpoint                        |
-| pull_hour         | optional    | 2                     | AliCloud billing source pull billing data time(unit hour) |
+| name      | requirement | default               | description                                               |
+|:----------|:------------|:----------------------|:----------------------------------------------------------|
+| target    | required    |                       | target URL will send CloudEvents to                       |
+| endpoint  | optional    | business.aliyuncs.com | the AliCloud business api endpoint                        |
+| pull_hour | optional    | 2                     | AliCloud billing source pull billing data time(unit hour) |
 
 ### Secret
 
@@ -74,7 +74,7 @@ For example,billing data output a CloudEvent looks like:
 refer [config](#Config) to create `config.yaml`. for example:
 
 ```yaml
-"v_target": "http://localhost:8080"
+"target": "http://localhost:8080"
 ```
 
 #### create secret file

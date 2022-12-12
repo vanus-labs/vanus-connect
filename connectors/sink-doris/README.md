@@ -38,16 +38,16 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 ### Config
 
-| name          | requirement | default      | description                              |
-|---------------|-------------|--------------|------------------------------------------|
-| v_port        | optional    | 8080         | the port Doris Sink is listening on      |
-| fenodes       | required    |              | doris fenodes, example: "17.0.0.1:8003"  |
-| db_name       | required    |              | doris database name                      |
-| table_name    | required    |              | doris table name                         |
-| stream_load   | optional    |              | doris stream load properties, map struct |
-| load_interval | optional    | 5            | doris stream load interval, unit second  |
-| load_size     | optional    | 10*1024*1024 | doris stream load max body size          |
-| timeout       | optional    | 30           | doris stream load timeout, unit second   |
+| name          | requirement  | default       | description                               |
+|:--------------|:-------------|:--------------|:------------------------------------------|
+| port          | optional     | 8080          | the port Doris Sink is listening on       |
+| fenodes       | required     |               | doris fenodes, example: "17.0.0.1:8003"   |
+| db_name       | required     |               | doris database name                       |
+| table_name    | required     |               | doris table name                          |
+| stream_load   | optional     |               | doris stream load properties, map struct  |
+| load_interval | optional     | 5             | doris stream load interval, unit second   |
+| load_size     | optional     | 10*1024*1024  | doris stream load max body size           |
+| timeout       | optional     | 30            | doris stream load timeout, unit second    |
 
 ### Secret
 
@@ -69,7 +69,7 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 refer [config](#Config) to create `config.yaml`. for example:
 
 ```yaml
-"v_port": 8080
+"port": 8080
 "fenodes": "172.31.57.192:8030"
 "db_name": "vance_test"
 "table_name": "user"

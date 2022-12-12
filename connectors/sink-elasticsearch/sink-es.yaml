@@ -19,7 +19,7 @@ metadata:
   namespace: vance
 data:
   config.yaml: |-
-    "v_port": 8080
+    "port": 8080
     "address": "http://localhost:9200"
     "index_name": "vance_test"
     "primary_key": "data.id"
