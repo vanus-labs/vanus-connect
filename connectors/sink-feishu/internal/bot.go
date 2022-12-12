@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
@@ -33,8 +34,10 @@ import (
 type messageType string
 
 const (
-	xChatGroupID = "xvfeishuchatgroup"
-	xMessageType = "xvfeishumsgtype"
+	xChatGroupID  = "xvfeishuchatgroup"
+	xMessageType  = "xvfeishumsgtype"
+	xBotURL       = "xvfeishuboturls"
+	xBotSignature = "xvfeishubotsigns"
 
 	textMessage        = messageType("text")
 	postMessage        = messageType("post")
@@ -48,7 +51,10 @@ var (
 		"Sink config or subscription")
 	errMessageType = errors.New("feishu: xvfeishumsgtype is missing or invalid, only" +
 		" [text, post, share_chat, image, interactive] are supported")
-	errInvalidPostMessage = errors.New("feishu: invalid post message, please make sure it's the json format")
+	errInvalidPostMessage     = errors.New("feishu: invalid post message, please make sure it's the json format")
+	errInvalidAttributes      = errors.New("feishu: invalid xvfeishuboturls or xvfeishubotsigs")
+	errInvalidAttributeNumber = errors.New("feishu: the number of bot url and signature must be equal")
+	errNoBotWebhookFound      = errors.New("feishu: no feishu bot target webhook found")
 )
 
 type bot struct {
@@ -71,26 +77,66 @@ func (b *bot) init(cfg BotConfig) error {
 }
 
 type WebHook struct {
-	Address   string `json:"address" yaml:"address" validate:"required"`
-	Signature string `json:"signature" yaml:"signature" validate:"required"`
 	ChatGroup string `json:"chat_group" yaml:"chat_group" validate:"required"`
+	URL       string `json:"url" yaml:"url" validate:"required"`
+	Signature string `json:"signature" yaml:"signature"`
 }
 
 type BotConfig struct {
-	Webhooks []WebHook `json:"webhooks" yaml:"webhooks" validate:"gt=0,dive"`
+	Webhooks     []WebHook `json:"webhooks" yaml:"webhooks" validate:"dive"`
+	DynamicRoute bool      `json:"dynamic_route" yaml:"dynamic_route"`
+}
+
+func (c *BotConfig) Validate() error {
+	if !c.DynamicRoute && len(c.Webhooks) == 0 {
+		return errors.New("the bot.webhooks can't be empty when dynamic_route is false")
+	}
+	return nil
 }
 
 func (b *bot) sendMessage(e *v2.Event) error {
-
+	var whs []WebHook
 	v := e.Extensions()[xChatGroupID]
 	groupID, err := types.ToString(v)
-	if err != nil {
+	if err != nil && !b.cfg.DynamicRoute {
 		return errChatGroup
+	} else {
+		wh, exist := b.cm[groupID]
+		if !exist {
+			if !b.cfg.DynamicRoute {
+				return errChatGroup
+			}
+		} else {
+			whs = append(whs, wh)
+		}
 	}
 
-	wh, exist := b.cm[groupID]
-	if !exist {
-		return errChatGroup
+	if b.cfg.DynamicRoute {
+		v = e.Extensions()[xBotURL]
+		urlAttr, ok := v.(string)
+		if !ok {
+			return errInvalidAttributes
+		}
+		v = e.Extensions()[xBotSignature]
+		signatureAttr, ok := v.(string)
+		if !ok {
+			return errInvalidAttributes
+		}
+		urls := strings.Split(urlAttr, ",")
+		signatures := strings.Split(signatureAttr, ",")
+		if len(urls) != len(signatures) {
+			return errInvalidAttributeNumber
+		}
+		for idx := range urls {
+			whs = append(whs, WebHook{
+				URL:       urls[idx],
+				Signature: signatures[idx],
+			})
+		}
+	}
+
+	if len(whs) == 0 {
+		return errNoBotWebhookFound
 	}
 
 	v = e.Extensions()[xMessageType]
@@ -100,33 +146,38 @@ func (b *bot) sendMessage(e *v2.Event) error {
 	}
 	switch messageType(t) {
 	case textMessage:
-		return b.sendTextMessage(e, wh)
+		return b.sendTextMessage(e, whs)
 	case postMessage:
-		return b.sendPostMessage(e, wh)
+		return b.sendPostMessage(e, whs)
 	case shareChatMessage:
-		return b.sendShareChatMessage(e, wh)
+		return b.sendShareChatMessage(e, whs)
 	case imageMessage:
-		return b.sendImageMessage(e, wh)
+		return b.sendImageMessage(e, whs)
 	case interactiveMessage:
-		return b.sendInteractiveMessage(e, wh)
+		return b.sendInteractiveMessage(e, whs)
 	default:
 		return errMessageType
 	}
 }
 
-func (b *bot) sendTextMessage(e *v2.Event, wh WebHook) error {
+func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
 	content := map[string]interface{}{
 		"text": string(e.Data()),
 	}
-	res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.Address)
-	if err != nil {
-		return err
-	}
 
-	return b.processResponse(e, res)
+	for _, wh := range whs {
+		res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.URL)
+		if err != nil {
+			return err
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (b *bot) sendPostMessage(e *v2.Event, wh WebHook) error {
+func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
 	m := map[string]interface{}{}
 	if err := json.Unmarshal(e.Data(), &m); err != nil {
 		return errInvalidPostMessage
@@ -134,39 +185,52 @@ func (b *bot) sendPostMessage(e *v2.Event, wh WebHook) error {
 	content := map[string]interface{}{
 		"post": m,
 	}
-
-	res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.Address)
-	if err != nil {
-		return err
+	for _, wh := range whs {
+		res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.URL)
+		if err != nil {
+			return err
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return err
+		}
 	}
-	return b.processResponse(e, res)
+	return nil
 }
 
-func (b *bot) sendShareChatMessage(e *v2.Event, wh WebHook) error {
+func (b *bot) sendShareChatMessage(e *v2.Event, whs []WebHook) error {
 	content := map[string]interface{}{
 		"share_chat_id": string(e.Data()),
 	}
 
-	res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.Address)
-	if err != nil {
-		return err
+	for _, wh := range whs {
+		res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.URL)
+		if err != nil {
+			return err
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return err
+		}
 	}
-	return b.processResponse(e, res)
+	return nil
 }
 
-func (b *bot) sendImageMessage(e *v2.Event, wh WebHook) error {
+func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
 	content := map[string]interface{}{
 		"image_key": string(e.Data()),
 	}
-
-	res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.Address)
-	if err != nil {
-		return err
+	for _, wh := range whs {
+		res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.URL)
+		if err != nil {
+			return err
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return err
+		}
 	}
-	return b.processResponse(e, res)
+	return nil
 }
 
-func (b *bot) sendInteractiveMessage(e *v2.Event, wh WebHook) error {
+func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
 	m := map[string]interface{}{}
 	if err := json.Unmarshal(e.Data(), &m); err != nil {
 		return errInvalidPostMessage
@@ -174,19 +238,32 @@ func (b *bot) sendInteractiveMessage(e *v2.Event, wh WebHook) error {
 
 	t := time.Now()
 	payload := map[string]interface{}{
-		"sign":      b.genSignature(t, wh.Signature),
 		"timestamp": t.Unix(),
 		"msg_type":  interactiveMessage,
 		"card":      m,
 	}
-	res, err := b.httpClient.R().SetBody(payload).Post(wh.Address)
-	if err != nil {
-		return err
+
+	for _, wh := range whs {
+		if wh.Signature != "" {
+			payload["sign"] = b.genSignature(t, wh.Signature)
+		}
+		res, err := b.httpClient.R().SetBody(payload).Post(wh.URL)
+		if err != nil {
+			return err
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return err
+		}
+		delete(payload, "sign")
 	}
-	return b.processResponse(e, res)
+
+	return nil
 }
 
 func (b *bot) genSignature(t time.Time, signature string) string {
+	if signature == "" {
+		return ""
+	}
 	strToSign := fmt.Sprintf("%d\n%s", t.Unix(), signature)
 	h := hmac.New(sha256.New, []byte(strToSign))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
@@ -194,12 +271,15 @@ func (b *bot) genSignature(t time.Time, signature string) string {
 
 func (b *bot) generatePayload(content map[string]interface{}, msgType messageType, wh WebHook) interface{} {
 	t := time.Now()
-	return map[string]interface{}{
-		"sign":      b.genSignature(t, wh.Signature),
+	payload := map[string]interface{}{
 		"timestamp": t.Unix(),
 		"msg_type":  msgType,
 		"content":   content,
 	}
+	if wh.Signature != "" {
+		payload["sign"] = b.genSignature(t, wh.Signature)
+	}
+	return payload
 }
 
 func (b *bot) processResponse(e *v2.Event, res *resty.Response) error {
