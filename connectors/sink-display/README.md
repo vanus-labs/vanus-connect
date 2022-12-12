@@ -74,4 +74,69 @@ receive a new event, in total: 1
 }
 ```
 
+## How to use
+
+### Run in Kubernetes
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-display
+  namespace: vanus
+spec:
+  selector:
+    app: sink-display
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-display
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-display
+  namespace: vanus
+  labels:
+    app: sink-display
+spec:
+  selector:
+    matchLabels:
+      app: sink-display
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-display
+    spec:
+      initContainers:
+      - name: touc-config
+        image: busybox
+        command:
+          - touch
+          - "${CONNECTOR_CONFIG}"
+        volumeMounts:
+          - name: config
+            mountPath: /vance/config
+      containers:
+        - name: sink-display
+          image: public.ecr.aws/vanus/connector/sink-display:latest
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+      volumes:
+        - name: config
+          emptyDir: {}
+```
+
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
