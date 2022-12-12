@@ -1,5 +1,5 @@
-v_target: 35.87.170.130:8080
-v_port: 8080
+target: 35.87.170.130:8080
+port: 8080
 region: "ap-beijing"
 function:
   name: "vanus-cos-source-function-3513950818025804220"

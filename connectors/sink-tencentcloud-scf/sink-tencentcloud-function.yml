@@ -20,7 +20,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_port: 8080
+    port: 8080
     function:
       name: "xxxxxx"
       region: "ap-beijing"

@@ -5,7 +5,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_target: "xxxx"
+    target: "xxxx"
     eventbus: "xxxxx"
     bucket:
       endpoint: "xxxxx.cos.ap-beijing.myqcloud.com"

@@ -10,7 +10,7 @@ This connector for invoking SCF function with events.
 
 ```shell
 cat << EOF > config.yml
-v_port: 8080
+port: 8080
 function:
   name: "xxxxxxxxx"
   region: "ap-beijing"
@@ -81,7 +81,7 @@ docker stop sink-tencentcloud-scf
 ### config
 
 ```yml
-v_port: 8080
+port: 8080
 function:
   name: "vanus-cos-source-function-3513950818025804220"
   region: "ap-beijing"
@@ -91,7 +91,7 @@ debug: false
 
 | Name               | Required | Default | Description                              |
 |:-------------------|:--------:|:-------:|------------------------------------------|
-| v_port             |    No    |  8080   | which port for listening                 |
+| port               |    No    |  8080   | which port for listening                 |
 | function.region    | **YES**  |    -    | which region the function was created    |
 | function.name      | **YES**  |    -    | function name will be invoked            |
 | function.namespace | **YES**  |    -    | which namespace the function was created |
@@ -132,7 +132,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    v_port: 8080
+    port: 8080
     function:
       name: "xxxxxx"
       region: "ap-beijing"
