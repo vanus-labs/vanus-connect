@@ -63,7 +63,6 @@ docker logs sink-display
 time="2022-12-12T02:20:07.532592849Z" level=info msg="logger level is set" log_level=INFO
 time="2022-12-12T02:20:07.53882172Z" level=info msg="the connector started" connector-name="Display Sink" listening=8080
 receive a new event, in total: 1
-receive a new event, in total: 1
 {
   "specversion": "1.0",
   "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
