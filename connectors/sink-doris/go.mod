@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.3.1
+	github.com/linkall-labs/cdk-go v0.3.2
 	github.com/pkg/errors v0.9.1
 )
 

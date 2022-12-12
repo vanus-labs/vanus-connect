@@ -1,5 +1,5 @@
 # receive event port
-"v_port": 8080
+"port": 8080
 # es address
 "address": "http://localhost:9200"
 # es index name

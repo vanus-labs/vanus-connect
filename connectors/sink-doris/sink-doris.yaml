@@ -19,7 +19,7 @@ metadata:
   namespace: vance
 data:
   config.yaml: |-
-    "v_port": 8080
+    "port": 8080
     "fenodes": "172.31.57.192:8030"
     "db_name": "vance_test"
     "table_name": "user"

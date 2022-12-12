@@ -28,11 +28,11 @@ by fix time.The data group by aws service For example,billing data output a Clou
 
 ### Config
 
-| name              | requirement | default                            | description                                          |
-|-------------------|-------------|------------------------------------|------------------------------------------------------|
-| v_target          | required    |                                    | target URL will send CloudEvents to                  |
-| endpoint          | optional    | https://ce.us-east-1.amazonaws.com | the aws cost explorer api endpoint                   |
-| pull_hour         | optional    | 2                                  | aws billing source pull billing data time(unit hour) |
+| name      | requirement | default                             | description                                           |
+|:----------|:------------|:------------------------------------|:------------------------------------------------------|
+| target    | required    |                                     | target URL will send CloudEvents to                   |
+| endpoint  | optional    | https://ce.us-east-1.amazonaws.com  | the aws cost explorer api endpoint                    |
+| pull_hour | optional    | 2                                   | aws billing source pull billing data time(unit hour)  |
 
 ### Secret
 
@@ -54,7 +54,7 @@ by fix time.The data group by aws service For example,billing data output a Clou
 refer [config](#Config) to create `config.yaml`. for example:
 
 ```yaml
-"v_target": "http://localhost:8080"
+"target": "http://localhost:8080"
 ```
 
 #### create secret file
