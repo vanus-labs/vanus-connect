@@ -39,7 +39,7 @@ docker run -d -p 31080:8080 --rm \
 ### Test
 1. make a HTTP request
 ```shell
-curl --location --request POST 'localhost:8080' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -60,6 +60,9 @@ docker logs sink-display
 ```
 
 ```shell
+time="2022-12-12T02:20:07.532592849Z" level=info msg="logger level is set" log_level=INFO
+time="2022-12-12T02:20:07.53882172Z" level=info msg="the connector started" connector-name="Display Sink" listening=8080
+receive a new event, in total: 1
 receive a new event, in total: 1
 {
   "specversion": "1.0",
@@ -72,6 +75,11 @@ receive a new event, in total: 1
     "myData": "simulation event data"
   }
 }
+```
+### Clean
+
+```shell
+docker stop sink-display
 ```
 
 ## How to use
@@ -108,15 +116,6 @@ spec:
       labels:
         app: sink-display
     spec:
-      initContainers:
-      - name: touc-config
-        image: busybox
-        command:
-          - touch
-          - "${CONNECTOR_CONFIG}"
-        volumeMounts:
-          - name: config
-            mountPath: /vance/config
       containers:
         - name: sink-display
           image: public.ecr.aws/vanus/connector/sink-display:latest
@@ -127,16 +126,6 @@ spec:
               cpu: "100m"
             limits:
               memory: "128Mi"
-              cpu: "100m"
-          env:
-            - name: LOG_LEVEL
-              value: INFO
-          volumeMounts:
-            - name: config
-              mountPath: /vance/config
-      volumes:
-        - name: config
-          emptyDir: {}
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

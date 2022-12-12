@@ -28,32 +28,14 @@ spec:
       labels:
         app: sink-display
     spec:
-      initContainers:
-      - name: touc-config
-        image: busybox
-        command:
-          - touch
-          - "${CONNECTOR_CONFIG}"
-        volumeMounts:
-          - name: config
-            mountPath: /vance/config
       containers:
-        - name: sink-display
-          image: public.ecr.aws/vanus/connector/sink-display:latest
-          imagePullPolicy: Always
-          resources:
-            requests:
-              memory: "128Mi"
-              cpu: "100m"
-            limits:
-              memory: "128Mi"
-              cpu: "100m"
-          env:
-            - name: LOG_LEVEL
-              value: INFO
-          volumeMounts:
-            - name: config
-              mountPath: /vance/config
-      volumes:
-        - name: config
-          emptyDir: {}
+      - name: sink-display
+        image: public.ecr.aws/vanus/connector/sink-display:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"

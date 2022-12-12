@@ -20,8 +20,8 @@ build-go-image:
 	docker build $(DOCKER_BUILD_ARG) -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/go/Dockerfile \
 		--build-arg connector=${CONNECTOR} .
 
-# example: make push-go-image CONNECTOR=source-http
-# example: make push-go-image DOCKER_REGISTRY=linkall.tencentcloudcr.com CONNECTOR=sink-feishu
+# make push-go-image CONNECTOR=source-http
+# make push-go-image DOCKER_REGISTRY=linkall.tencentcloudcr.com CONNECTOR=sink-feishu
 push-go-image:
 	docker buildx build $(DOCKER_BUILD_ARG) -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/go/Dockerfile \
 		--platform ${DOCKER_PLATFORM} \

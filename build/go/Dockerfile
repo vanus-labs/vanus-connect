@@ -21,12 +21,14 @@ ENV EXECUTABLE_FILE=/vance/bin/${connector}
 ENV CONNECTOR_HOME=/vance
 ENV CONNECTOR_CONFIG=/vance/config/config.yml
 ENV CONNECTOR_SECRET=/vance/secret/secret.yml
+ENV LOG_LEVEL=INFO
 
 RUN touch /vance/run.sh && \
     echo '#!/bin/sh' >> /vance/run.sh && \
     echo $EXECUTABLE_FILE >> /vance/run.sh && \
     chmod a+x /vance/bin/${connector} && \
-    chmod a+x /vance/run.sh
+    chmod a+x /vance/run.sh && \
+    touch /vance/config/config.yml
 
 EXPOSE 8080
 
