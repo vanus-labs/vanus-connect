@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 
 	"github.com/linkall-labs/cdk-go/log"
-
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +28,7 @@ func (s *k8sSink) handleJob(ctx context.Context, data []byte) error {
 	job := &batchv1.Job{}
 	err = json.Unmarshal(data, job)
 	if err != nil {
-		log.Info(ctx, "unmarshal to job failed", map[string]interface{}{
+		log.Info("unmarshal to job failed", map[string]interface{}{
 			log.KeyError: err,
 			"data":       string(data),
 		})
@@ -46,26 +45,26 @@ func (s *k8sSink) handleJob(ctx context.Context, data []byte) error {
 		createOpts := metav1.CreateOptions{}
 		_, err = s.client.BatchV1().Jobs(job.Namespace).Create(ctx, job, createOpts)
 		if err != nil {
-			log.Info(ctx, "create job failed", map[string]interface{}{
+			log.Info("create job failed", map[string]interface{}{
 				log.KeyError: err,
 				"job":        job,
 			})
 			return err
 		}
-		log.Info(ctx, "create job success", map[string]interface{}{
+		log.Info("create job success", map[string]interface{}{
 			"job": job.Name,
 		})
 	case Update:
 		updateOpts := metav1.UpdateOptions{}
 		_, err = s.client.BatchV1().Jobs(job.Namespace).Update(ctx, job, updateOpts)
 		if err != nil {
-			log.Info(ctx, "update job failed", map[string]interface{}{
+			log.Info("update job failed", map[string]interface{}{
 				log.KeyError: err,
 				"job":        job,
 			})
 			return err
 		}
-		log.Info(ctx, "update job success", map[string]interface{}{
+		log.Info("update job success", map[string]interface{}{
 			"job": job.Name,
 		})
 	case Delete:
@@ -75,17 +74,17 @@ func (s *k8sSink) handleJob(ctx context.Context, data []byte) error {
 		}
 		err = s.client.BatchV1().Jobs(job.Namespace).Delete(ctx, job.Name, deleteOpts)
 		if err != nil {
-			log.Info(ctx, "delete job failed", map[string]interface{}{
+			log.Info("delete job failed", map[string]interface{}{
 				log.KeyError: err,
 				"job":        job,
 			})
 			return err
 		}
-		log.Info(ctx, "delete job success", map[string]interface{}{
+		log.Info("delete job success", map[string]interface{}{
 			"job": job.Name,
 		})
 	default:
-		log.Warning(ctx, "unknown operation type", map[string]interface{}{
+		log.Warning("unknown operation type", map[string]interface{}{
 			"operation": operation,
 		})
 	}

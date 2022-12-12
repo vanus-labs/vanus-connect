@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 
 	"github.com/linkall-labs/cdk-go/log"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +28,7 @@ func (s *k8sSink) handlePod(ctx context.Context, data []byte) error {
 	pod := &corev1.Pod{}
 	err = json.Unmarshal(data, pod)
 	if err != nil {
-		log.Info(ctx, "unmarshal to pod failed", map[string]interface{}{
+		log.Info("unmarshal to pod failed", map[string]interface{}{
 			log.KeyError: err,
 			"data":       string(data),
 		})
@@ -46,43 +45,43 @@ func (s *k8sSink) handlePod(ctx context.Context, data []byte) error {
 		createOpts := metav1.CreateOptions{}
 		_, err = s.client.CoreV1().Pods(pod.Namespace).Create(ctx, pod, createOpts)
 		if err != nil {
-			log.Info(ctx, "create pod failed", map[string]interface{}{
+			log.Info("create pod failed", map[string]interface{}{
 				log.KeyError: err,
 				"pod":        pod,
 			})
 			return err
 		}
-		log.Info(ctx, "create pod success", map[string]interface{}{
+		log.Info("create pod success", map[string]interface{}{
 			"pod": pod.Name,
 		})
 	case Update:
 		updateOpts := metav1.UpdateOptions{}
 		_, err = s.client.CoreV1().Pods(pod.Namespace).Update(ctx, pod, updateOpts)
 		if err != nil {
-			log.Info(ctx, "update pod failed", map[string]interface{}{
+			log.Info("update pod failed", map[string]interface{}{
 				log.KeyError: err,
 				"pod":        pod,
 			})
 			return err
 		}
-		log.Info(ctx, "update pod success", map[string]interface{}{
+		log.Info("update pod success", map[string]interface{}{
 			"pod": pod.Name,
 		})
 	case Delete:
 		deleteOpts := metav1.DeleteOptions{}
 		err = s.client.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, deleteOpts)
 		if err != nil {
-			log.Info(ctx, "delete pod failed", map[string]interface{}{
+			log.Info("delete pod failed", map[string]interface{}{
 				log.KeyError: err,
 				"pod":        pod,
 			})
 			return err
 		}
-		log.Info(ctx, "delete pod success", map[string]interface{}{
+		log.Info("delete pod success", map[string]interface{}{
 			"pod": pod.Name,
 		})
 	default:
-		log.Warning(ctx, "unknown operation type", map[string]interface{}{
+		log.Warning("unknown operation type", map[string]interface{}{
 			"operation": operation,
 		})
 	}

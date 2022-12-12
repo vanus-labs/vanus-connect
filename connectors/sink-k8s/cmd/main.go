@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSink(internal.NewKubernetesSink())
+	cdkgo.RunSink(internal.NewConfig, internal.NewKubernetesSink)
 }
