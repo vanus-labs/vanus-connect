@@ -36,7 +36,7 @@ type messageType string
 const (
 	xChatGroupID  = "xvfeishuchatgroup"
 	xMessageType  = "xvfeishumsgtype"
-	xBotURL       = "xveishuboturls"
+	xBotURL       = "xvfeishuboturls"
 	xBotSignature = "xvfeishubotsigns"
 
 	textMessage        = messageType("text")
