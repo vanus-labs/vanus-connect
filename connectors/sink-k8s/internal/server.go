@@ -48,7 +48,7 @@ type Config struct {
 	Secret *Secret `json:"secret" yaml:"secret"`
 }
 
-func NewKubernetesConfig() cdkgo.SinkConfigAccessor {
+func NewConfig() cdkgo.SinkConfigAccessor {
 	return &Config{
 		Secret: &Secret{},
 	}
