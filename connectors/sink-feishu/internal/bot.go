@@ -52,7 +52,7 @@ var (
 	errMessageType = errors.New("feishu: xvfeishumsgtype is missing or invalid, only" +
 		" [text, post, share_chat, image, interactive] are supported")
 	errInvalidPostMessage     = errors.New("feishu: invalid post message, please make sure it's the json format")
-	errInvalidAttributes      = errors.New("feishu: invalid xveishuboturls or xvfeishubotsigs")
+	errInvalidAttributes      = errors.New("feishu: invalid xvfeishuboturls or xvfeishubotsigs")
 	errInvalidAttributeNumber = errors.New("feishu: the number of bot url and signature must be equal")
 	errNoBotWebhookFound      = errors.New("feishu: no feishu bot target webhook found")
 )
