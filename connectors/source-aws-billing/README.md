@@ -51,7 +51,7 @@ by fix time.The data group by aws service For example,billing data output a Clou
 
 #### create config file
 
-refer [config](#Config) to create `config.yaml`. for example:
+refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "target": "http://localhost:8080"
@@ -59,7 +59,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 
 #### create secret file
 
-refer [secret](#Secret) to create `secret.yaml`. for example:
+refer [secret](#Secret) to create `secret.yml`. for example:
 
 ```yaml
 "access_key_id": "xxxxxx"

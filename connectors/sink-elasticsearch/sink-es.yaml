@@ -18,7 +18,7 @@ metadata:
   name: sink-es-config
   namespace: vance
 data:
-  config.yaml: |-
+  config.yml: |-
     "port": 8080
     "address": "http://localhost:9200"
     "index_name": "vance_test"
@@ -31,7 +31,7 @@ metadata:
   name: sink-es-secret
   namespace: vance
 data:
-  secret.yaml: |-
+  secret.yml: |-
     "username": "elastic"
     "password": "elastic"
 ---

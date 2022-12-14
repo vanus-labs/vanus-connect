@@ -4,7 +4,7 @@ metadata:
   name: source-alicloud-billing-config
   namespace: vance
 data:
-  config.yaml: |-
+  config.yml: |-
     "target": "http://vanus-gateway.vanus:8080/gateway/vance_eb"
 ---
 apiVersion: v1
@@ -13,7 +13,7 @@ metadata:
   name: source-alicloud-billing-secret
   namespace: vance
 data:
-  secret.yaml: |-
+  secret.yml: |-
     "access_key_id": "xxxxxx"
     "secret_access_key":"xxxxxx"
 ---

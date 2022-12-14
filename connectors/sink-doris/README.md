@@ -66,7 +66,7 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 #### create config file
 
-refer [config](#Config) to create `config.yaml`. for example:
+refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "port": 8080
@@ -77,7 +77,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 
 #### create secret file
 
-refer [secret](#Secret) to create `secret.yaml`. for example:
+refer [secret](#Secret) to create `secret.yml`. for example:
 
 ```yaml
 "username": "vance_test"
