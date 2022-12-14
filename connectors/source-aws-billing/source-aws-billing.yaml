@@ -4,7 +4,7 @@ metadata:
   name: source-aws-billing-config
   namespace: vance
 data:
-  config.yaml: |-
+  config.yml: |-
     "target": "http://vanus-gateway.vanus:8080/gateway/vance_eb"
 ---
 apiVersion: v1
@@ -13,7 +13,7 @@ metadata:
   name: source-aws-billing-secret
   namespace: vance
 data:
-  secret.yaml: |-
+  secret.yml: |-
     "access_key_id": "xxxxxx"
     "secret_access_key":"xxxxxx"
 ---
@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: source-aws-billing
-          image: vancehub/source-aws-billing
+          image: public.ecr.aws/vanus/connector/source-aws-billing
           imagePullPolicy: IfNotPresent
           #command: ['sh', '-c', 'sleep 360000']
           env:

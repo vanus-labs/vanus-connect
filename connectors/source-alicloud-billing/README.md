@@ -63,7 +63,7 @@ For example,billing data output a CloudEvent looks like:
 
 ## AliCloud Billing Source Image
 
-> vancehub/source-alicloud-billing
+> public.ecr.aws/vanus/connector/source-alicloud-billing
 
 ## Deploy
 
@@ -71,7 +71,7 @@ For example,billing data output a CloudEvent looks like:
 
 #### create config file
 
-refer [config](#Config) to create `config.yaml`. for example:
+refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "target": "http://localhost:8080"
@@ -79,7 +79,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 
 #### create secret file
 
-refer [secret](#Secret) to create `secret.yaml`. for example:
+refer [secret](#Secret) to create `secret.yml`. for example:
 
 ```yaml
 "access_key_id": "xxxxxx"
@@ -89,7 +89,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/source-alicloud-billing
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/source-alicloud-billing
 ```
 
 ### K8S

@@ -63,7 +63,7 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ## Image
 
-> vancehub/sink-elasticsearch
+> public.ecr.aws/vanus/connector/sink-elasticsearch
 
 ## Deploy
 
@@ -71,7 +71,7 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 #### create config file
 
-refer [config](#Config) to create `config.yaml`. for example:
+refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "port": 8080
@@ -83,7 +83,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 
 #### create secret file
 
-refer [secret](#Secret) to create `secret.yaml`. for example:
+refer [secret](#Secret) to create `secret.yml`. for example:
 
 ```yaml
 "username": "elastic"
@@ -93,7 +93,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-elasticsearch
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/sink-elasticsearch
 ```
 
 ### K8S

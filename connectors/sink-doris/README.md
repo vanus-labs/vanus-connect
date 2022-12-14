@@ -58,7 +58,7 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 ## Doris Sink Image
 
-> vancehub/sink-doris
+> public.ecr.aws/vanus/connector/sink-doris
 
 ## Deploy
 
@@ -66,7 +66,7 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 #### create config file
 
-refer [config](#Config) to create `config.yaml`. for example:
+refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "port": 8080
@@ -77,7 +77,7 @@ refer [config](#Config) to create `config.yaml`. for example:
 
 #### create secret file
 
-refer [secret](#Secret) to create `secret.yaml`. for example:
+refer [secret](#Secret) to create `secret.yml`. for example:
 
 ```yaml
 "username": "vance_test"
@@ -87,7 +87,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-doris
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/sink-doris
 ```
 
 ### K8S
