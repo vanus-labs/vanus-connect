@@ -96,7 +96,7 @@ spec:
     spec:
       containers:
         - name: sink-k8s
-          image: docker.io/vancehub/sink-k8s:latest
+          image: public.ecr.aws/vanus/connector/sink-k8s:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

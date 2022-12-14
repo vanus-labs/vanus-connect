@@ -43,7 +43,7 @@ by fix time.The data group by aws service For example,billing data output a Clou
 
 ## AWS Billing Source Image
 
-> vancehub/source-aws-billing
+> public.ecr.aws/vanus/connector/source-aws-billing
 
 ## Deploy
 
@@ -69,7 +69,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/source-aws-billing
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/source-aws-billing
 ```
 
 ### K8S

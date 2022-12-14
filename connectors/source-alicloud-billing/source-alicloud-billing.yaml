@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: source-alicloud-billing
-          image: vancehub/source-alicloud-billing
+          image: public.ecr.aws/vanus/connector/source-alicloud-billing
           imagePullPolicy: IfNotPresent
           #command: ['sh', '-c', 'sleep 360000']
           env:

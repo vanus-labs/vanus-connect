@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
         - name: sink-es
-          image: vancehub/sink-elasticsearch:0.1
+          image: public.ecr.aws/vanus/connector/sink-elasticsearch:latest
           imagePullPolicy: IfNotPresent
           #command: ['sh', '-c', 'sleep 360000']
           env:

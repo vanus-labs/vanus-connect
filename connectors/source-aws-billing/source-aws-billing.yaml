@@ -36,7 +36,7 @@ spec:
     spec:
       containers:
         - name: source-aws-billing
-          image: vancehub/source-aws-billing
+          image: public.ecr.aws/vanus/connector/source-aws-billing
           imagePullPolicy: IfNotPresent
           #command: ['sh', '-c', 'sleep 360000']
           env:

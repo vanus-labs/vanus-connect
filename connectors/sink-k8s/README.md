@@ -62,7 +62,7 @@ Users can specify their configs by either setting environments variables or moun
 
 ## Elasticsearch Sink Image
 
-> docker.io/vancehub/sink-k8s
+> public.ecr.aws/vanus/connector/sink-k8s
 
 ## Deploy
 

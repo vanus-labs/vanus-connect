@@ -63,7 +63,7 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ## Image
 
-> vancehub/sink-elasticsearch
+> public.ecr.aws/vanus/connector/sink-elasticsearch
 
 ## Deploy
 
@@ -93,7 +93,7 @@ refer [secret](#Secret) to create `secret.yaml`. for example:
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret vancehub/sink-elasticsearch
+ docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/sink-elasticsearch
 ```
 
 ### K8S
