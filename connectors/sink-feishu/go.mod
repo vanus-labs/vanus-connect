@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/go-resty/resty/v2 v2.7.0
-	github.com/linkall-labs/cdk-go v0.3.2
+	github.com/linkall-labs/cdk-go v0.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448

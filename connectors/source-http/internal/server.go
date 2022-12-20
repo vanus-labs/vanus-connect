@@ -186,9 +186,10 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 			ctx.Response.SetStatusCode(http.StatusOK)
 			wg.Done()
 		},
-		Failed: func() {
+		Failed: func(err2 error) {
 			ctx.Response.SetStatusCode(http.StatusInternalServerError)
-			ctx.Response.SetBody([]byte("failed to send event to remote server"))
+			ctx.Response.SetBody([]byte(
+				fmt.Sprintf("failed to send event to remote server: %s", err2.Error())))
 			wg.Done()
 		},
 	}

@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/google/uuid v1.3.0
-	github.com/linkall-labs/cdk-go v0.3.2
+	github.com/linkall-labs/cdk-go v0.3.3
 	github.com/valyala/fasthttp v1.43.0
 )
 
