@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-slack
+  namespace: vanus
+spec:
+  selector:
+    app: sink-slack
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-slack
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-slack
+  namespace: vanus
+data:
+  config.yml: |-
+    default: "test-app"
+    slack:
+      - app_name: "test-app1"
+        token: "xoxb-xxxxxxxxxx"
+        default_channel: "#general"
+      - app_name: "test-app2"
+        token: "xoxb-xxxxxxxxxx"
+        default_channel: "#general"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-slack
+  namespace: vanus
+  labels:
+    app: sink-slack
+spec:
+  selector:
+    matchLabels:
+      app: sink-slack
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-slack
+    spec:
+      containers:
+        - name: sink-slack
+#          For China mainland
+#          image: linkall.tencentcloudcr.com/vanus/connector/sink-slack:latest
+          image: public.ecr.aws/vanus/connector/sink-slack:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-slack
