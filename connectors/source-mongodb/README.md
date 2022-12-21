@@ -8,23 +8,19 @@ This connector capturing mongodb [ChangeEvent](https://www.mongodb.com/docs/manu
 
 ### create config file
 
-```shell
-touch offset.data
+change configurations to yours.
 
-cat << EOF > config.json
-# change this hosts to your mongodb's address
-{
-  "v_target": "http://localhost:8080",
-  "v_store_file": "/vance/config/offset.data",
-  "db_hosts": "127.0.0.1:27017",
-  "port": 8080
-}
+```shell
+cat << EOF > config.yml
+target: "<url of cloud event receiver>"
+name: "quick-start"
+hosts: [<your_mongodb_hosts >]
 EOF
 ```
 
 For full configuration, you can see [config](#config) section.
 
-### run mongodb-source
+### Start Using Docker
 
 it assumes that the mongodb instance doesn't need authentication. For how to use authentication please see
 [secret](#secret) section.
@@ -32,10 +28,9 @@ it assumes that the mongodb instance doesn't need authentication. For how to use
 ```shell
 docker run -d --rm \
   --network host \
-  -p 12321:12321 \
   -v ${PWD}:/vance/config \
-  -e CONNECTOR_CONFIG=/vance/config/config.json \
-  --name mongodb-source public.ecr.aws/vanus/connector/mongodb-source:dev
+  -e CONNECTOR_CONFIG=/vance/config/config.yml \
+  --name source-mongodb public.ecr.aws/vanus/connector/source-mongodb:latest
 ```
 
 ### capture a insert event
@@ -50,44 +45,32 @@ and you will receive an event like this:
 
 ```json
 {
-    "specversion":"1.0",
-    "id":"630e32fa020bac5f5f1dcb74",
-    "source":"mongodb.replicaset-01.test.mongo_source",
-    "type":"test.mongo_source",
-    "datacontenttype":"application/json",
-    "time":"2022-08-30T15:55:38Z",
-    "data":{
-        "metadata":{
-            "id":"630e32fa020bac5f5f1dcb74",
-            "recognized":true,
-            "extension":{
-                "ord":1,
-                "rs":"replicaset-01",
-                "collection":"mongo_source",
-                "version":"1.9.4.Final",
-                "connector":"mongodb",
-                "name":"replica-set01",
-                "ts_ms":1661874938000,
-                "snapshot":"false",
-                "db":"test"
-            }
-        },
-        "op":"INSERT",
-        "insert":{
-            "document":{
-                "_id":{
-                    "$oid":"630e32fa020bac5f5f1dcb74"
-                },
-                "test":"demo"
-            }
-        }
-    },
-    "vancemongodbversion":"1.9.4.Final",
-    "vancemongodboperation":"INSERT",
-    "vancemongodbrecognized":true,
-    "vancemongodbsnapshot":"false",
-    "vancemongodbname":"replica-set01",
-    "vancemongodbord":""
+  "specversion":"1.0",
+  "id":"4cbc7a65-5338-41aa-8f16-8fd164146975",
+  "source":"/debezium/mongodb/test",
+  "type":"io.debezium.mongodb.datachangeevent",
+  "datacontenttype":"application/json",
+  "time":"2022-12-21T21:23:40Z",
+  "data":{
+    "after":{
+      "_id":"63a3795c8835b568e786e26a",
+      "a":1,
+      "b":"3"
+    }
+  },
+  "iodebeziumversion":"2.0.1.Final",
+  "xvanuslogoffset":"AAAAAAAAAHk=",
+  "iodebeziumord":"1",
+  "iodebeziumdb":"test",
+  "iodebeziumrs":"replicaset-01",
+  "iodebeziumname":"test",
+  "iodebeziumcollection":"a",
+  "xvanusstime":"2022-12-21T21:23:41.109Z",
+  "iodebeziumsnapshot":"false",
+  "iodebeziumtsms":"1671657820000",
+  "xvanuseventbus":"test",
+  "iodebeziumconnector":"mongodb",
+  "iodebeziumop":"c"
 }
 ```
 
@@ -96,7 +79,7 @@ please see [Event Structure](#Event Structure) to understanding it.
 ### clean resource
 
 ```shell
-docker stop mongodb-source
+docker stop source-mongodb
 ```
 
 ## Configuration

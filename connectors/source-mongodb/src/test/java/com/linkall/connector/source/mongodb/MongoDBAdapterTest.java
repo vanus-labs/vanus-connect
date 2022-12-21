@@ -14,111 +14,36 @@
 
 package com.linkall.connector.source.mongodb;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import io.cloudevents.CloudEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import junit.framework.Assert;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public class MongoDBAdapterTest {
 
     @Test
-    public void TestCreateEvent() throws IOException {
-        String id = "{\"id\":\"{\\\"$oid\\\": \\\"62ff236a99b4cfeac7ed54c6\\\"}\"}";
-        String createEvent = "{\"after\":\"{\\\"_id\\\": {\\\"$oid\\\": \\\"62ff236a99b4cfeac7ed54c6\\\"}," +
-                "\\\"a\\\": \\\"a\\\"}\",\"patch\":null,\"filter\":null,\"updateDescription\":null," +
-                "\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\",\"name\":\"test\"," +
-                "\"ts_ms\":1660887914000,\"snapshot\":\"false\",\"db\":\"test\",\"sequence\":null," +
-                "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
-                "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"c\",\"ts_ms\":1661223842688," +
-                "\"transaction\":null}";
-        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, createEvent));
-        assertEquals("62ff236a99b4cfeac7ed54c6", ce.getId());
-        assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
-        assertEquals("test.source", ce.getType());
-        assertEquals("application/json", ce.getDataContentType());
-        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
-        JSONObject document = obj.getJSONObject("insert").getJSONObject("document");
-        assertEquals("62ff236a99b4cfeac7ed54c6", document.getJSONObject("_id").get("$oid"));
-        assertEquals("a", document.get("a"));
-        assertEquals(6, ce.getExtensionNames().size());
-        assertEquals("INSERT", ce.getExtension("vancemongodboperation"));
+    public void TestConvertData() throws IOException {
+        MongoDBSource source = new MongoDBSource();
+        ObjectMapper mapper = new ObjectMapper();
+        String data = "{\"id\":\"name:test;ts:1671652565000;ord:1\",\"source\":\"/debezium/mongodb/test\"," +
+                "\"specversion\":\"1.0\",\"type\":\"io.debezium.mongodb.datachangeevent\",\"time\":\"2022-12-21T19:56:05.000Z\"," +
+                "\"datacontenttype\":\"application/json\",\"iodebeziumop\":\"u\",\"iodebeziumversion\":\"2.0.1.Final\"," +
+                "\"iodebeziumconnector\":\"mongodb\",\"iodebeziumname\":\"test\",\"iodebeziumtsms\":\"1671652565000\"," +
+                "\"iodebeziumsnapshot\":\"false\",\"iodebeziumdb\":\"test\",\"iodebeziumsequence\":null," +
+                "\"iodebeziumrs\":\"replicaset-01\",\"iodebeziumcollection\":\"a\",\"iodebeziumord\":1," +
+                "\"iodebeziumlsid\":null,\"iodebeziumtxnNumber\":null,\"iodebeziumtxid\":null," +
+                "\"iodebeziumtxtotalorder\":null,\"iodebeziumtxdatacollectionorder\":null,\"data\":{\"before\":null," +
+                "\"after\":\"{\\\\\\\"_id\\\\\\\": {\\\\\\\"$oid\\\\\\\": \\\\\\\"63a364ad8835b568e786e262\\\\\\\"}," +
+                "\\\\\\\"a\\\\\\\": 1234,\\\\\\\"b\\\\\\\": \\\\\\\"3\\\\\\\"}\",\"patch\":null,\"filter\":null," +
+                "\"updateDescription\":{\"removedFields\":null,\"updatedFields\":\"{\\\\\\\"a\\\\\\\": 1234}\"," +
+                "\"truncatedArrays\":null}}}";
+        Map<String, Object> value = mapper.readValue(data.getBytes(StandardCharsets.UTF_8), Map.class);
+        Assert.assertEquals(source.convertData(value.get("data")).toString(),"JsonCloudEventData{node={" +
+                "\"updateDescription\":{\"updatedFields\":{\"a\":1234}},\"after\":{\"_id\":\"63a364ad8835b568e786e262\"," +
+                "\"a\":1234,\"b\":\"3\"}}}" );
     }
 
-    @Test
-    public void TestUpdateEvent() throws IOException {
-        String id = "{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
-        String updateEvent = "{\"after\":\"{\\\"_id\\\": {\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}," +
-                "\\\"b\\\": \\\"1213\\\"}\",\"patch\":null,\"filter\":null," +
-                "\"updateDescription\":{\"removedFields\":null,\"updatedFields\":\"{\\\"b\\\": \\\"1213\\\"}\"," +
-                "\"truncatedArrays\":null},\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\"," +
-                "\"name\":\"test\",\"ts_ms\":1661225902000,\"snapshot\":\"false\",\"db\":\"test\",\"sequence\":null," +
-                "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
-                "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"u\",\"ts_ms\":1661225902776," +
-                "\"transaction\":null}";
-
-        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, updateEvent));
-        assertEquals("63044b3fccaea8fcf8a159ef", ce.getId());
-        assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
-        assertEquals("test.source", ce.getType());
-        assertEquals("application/json", ce.getDataContentType());
-        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
-        JSONObject document = obj.getJSONObject("insert").getJSONObject("document");
-        assertEquals(2, document.size());
-        assertEquals("63044b3fccaea8fcf8a159ef", document.getJSONObject("_id").get("$oid"));
-        assertEquals("1213", document.get("b"));
-        JSONObject update = obj.getJSONObject("update").getJSONObject("updateDescription");
-        assertEquals(3, update.size());
-        JSONObject updatedFields = update.getJSONObject("updatedFields");
-        assertEquals(1, updatedFields.size());
-        assertEquals("1213", updatedFields.get("b"));
-        assertEquals(6, ce.getExtensionNames().size());
-        assertEquals("UPDATE", ce.getExtension("vancemongodboperation"));
-    }
-
-    @Test
-    void TestDeletedEvent() throws IOException {
-        String id = "{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
-        String deleted = "{\"after\":null,\"patch\":null,\"filter\":null,\"updateDescription\":null," +
-                "\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\",\"name\":\"test\"," +
-                "\"ts_ms\":1661232012000,\"snapshot\":\"false\",\"db\":\"test\",\"sequence\":null," +
-                "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
-                "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"d\",\"ts_ms\":1661232012563," +
-                "\"transaction\":null}";
-        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, deleted));
-        assertEquals("63044b3fccaea8fcf8a159ef", ce.getId());
-        assertEquals("mongodb.replicaset-01.test.source", ce.getSource().toString());
-        assertEquals("test.source", ce.getType());
-        assertEquals("application/json", ce.getDataContentType());
-        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
-        assertEquals(3, obj.size());
-        assertEquals(6, ce.getExtensionNames().size());
-        assertEquals("DELETE", ce.getExtension("vancemongodboperation"));
-    }
-
-    @Test
-    void TestUnrecognizedEvent() throws IOException {
-        String id = "1{\"id\":\"{\\\"$oid\\\": \\\"63044b3fccaea8fcf8a159ef\\\"}\"}";
-        String unknown = "1{\"after\":null,\"patch\":null,\"filter\":null,\"updateDescription\":null," +
-                "\"source\":{\"version\":\"1.9.4.Final\",\"connector\":\"mongodb\",\"name\":\"test\"," +
-                "\"ts_ms\":1661232012000,\"snapshot\":\"false\",\"db\":\"test\",\"sequence\":null," +
-                "\"rs\":\"replicaset-01\",\"collection\":\"source\",\"ord\":1,\"h\":null,\"tord\":null," +
-                "\"stxnid\":null,\"lsid\":null,\"txnNumber\":null},\"op\":\"d\",\"ts_ms\":1661232012563," +
-                "\"transaction\":null}";
-        CloudEvent ce = MongoDBAdapter.proto2CloudEvent(MongoDBAdapter.parse(id, unknown));
-        assertEquals("unknown", ce.getId());
-        assertEquals("unknown.unknown.unknown.unknown", ce.getSource().toString());
-        assertEquals("unknown.unknown", ce.getType());
-        assertEquals("application/json", ce.getDataContentType());
-        JSONObject obj = JSON.parseObject(ce.getData().toBytes(), JSONObject.class);
-        assertEquals(2, obj.size());
-        assertEquals(id, obj.getJSONObject("raw").get("key"));
-        assertEquals(unknown, obj.getJSONObject("raw").get("value"));
-        assertEquals(2, ce.getExtensionNames().size());
-        assertEquals(false, ce.getExtension("vancemongodbrecognized"));
-        assertEquals("UNKNOWN", ce.getExtension("vancemongodboperation"));
-    }
 }
