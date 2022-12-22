@@ -1,51 +1,34 @@
 package com.linkall.source.mysql;
 
-import com.linkall.source.debezium.DebeziumSource;
-import com.linkall.vance.core.Adapter;
-import com.linkall.vance.core.Source;
-import io.debezium.connector.mysql.MySqlConnector;
-import io.debezium.connector.mysql.converters.TinyIntOneToBooleanConverter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linkall.cdk.config.Config;
+import com.linkall.cdk.database.debezium.DebeziumSource;
+import io.cloudevents.CloudEventData;
+import io.cloudevents.jackson.JsonCloudEventData;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.io.IOException;
 
-public class MySqlSource extends DebeziumSource implements Source {
+public class MySqlSource extends DebeziumSource {
 
-  private MySqlOffset offset;
+  private ObjectMapper objectMapper = new ObjectMapper();
 
   public MySqlSource() {
-    offset = new MySqlOffset();
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
   @Override
-  public String getConnectorClass() {
-    return MySqlConnector.class.getCanonicalName();
+  protected CloudEventData convertData(Object data) throws IOException {
+    return JsonCloudEventData.wrap(objectMapper.valueToTree(data));
   }
 
   @Override
-  public Map<String, Object> getConfigOffset() {
-    Map<String, Object> offsets = new HashMap<>();
-    if (offset.getPos() != null) offsets.put("pos", offset.getPos());
-    if (offset.getFile() != null && !offset.getFile().isEmpty())
-      offsets.put("file", offset.getFile());
-    return offsets;
+  public Class<? extends Config> configClass() {
+    return MySqlConfig.class;
   }
 
   @Override
-  public Properties getDebeziumProperties() {
-    final Properties props = new Properties();
-
-    // convert
-    props.setProperty("converters", "boolean, datetime");
-    props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
-    props.setProperty("datetime.type", MySqlDateTimeConverter.class.getCanonicalName());
-
-    return props;
-  }
-
-  @Override
-  public Adapter getAdapter() {
-    return new MySqlAdapter();
+  public String name() {
+    return "Source MySQL";
   }
 }
