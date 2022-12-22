@@ -14,128 +14,78 @@
 
 package com.linkall.connector.source.mongodb;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.linkall.vance.core.Adapter;
-import org.apache.logging.log4j.util.Strings;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linkall.cdk.config.Config;
+import io.cloudevents.CloudEventData;
+import io.cloudevents.jackson.JsonCloudEventData;
+import org.apache.commons.text.StringEscapeUtils;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSource
-        implements com.linkall.vance.core.Source {
-    private static final String DEBEZIUM_CONNECTOR = "io.debezium.connector.mongodb.MongoDbConnector";
+public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSource {
+    private static final String CONNECTOR_NAME = "Source MongoDB";
+    private final ObjectMapper mapper = new ObjectMapper();
 
-    private final String connectorName;
-    private final Map<String, Object> config;
-    private Map<String, String> secret;
-
-    public MongoDBSource() throws IOException {
-        super();
-        String configPath = System.getenv("CONNECTOR_CONFIG");
-        if (Strings.isBlank(configPath)) {
-            configPath = "/vance/config/config.json";
-        }
-        Path cp = Paths.get(configPath);
-        if (!cp.toFile().exists()) {
-            throw new FileNotFoundException("the config.json not found in [ " + cp.toAbsolutePath() + " ]");
-        }
-        byte[] data = Files.readAllBytes(cp);
-        config = JSON.parseObject(data, Map.class);
-
-        String secretPath = System.getenv("CONNECTOR_SECRET");
-        if (Strings.isBlank(secretPath)) {
-            secretPath = "/vance/config/secret.json";
-        }
-
-        Path sp = Paths.get(secretPath);
-        if (sp.toFile().exists()) {
-            data = Files.readAllBytes(sp);
-            secret = JSON.parseObject(data, Map.class);
-        }
-        connectorName = config.get("name").toString();
+    @Override
+    public Class<? extends Config> configClass() {
+        return MongoDBConfig.class;
     }
 
     @Override
-    public Adapter getAdapter() {
-        return new MongoDBAdapter();
+    public String name() {
+        return CONNECTOR_NAME;
     }
 
     @Override
-    public String getConnectorClass() {
-        return DEBEZIUM_CONNECTOR;
-    }
+    protected CloudEventData convertData(Object data) throws IOException {
+        Map<String, Object> m = (Map) data;
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : m.entrySet()) {
+            if (entry.getValue() == null) {
+                continue;
+            }
+            switch (entry.getKey()) {
+                case "before":
+                    break;
+                case "after":
+                    String json = StringEscapeUtils.unescapeJson(entry.getValue().toString());
+                    Map<String, Object> value = this.mapper.readValue(json.getBytes(StandardCharsets.UTF_8), Map.class);
+                    if(value.get("_id") != null) {
+                        value.put("_id", ((Map)value.get("_id")).get("$oid"));
+                    }
+                    result.put(entry.getKey(), value);
+                    break;
+                case "patch":
+                    break;
+                case "filter":
+                    break;
+                case "updateDescription":
+                    result.put(entry.getKey(), processUpdate(entry.getValue()));
+                    break;
+            }
 
-    @Override
-    public String getDatabase() {
-        return connectorName;
-    }
-
-    @Override
-    public String getStoreOffsetKey() {
-        return null;
-    }
-
-    @Override
-    public Map<String, Object> getConfigOffset() {
-        return new HashMap<>();
-    }
-
-    @Override
-    // https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-connector-properties
-    public Properties getDebeziumProperties() {
-        final Properties props = new Properties();
-        props.setProperty("name", connectorName);
-        props.setProperty("mongodb.hosts", config.get("db_hosts").toString());
-        props.setProperty("mongodb.name", config.get("db_name").toString());
-        props.setProperty("capture.mode", "change_streams_update_full");
-        if (secret != null && secret.size() > 0) {
-            props.setProperty("mongodb.user", secret.get("username"));
-            props.setProperty("mongodb.password", secret.get("password"));
-            props.setProperty("mongodb.authsource", secret.getOrDefault("authSource", "admin"));
         }
-
-        if (config.get("database") != null) {
-            JSONObject db = (JSONObject) config.get("database");
-            if (db.getJSONArray("include").size() > 0 && db.getJSONArray("exclude").size() > 0) {
-                throw new IllegalArgumentException("the database.include and database.exclude can't be set together");
-            }
-            if (db.getJSONArray("include").size() > 0) {
-                props.setProperty("database.include.list", tableFormat(db.getJSONArray("include").stream()));
-            }
-
-            if (db.getJSONArray("exclude").size() > 0) {
-                props.setProperty("database.exclude.list", tableFormat(db.getJSONArray("exclude").stream()));
-            }
-        }
-        if (config.get("collection") != null) {
-            JSONObject collection = (JSONObject) config.get("collection");
-            if (collection.getJSONArray("include").size() > 0 && collection.getJSONArray("exclude").size() > 0) {
-                throw new IllegalArgumentException("the collection.include and collection.exclude can't be set together");
-            }
-            if (collection.getJSONArray("include").size() > 0) {
-                props.setProperty("collection.include.list", tableFormat(collection.getJSONArray("include").stream()));
-            }
-
-            if (collection.getJSONArray("exclude").size() > 0) {
-                props.setProperty("collection.exclude.list", tableFormat(collection.getJSONArray("exclude").stream()));
-            }
-        }
-
-        return props;
+        return JsonCloudEventData.wrap( mapper.valueToTree(result));
     }
 
-    public String tableFormat(Stream<Object> table) {
-        return table
-                .map(stream -> this.getDatabase() + "." + stream)
-                .collect(Collectors.joining(","));
+    // TODO more tests
+    private Object processUpdate(Object obj) throws IOException {
+        Map<String, Object> m = (Map) obj;
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, Object> entry : m.entrySet()) {
+            if (entry.getValue() == null) {
+                continue;
+            }
+            String json = StringEscapeUtils.unescapeJson(entry.getValue().toString());
+            Map<String, Object> value = this.mapper.readValue(json.getBytes(StandardCharsets.UTF_8), Map.class);
+            result.put(entry.getKey(), value);
+        }
+        return result;
     }
 }
+
+
