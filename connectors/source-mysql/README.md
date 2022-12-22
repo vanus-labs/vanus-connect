@@ -58,11 +58,11 @@ The row record will be transformed into a CloudEvent looks like:
 | target                  | required    | target URL will send CloudEvents to                                            |
 | db_config.host          | required    | db host                                                                        |
 | db_config.port          | required    | db port                                                                        |
-| db_config.username      | optional    | db username                                                                    |
-| db_config.password      | optional    | db password                                                                    |
+| db_config.username      | required    | db username                                                                    |
+| db_config.password      | required    | db password                                                                    |
 | db_config.database      | required    | db database name                                                               |
-| include_tables          | required    | include table                                                                  |
-| exclude_tables          | required    | exclude table                                                                  |
+| include_tables          | optional    | include table                                                                  |
+| exclude_tables          | optional    | exclude table                                                                  |
 | store_config.type       | required    | save offset type, support FILE,MEMORY                                          |
 | store_config.store_file | required    | it's needed when offset type is FIlE, save offset file name                    |
 | db_history_file         | required    | save db schema history file name                                               |
@@ -107,4 +107,5 @@ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-my
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+
 [debezium]: https://debezium.io/documentation/reference/2.0/connectors/mysql.html
