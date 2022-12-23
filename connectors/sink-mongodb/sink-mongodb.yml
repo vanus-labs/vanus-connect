@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+spec:
+  selector:
+    app: sink-mongodb
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: sink-mongodb
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+data:
+  config.yml: |-
+    db_hosts:
+      - 44.242.140.28:27017
+    port: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+  labels:
+    app: sink-mongodb
+spec:
+  selector:
+    matchLabels:
+      app: sink-mongodb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-mongodb
+    spec:
+      containers:
+        - name: sink-mongodb
+          image: public.ecr.aws/vanus/connector/sink-mongodb:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+          # env: see README for more about how to set env
+      volumes:
+        - name: config
+          configMap:
+            name: sink-mongodb
