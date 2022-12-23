@@ -126,9 +126,9 @@ public class MySQLConfig extends DebeziumConfig {
       props.setProperty(
           "table.exclude.list", Arrays.stream(tableExclude).collect(Collectors.joining(",")));
     }
-    props.setProperty("converters", "boolean, datetime");
-    props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
-    props.setProperty("datetime.type", MySQLDateTimeConverter.class.getCanonicalName());
+//    props.setProperty("converters", "boolean, datetime");
+//    props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
+//    props.setProperty("datetime.type", MySQLDateTimeConverter.class.getCanonicalName());
     return props;
   }
 }
