@@ -14,7 +14,6 @@
 
 package com.linkall.connector.source.mongodb;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkall.cdk.config.Config;
 import io.cloudevents.CloudEventData;
@@ -54,8 +53,8 @@ public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSou
                 case "after":
                     String json = StringEscapeUtils.unescapeJson(entry.getValue().toString());
                     Map<String, Object> value = this.mapper.readValue(json.getBytes(StandardCharsets.UTF_8), Map.class);
-                    if(value.get("_id") != null) {
-                        value.put("_id", ((Map)value.get("_id")).get("$oid"));
+                    if (value.get("_id") != null) {
+                        value.put("_id", ((Map) value.get("_id")).get("$oid"));
                     }
                     result.put(entry.getKey(), value);
                     break;
@@ -69,7 +68,7 @@ public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSou
             }
 
         }
-        return JsonCloudEventData.wrap( mapper.valueToTree(result));
+        return JsonCloudEventData.wrap(mapper.valueToTree(result));
     }
 
     // TODO more tests

@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-mongodb
+  namespace: vanus
+data:
+  config.yml: |-
+    target: "http://localhost:8080",
+    store:
+      type: "FILE"
+      pathname: "/tmp/vance/source-mongodb/offset.data",
+    name: "test",
+    hosts: "127.0.0.1:27017",
+    credential:
+      username: "vanus"
+      password: "abc123"
+      auth_source: "admin"
+    database_include: ["test"]
+    collection_include: ["test.demo"]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-mongodb
+  namespace: vanus
+  labels:
+    app: source-mongodb
+spec:
+  selector:
+    matchLabels:
+      app: source-mongodb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-mongodb
+    spec:
+      containers:
+        - name: source-mongodb
+          image: public.ecr.aws/vanus/connector/source-mongodb:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-mongodb

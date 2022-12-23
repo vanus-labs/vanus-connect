@@ -3,11 +3,12 @@ package com.linkall.connector.source.mongodb;
 import java.util.Properties;
 
 public class MongoDBCredentials {
-    private String username ;
-    private String password ;
-    private String authSource ;
+    private String username;
+    private String password;
+    private String authSource;
 
-    public MongoDBCredentials() {}
+    public MongoDBCredentials() {
+    }
 
     public Properties getProperties() {
         final Properties props = new Properties();

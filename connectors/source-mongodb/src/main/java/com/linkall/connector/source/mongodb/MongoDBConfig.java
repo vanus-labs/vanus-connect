@@ -31,20 +31,17 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
     @JsonProperty("hosts")
     private String[] hosts;
 
-    @JsonProperty("database")
-    private String database;
-
-    @JsonProperty("secret")
+    @JsonProperty("credential")
     private MongoDBCredentials credentials;
 
-    @JsonProperty("include_databases")
+    @JsonProperty("database_include")
     private String[] includeDatabases;
-    @JsonProperty("exclude_databases")
+    @JsonProperty("database_exclude")
     private String[] excludeDatabases;
 
-    @JsonProperty("include_collections")
+    @JsonProperty("collection_include")
     private String[] includeCollections;
-    @JsonProperty("exclude_collections")
+    @JsonProperty("collection_exclude")
     private String[] excludeCollections;
 
     public MongoDBConfig() {
@@ -68,9 +65,9 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
         final Properties props = new Properties();
         props.setProperty("connector.class", DEBEZIUM_CLASS);
         props.setProperty("name", name);
-        if (connectionUrl!=null) {
+        if (connectionUrl != null) {
             props.setProperty("mongodb.connection.string", connectionUrl);
-        }else {
+        } else {
             props.setProperty("mongodb.hosts", String.join(",", this.hosts));
         }
         props.setProperty("capture.mode", "change_streams_update_full");
