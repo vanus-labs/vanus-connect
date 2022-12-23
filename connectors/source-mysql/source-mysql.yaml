@@ -7,7 +7,7 @@ data:
   config.yml: |-
     target: "http://localhost:8080"
     name: "quick_start"
-    db_config:
+    db:
       host: "localhost"
       port: 3306
       username: "root"
@@ -17,7 +17,7 @@ data:
     include_tables:
       - dbname.user
 
-    store_config:
+    store:
       type: FILE
       store_file: "/vance/data/offset.dat"
 

@@ -22,7 +22,7 @@ public class MySqlConfig extends DebeziumConfig {
   @JsonProperty("name")
   private String name;
 
-  @JsonProperty("db_config")
+  @JsonProperty("db")
   private DbConfig dbConfig;
 
   @JsonProperty("binlog_offset")

@@ -53,31 +53,31 @@ The row record will be transformed into a CloudEvent looks like:
 
 ### Config
 
-| name                    | requirement | description                                                                                       |
-|-------------------------|-------------|---------------------------------------------------------------------------------------------------|
-| target                  | required    | target URL will send CloudEvents to                                                               |
-| name                    | required    | unique name for the connector                                                                     |
-| db_config.host          | required    | IP address or host name of db                                                                     |
-| db_config.port          | required    | integer port number of db                                                                         |
-| db_config.username      | required    | username of db                                                                                    |
-| db_config.password      | required    | password of db                                                                                    |
-| include_databases       | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
-| exclude_databases       | optional    | database name which don't want to capture changes,string array, can not set with include_database |
-| include_tables          | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
-| exclude_tables          | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
-| store_config.type       | required    | save offset type, support FILE, MEMORY                                                            |
-| store_config.store_file | required    | it's needed when offset type is FIlE, save offset file name                                       |
-| db_history_file         | required    | save db schema history file name                                                                  |
-| binlog_offset.file      | optional    | binlog filename, increment sync start binlog file name if not set is full sync                    |
-| binlog_offset.pos       | optional    | binlog position, use with config offset_binlog_file                                               |
-| binlog_offset.gtids     | optional    | binlog grids                                                                                      |
+| name                | requirement | description                                                                                       |
+|---------------------|-------------|---------------------------------------------------------------------------------------------------|
+| target              | required    | target URL will send CloudEvents to                                                               |
+| name                | required    | unique name for the connector                                                                     |
+| db.host             | required    | IP address or host name of db                                                                     |
+| db.port             | required    | integer port number of db                                                                         |
+| db.username         | required    | username of db                                                                                    |
+| db.password         | required    | password of db                                                                                    |
+| include_databases   | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
+| exclude_databases   | optional    | database name which don't want to capture changes,string array, can not set with include_database |
+| include_tables      | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
+| exclude_tables      | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
+| store.type          | required    | save offset type, support FILE, MEMORY                                                            |
+| store.store_file    | required    | it's needed when offset type is FIlE, save offset file name                                       |
+| db_history_file     | required    | save db schema history file name                                                                  |
+| binlog_offset.file  | optional    | binlog filename, increment sync start binlog file name if not set is full sync                    |
+| binlog_offset.pos   | optional    | binlog position, use with config offset_binlog_file                                               |
+| binlog_offset.gtids | optional    | binlog grids                                                                                      |
 
 ### Config Example
 
 ```yaml
 target: "http://localhost:8080"
 name: "quick_start"
-db_config:
+db:
   host: "localhost"
   port: 3306
   username: "root"
@@ -87,7 +87,7 @@ include_databases:
 include_tables:
   - dbname.user
 
-store_config:
+store:
   type: FILE
   store_file: "/tmp/mysql/offset.dat"
 
@@ -111,5 +111,4 @@ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-my
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-
 [debezium]: https://debezium.io/documentation/reference/2.0/connectors/mysql.html
