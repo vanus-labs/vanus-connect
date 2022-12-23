@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Properties;
 
-public class MySqlDateTimeConverter implements CustomConverter<SchemaBuilder, RelationalColumn> {
+public class MySQLDateTimeConverter implements CustomConverter<SchemaBuilder, RelationalColumn> {
   private final DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_TIME;
   private final DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_DATE;
   private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME;
