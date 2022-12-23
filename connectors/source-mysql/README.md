@@ -22,26 +22,26 @@ The row record will be transformed into a CloudEvent looks like:
 ```json
 {
   "specversion": "1.0",
-  "id": "ad3eaae9-2d6d-46e7-88d3-4b657155f183",
-  "source": "/debezium/mysql/dbname",
+  "id": "a67f31d6-a0c2-4124-b794-4139a9525ea8",
+  "source": "/debezium/mysql/quick_start",
   "type": "io.debezium.mysql.datachangeevent",
   "datacontenttype": "application/json",
-  "time": "2022-12-23T05:54:49Z",
+  "time": "2022-12-23T16:06:14Z",
   "iodebeziumconnector": "mysql",
   "iodebeziumserverid": "0",
   "iodebeziumsnapshot": "last",
   "iodebeziumdb": "dbname",
   "iodebeziumfile": "binlog.000009",
   "iodebeziumpos": "197",
-  "iodebeziumname": "dbname",
-  "iodebeziumtsms": "1671774889000",
+  "iodebeziumname": "quick_start",
+  "iodebeziumtsms": "1671811574000",
   "iodebeziumtable": "user",
   "iodebeziumop": "r",
   "iodebeziumversion": "2.0.1.Final",
   "iodebeziumrow": "0",
   "data": {
     "after": {
-      "id": 1,
+      "id": 100,
       "name": "user_name",
       "email": "user_email"
     }
@@ -53,35 +53,39 @@ The row record will be transformed into a CloudEvent looks like:
 
 ### Config
 
-| name                    | requirement | description                                                                    |
-|-------------------------|-------------|--------------------------------------------------------------------------------|
-| target                  | required    | target URL will send CloudEvents to                                            |
-| db_config.host          | required    | db host                                                                        |
-| db_config.port          | required    | db port                                                                        |
-| db_config.username      | required    | db username                                                                    |
-| db_config.password      | required    | db password                                                                    |
-| db_config.database      | required    | db database name                                                               |
-| include_tables          | optional    | include table                                                                  |
-| exclude_tables          | optional    | exclude table                                                                  |
-| store_config.type       | required    | save offset type, support FILE,MEMORY                                          |
-| store_config.store_file | required    | it's needed when offset type is FIlE, save offset file name                    |
-| db_history_file         | required    | save db schema history file name                                               |
-| binlog_offset.file      | optional    | binlog filename, increment sync start binlog file name if not set is full sync |
-| binlog_offset.pos       | optional    | binlog position, use with config offset_binlog_file                            |
-| binlog_offset.gtids     | optional    | binlog grids                                                                   |
+| name                    | requirement | description                                                                                       |
+|-------------------------|-------------|---------------------------------------------------------------------------------------------------|
+| target                  | required    | target URL will send CloudEvents to                                                               |
+| name                    | required    | unique name for the connector                                                                     |
+| db_config.host          | required    | IP address or host name of db                                                                     |
+| db_config.port          | required    | integer port number of db                                                                         |
+| db_config.username      | required    | username of db                                                                                    |
+| db_config.password      | required    | password of db                                                                                    |
+| include_databases       | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
+| exclude_databases       | optional    | database name which don't want to capture changes,string array, can not set with include_database |
+| include_tables          | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
+| exclude_tables          | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
+| store_config.type       | required    | save offset type, support FILE, MEMORY                                                            |
+| store_config.store_file | required    | it's needed when offset type is FIlE, save offset file name                                       |
+| db_history_file         | required    | save db schema history file name                                                                  |
+| binlog_offset.file      | optional    | binlog filename, increment sync start binlog file name if not set is full sync                    |
+| binlog_offset.pos       | optional    | binlog position, use with config offset_binlog_file                                               |
+| binlog_offset.gtids     | optional    | binlog grids                                                                                      |
 
 ### Config Example
 
 ```yaml
 target: "http://localhost:8080"
+name: "quick_start"
 db_config:
   host: "localhost"
   port: 3306
   username: "root"
   password: "vanus123456"
-  database: "dbname"
+include_databases:
+  - dbname
 include_tables:
-  - user
+  - dbname.user
 
 store_config:
   type: FILE

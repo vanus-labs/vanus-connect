@@ -5,7 +5,6 @@ public class DbConfig {
   private int port;
   private String username;
   private String password;
-  private String database;
 
   public String getHost() {
     return host;
@@ -37,13 +36,5 @@ public class DbConfig {
 
   public void setPassword(String password) {
     this.password = password;
-  }
-
-  public String getDatabase() {
-    return database;
-  }
-
-  public void setDatabase(String database) {
-    this.database = database;
   }
 }

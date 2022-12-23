@@ -11,10 +11,16 @@ import org.apache.kafka.connect.json.JsonConverterConfig;
 import org.apache.kafka.connect.storage.Converter;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class MySqlConfig extends DebeziumConfig {
-  private static final Set<String> systemTable = new HashSet(Arrays.asList("information_schema", "mysql", "performance_schema", "sys"));
+
+  @JsonProperty("name")
+  private String name;
 
   @JsonProperty("db_config")
   private DbConfig dbConfig;
@@ -25,12 +31,17 @@ public class MySqlConfig extends DebeziumConfig {
   @JsonProperty("db_history_file")
   private String dbHistoryFile;
 
+  @JsonProperty("include_databases")
+  private String[] includeDatabases;
+
+  @JsonProperty("exclude_databases")
+  private String[] excludeDatabases;
+
   @JsonProperty("include_tables")
   private String[] includeTables;
 
   @JsonProperty("exclude_tables")
   private String[] excludeTables;
-
 
   @Override
   public Class<?> secretClass() {
@@ -55,8 +66,7 @@ public class MySqlConfig extends DebeziumConfig {
       Map<String, Object> valueConfigs = new HashMap<>();
       valueConfigs.put(JsonConverterConfig.SCHEMAS_ENABLE_CONFIG, false);
       valueConverter.configure(valueConfigs, false);
-      byte[] offsetValue =
-          valueConverter.fromConnectData(dbConfig.getDatabase(), null, binlogOffset);
+      byte[] offsetValue = valueConverter.fromConnectData(name, null, binlogOffset);
       props.setProperty(
           KvStoreOffsetBackingStore.OFFSET_CONFIG_VALUE,
           new String(offsetValue, StandardCharsets.UTF_8));
@@ -73,80 +83,54 @@ public class MySqlConfig extends DebeziumConfig {
     props.setProperty("value.converter.schemas.enable", "false");
 
     // debezium names
-    props.setProperty("name", dbConfig.getDatabase());
-    props.setProperty("topic.prefix", dbConfig.getDatabase());
+    props.setProperty("name", name);
+    props.setProperty("topic.prefix", name);
     props.setProperty("database.server.id", String.valueOf(System.currentTimeMillis()));
 
     // db connection configuration
     props.setProperty("database.hostname", dbConfig.getHost());
     props.setProperty("database.port", String.valueOf(dbConfig.getPort()));
-    props.setProperty("database.dbname", dbConfig.getDatabase());
-    if (dbConfig.getUsername() != null && dbConfig.getUsername() != "")
-      props.setProperty("database.user", dbConfig.getUsername());
-    if (dbConfig.getPassword() != null && dbConfig.getPassword() != "")
-      props.setProperty("database.password", dbConfig.getPassword());
+    props.setProperty("database.user", dbConfig.getUsername());
+    props.setProperty("database.password", dbConfig.getPassword());
 
-    // https://debezium.io/documentation/reference/1.9/connectors/mysql.html#mysql-property-binary-handling-mode
+    // https://debezium.io/documentation/reference/2.0/connectors/mysql.html#mysql-property-binary-handling-mode
     props.setProperty("binary.handling.mode", "base64");
 
-    // table selection
-    props.setProperty("database.include.list", dbConfig.getDatabase());
+    if (includeDatabases != null
+        && includeDatabases.length > 0
+        && excludeDatabases != null
+        && excludeDatabases.length > 0) {
+      throw new IllegalArgumentException(
+          "the include_databases and exclude_databases can't be set together");
+    }
+    // database selection
+    if (includeDatabases != null && includeDatabases.length > 0) {
+      props.setProperty(
+          "database.include.list",
+          Arrays.stream(includeDatabases).collect(Collectors.joining(",")));
+    } else if (excludeDatabases != null && excludeDatabases.length > 0) {
+      props.setProperty(
+          "database.exclude.list",
+          Arrays.stream(excludeDatabases).collect(Collectors.joining(",")));
+    }
+
+    if (includeTables != null
+        && includeTables.length > 0
+        && excludeTables != null
+        && excludeTables.length > 0) {
+      throw new IllegalArgumentException(
+          "the include_tables and exclude_tables can't be set together");
+    }
     if (includeTables != null && includeTables.length > 0) {
       props.setProperty(
-          "table.include.list", tableFormat(dbConfig.getDatabase(), Arrays.stream(includeTables)));
-    } else {
-      Set<String> exclude = new HashSet<>(systemTable);
-      if (excludeTables !=null && excludeTables.length>0){
-        for (String table: excludeTables){
-          exclude.add(table);
-        }
-      }
+          "table.include.list", Arrays.stream(includeTables).collect(Collectors.joining(",")));
+    } else if (excludeTables != null && excludeTables.length > 0) {
       props.setProperty(
-          "table.exclude.list", tableFormat(dbConfig.getDatabase(),exclude.stream()));
+          "table.exclude.list", Arrays.stream(excludeTables).collect(Collectors.joining(",")));
     }
     props.setProperty("converters", "boolean, datetime");
     props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
     props.setProperty("datetime.type", MySqlDateTimeConverter.class.getCanonicalName());
     return props;
-  }
-
-  public DbConfig getDbConfig() {
-    return dbConfig;
-  }
-
-  public void setDbConfig(DbConfig dbConfig) {
-    this.dbConfig = dbConfig;
-  }
-
-  public BinlogOffset getBinlogOffset() {
-    return binlogOffset;
-  }
-
-  public void setBinlogOffset(BinlogOffset binlogOffset) {
-    this.binlogOffset = binlogOffset;
-  }
-
-  public String getDbHistoryFile() {
-    return dbHistoryFile;
-  }
-
-  public void setDbHistoryFile(String dbHistoryFile) {
-    this.dbHistoryFile = dbHistoryFile;
-  }
-
-  public String[] getIncludeTables() {
-    return includeTables;
-  }
-
-  public void setIncludeTables(String[] includeTables) {
-    this.includeTables = includeTables;
-  }
-
-  public String[] getExcludeTables() {
-    return excludeTables;
-  }
-
-  public void setExcludeTables(String[] excludeTables) {
-    this.excludeTables = excludeTables;
   }
 }
