@@ -6,10 +6,9 @@ metadata:
 spec:
   selector:
     app: sink-mongodb
-  type: NodePort
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
       name: sink-mongodb
 ---
 apiVersion: v1
@@ -19,9 +18,10 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    db_hosts:
-      - 44.242.140.28:27017
-    port: 8080
+    connection_uri: "mongodb+srv://<hosts>/?retryWrites=true&w=majority"
+    credential:
+      username: "<username>"
+      password: "<password>"
 
 ---
 apiVersion: apps/v1

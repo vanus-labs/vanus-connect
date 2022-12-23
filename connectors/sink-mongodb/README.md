@@ -1,241 +1,340 @@
-# MongoDB Sink Connector
+# Sink MongoDB Connector
 
 ## Introduction
 
-The MongoDB Sink is a [Vance Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md), 
-which now supports insert/update/delete operations.
+The Sink MongoDB is a [Vance Connector](../README.md) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+original event and insert/update/delete this data to mongodb.
+
+For examples, If incoming event looks like:
+
+```json
+{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quick-start",
+    "specversion": "1.0",
+    "type": "sink-mongodb",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvdatabasedb": "test",
+    "xvdatabasecoll": "demo",
+    "data": {
+        "inserts": [
+            {
+                "scenario":"quick-start"
+            }
+        ]
+    }
+}
+```
+
+which equals to
+
+```shell
+use test;
+db.demo.insertMany([{"scenario":"quick-start"}])
+```
 
 ## Quickstart
 
 ### create config file
 
+use your mongodb's hosts, username and password.
+
 ```shell
 cat << EOF > config.yml
-# change this hosts to your mongodb's address
-db_hosts:
-  - 44.242.140.28:27017
-port: 8080
+connection_uri: "mongodb+srv://<hosts>/?retryWrites=true&w=majority"
+credential:
+  username: "<username>"
+  password: "<password>"
 EOF
 ```
 
-### run mongodb-sink
-
-it assumes that the mongodb instance doesn't need authentication. For how to use authentication please see
-[secret](#secret) section.
+### start with docker
 
 ```shell
 docker run -d --rm \
-  --network host \
-  -p 8080:8080 \
+  -p 31080:8080 \
   -v ${PWD}:/vance/config \
-  --name mongodb-sink public.ecr.aws/vanus/connector/mongodb-sink:dev
+  --name sink-mongodb public.ecr.aws/vanus/connector/sink-mongodb:latest
 ```
 
 ### insert document to mongodb
-For more details on how to understand, please see [Structure](#structure) and [Examples](#examples) section.
+
+For more details on how to understand, please see [Examples](#examples) section.
 
 ```shell
-curl --location --request POST 'http://127.0.0.1:8080' \
+curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quick-start",
     "specversion": "1.0",
-    "id": "62ff305f779a73966deb3877",
-    "source": "mongodb.replicaset-01.test.source",
-    "type": "test.source",
+    "type": "sink-mongodb",
     "datacontenttype": "application/json",
-    "time": "2022-08-26T18:42:16Z",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvdatabasedb": "test",
+    "xvdatabasecoll": "demo",
     "data": {
-        "op": "INSERT",
-        "insert": {
-            "document": {
-                "a": 1234
+        "inserts": [
+            {
+                "scenario": "quick-start"
             }
-        }
-    },
-    "vancemongosinkdatabase":"test",
-    "vancemongosinkcollection": "sink",  
+        ]
+    }
 }'
+```
+
+find in mongodb
+
+```shell
+shard-0 [primary] test> db.demo.find()
+[
+  {
+    _id: ObjectId("63a56b176dcdb253ae4924f0"),
+    scenario: 'quick-start'
+  }
+]
+shard-0 [primary] test>
 ```
 
 ### clean resource
 
 ```shell
-docker stop mongodb-sink  
+docker stop sink-mongodb  
 ```
 
-## Configuration
+## How to use
 
-the configuration of mongodb-sink based on [Connection String URI Format](https://www.mongodb.com/docs/v6.0/reference/connection-string/)
+### Configuration
 
-### config
+The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
+tell Sink MongoDB.
 
-| Name     | Required | Default | Description                                     |
-|:---------|:--------:|:-------:|-------------------------------------------------|
-| db_hosts | **YES**  |    -    | the mongodb cluster hosts                       |
-| port     | **YES**  |    -    | the port the mongodb-sink for listening request |
 
-- example
-
-create a `config.yml` with its content as below, and mount it to container inside.
+| Name                                 | Required | Default | Description                                                                                                                                       |
+|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| port                                 |    NO    |  8080   | the pot Sink MongoDB receives incoming events                                                                                                     |
+| connection_uri                       | **YES**  |    -    | the URI to connect MongoDB, view[Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/) for more details |
+| credential.username                  |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
+| credential.password                  |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
+| credential.auth_source               |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
+| credential.auth_mechanism            |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
+| credential.auth_mechanism_properties |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
 
 ```yaml
-db_hosts:
-  - 127.0.0.1:27017
-port: 8080
+connection_uri: "mongodb+srv://<host1>,<host2>/?retryWrites=true&w=majority"
+credential:
+  username: "vanus"
+  password: "demo"
+  auth_source: "admin"
 ```
+
+### Extension Attributes
+
+Sink Source has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+to determine how to process event.
+
+
+| Attribute      | Required | Examples | Description                          |
+|:---------------|:--------:|----------|--------------------------------------|
+| xvdatabasedb   | **YES**  | test     | which database this event write to   |
+| xvdatabasecoll | **YES**  | demo     | which collection this event write to |
+
+### Data
+
+
+| Item                  | Required |   Type   | Default | Description                                                   |
+|:----------------------|:--------:|:--------:|:-------:|---------------------------------------------------------------|
+| inserts               |    NO    | []Object |  null   | insert data                                                   |
+| updates               |    NO    | []Object |  null   | https://www.mongodb.com/docs/manual/tutorial/update-documents |
+| updates[].filter      |    NO    |  Object  |  null   |                                                               |
+| updates[].update      |    NO    |  Object  |  null   |                                                               |
+| updates[].update_many |    NO    | boolean  |  false  | update many records when filter matches more than one         |
+| deletes               |    NO    | []Object |  null   | delete data                                                   |
+| deletes[].filter      |    NO    |  Object  |  null   | delete data                                                   |
+| deletes[].delete_many |    NO    |  Object  |  false  | delete many records when filter matches more than one         |
+
+```json
+{
+  "inserts":[
+    {
+      "_id": "63a56aed6dcdb253ae4924ee",
+      "key1": "value1"
+    },
+    {
+      "key2": "value2"
+    }
+  ],
+  "updates":[
+    {
+      "filter":{
+        "_id": "63a56aed6dcdb253ae4924ee"
+      },
+      "update": {
+        "$set": {
+          "key1": "value2_updated"
+        }
+      },
+      "update_many": true
+    }
+  ],
+  "deletes":[
+    {
+      "filter": {
+        "key2": "value2"
+      },
+      "delete_many": true
+    }
+  ]
+}
+```
+
+### Examples
+
+#### insert multiple documents to mongodb
 
 ```shell
-docker run -d \
-  -p 8080:8080 \
-  -v ${PWD}:/vance/config \
-  --name mongodb-sink \
-  --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quick-start",
+    "specversion": "1.0",
+    "type": "sink-mongodb",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvdatabasedb": "test",
+    "xvdatabasecoll": "demo",
+    "data": {
+        "inserts": [
+            {
+                "scenario": "quick-start-1"
+            },
+            {
+                "scenario": "quick-start-2"
+            }
+        ]
+    }
+}'
 ```
 
-### secret
+#### update multiple documents in mongodb
 
-| Name       | Required | Default | Description                      |
-|:-----------|:--------:|:-------:|----------------------------------|
-| username   | **YES**  |    -    | the username to connect mongodb  |
-| password   | **YES**  |    -    | the password to connect mongodb  |
-| authSource |    NO    |  admin  | the authSource to authentication |
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quick-start",
+    "specversion": "1.0",
+    "type": "sink-mongodb",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvdatabasedb": "test",
+    "xvdatabasecoll": "demo",
+    "data": {
+        "updates": [
+            {
+                "filter":{
+                  "scenario": "quick-start-1"
+                },
+                "update": {
+                    "$set": {
+                      "scenario": "quick-start-1-updated"
+                    }
+                },
+                "update_many": false
+            }
+        ]
+    }
+}'
+```
 
-The `user` and `password` are required only when MongoDB is configured to use authentication. This `authSource` required
-only when MongoDB is configured to use authentication with another authentication database than admin.
+#### delete document
 
-- example: create a `secert.yml` that its content like follow, and mount it to container inside.
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quick-start",
+    "specversion": "1.0",
+    "type": "sink-mongodb",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "xvdatabasedb": "test",
+    "xvdatabasecoll": "demo",
+    "data": {
+        "deletes": [
+            {
+                "filter":{
+                  "scenario": "quick-start-1-updated"
+                },                
+                "delete_many": false
+            }
+        ]
+    }
+}'
+```
 
+### Run in kubernetes
 ```yaml
-username: "test"
-password: "123456"
-authSource: "admin"
-```
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+spec:
+  selector:
+    app: sink-mongodb
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-mongodb
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+data:
+  config.yml: |-
+    connection_uri: "mongodb+srv://<hosts>/?retryWrites=true&w=majority"
+    credential:
+      username: "<username>"
+      password: "<password>"
 
-```shell
-docker run -d \
-  -p 8080:8080 \
-  -v ${PWD}:/vance/config \
-  --env CONNECTOR_SECRET_ENABLE=true 
-  --name mongodb-sink \
-  --rm public.ecr.aws/vanus/connector/mongodb-sink:v0.2.0-alpha
-```
-
-## Deploy
-
-### using k8s(recommended)
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/mongodb-sink.yml
-```
-
-### using vance Operator
-
-Coming soon, it depends on Vance Operator, the experience of it will be like follow:
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/database/mongodb-sink/crd.yml
-```
-
-or
-
-```shell
-vsctl connectors create mongodb --source --config /xxx/config.josn --secret /xxx/secret.json
-```
-
-## Structure
-
-The input events' structure is a [CloudEvent](https://github.com/cloudevents/spec) format, and each field are explained
-follows.
-
-the original `ChangeEvent` can be found in [official document](https://www.mongodb.com/docs/manual/reference/change-events/)
-
-| Field                    | Required | Description                                                                                                                                 |
-|--------------------------|:--------:|---------------------------------------------------------------------------------------------------------------------------------------------|
-| id                       | **YES**  | the bson`_id` will be set as the id                                                                                                         |
-| source                   | **YES**  | where the event come from                                                                                                                   |
-| type                     | **YES**  | what's the event's type                                                                                                                     |
-| time                     |    NO    | the time of this event generated with RFC3339 encoding                                                                                      |
-| data                     | **YES**  | the body of`ChangeEvent`, it's defined as `Event` in [mongodb.proto](../../proto/database/mongodb.proto)                                    |
-| data.metadata            |    NO    | the metadata of this event, it's defined as`Metadata` in [base.proto](../../proto/base/base.proto) , in the most cases users can be ignored |
-| data.op                  | **YES**  | the event operation of this event, it's defined as`Operation` in [database.proto](../../proto/database/database.proto)                      |
-| data.raw                 |    NO    | the raw data of this event, it's defined as "Raw" in [database.proto](../../proto/database/database.proto)                                  |
-| data.insert              |    NO    | it's defined as`InsertEvent` in [mongodb.proto](../../proto/database/mongodb.proto)                                                         |
-| data.update              |    NO    | it's defined as`UpdateEvent` in [mongodb.proto](../../proto/database/mongodb.proto)                                                         |
-| vancemongosinkdatabase   | **YES**  | which `database` the event into                                                                                                             |
-| vancemongosinkcollection | **YES**  | which `collection` the event into                                                                                                           |
-
-## Examples
-
-### insert document
-
-```shell
-curl --location --request POST 'http://127.0.0.1:8080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-    "specversion": "1.0",
-    "id": "62ff305f779a73966deb3877",
-    "source": "mongodb.replicaset-01.test.source",
-    "type": "test.source",
-    "datacontenttype": "application/json",
-    "time": "2022-08-26T18:42:16Z",
-    "data": {
-        "op": "INSERT",
-        "insert": {
-            "document": {
-                "a": 1234
-            }
-        }
-    },
-    "vancemongosinkdatabase":"test",
-    "vancemongosinkcollection": "sink",  
-}'
-```
-
-### update document
-
-```shell
-curl --location --request POST 'http://127.0.0.1:8080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-    "specversion": "1.0",
-    "id": "62ff305f779a73966deb3877",
-    "source": "mongodb.replicaset-01.test.source",
-    "type": "test.source",
-    "datacontenttype": "application/json",
-    "time": "2022-08-26T18:42:16Z",
-    "data": {
-        "op": "UPDATE",
-        "update": {
-            "updateDescription": {
-                "removedFields": [],
-                "truncatedArrays": [],
-                "updatedFields": {
-                    "a": 12314
-                }
-            }
-        }
-    },
-    "vancemongosinkdatabase":"test",
-    "vancemongosinkcollection": "sink",  
-}'
-```
-
-### delete document
-
-```shell
-curl --location --request POST 'http://127.0.0.1:8080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-    "specversion": "1.0",
-    "id": "62ff305f779a73966deb3877",
-    "source": "mongodb.replicaset-01.test.source",
-    "type": "test.source",
-    "datacontenttype": "application/json",
-    "time": "2022-08-26T18:42:16Z",
-    "data": {
-        "op": "DELETE"    
-    },
-    "vancemongosinkdatabase":"test",
-    "vancemongosinkcollection": "sink",  
-}'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-mongodb
+  namespace: vanus
+  labels:
+    app: sink-mongodb
+spec:
+  selector:
+    matchLabels:
+      app: sink-mongodb
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-mongodb
+    spec:
+      containers:
+        - name: sink-mongodb
+          image: public.ecr.aws/vanus/connector/sink-mongodb:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vance/config
+          # env: see README for more about how to set env
+      volumes:
+        - name: config
+          configMap:
+            name: sink-mongodb
 ```
