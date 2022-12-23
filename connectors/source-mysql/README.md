@@ -61,12 +61,12 @@ The row record will be transformed into a CloudEvent looks like:
 | db.port             | required    | integer port number of db                                                                         |
 | db.username         | required    | username of db                                                                                    |
 | db.password         | required    | password of db                                                                                    |
-| include_databases   | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
-| exclude_databases   | optional    | database name which don't want to capture changes,string array, can not set with include_database |
-| include_tables      | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
-| exclude_tables      | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
+| database_include   | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
+| database_exclude   | optional    | database name which don't want to capture changes,string array, can not set with include_database |
+| table_include      | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
+| table_exclude      | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
 | store.type          | required    | save offset type, support FILE, MEMORY                                                            |
-| store.store_file    | required    | it's needed when offset type is FIlE, save offset file name                                       |
+| store.pathname      | required    | it's needed when offset type is FIlE, save offset file name                                       |
 | db_history_file     | required    | save db schema history file name                                                                  |
 | binlog_offset.file  | optional    | binlog filename, increment sync start binlog file name if not set is full sync                    |
 | binlog_offset.pos   | optional    | binlog position, use with config offset_binlog_file                                               |
@@ -82,14 +82,14 @@ db:
   port: 3306
   username: "root"
   password: "vanus123456"
-include_databases:
+database_include:
   - dbname
-include_tables:
+table_include:
   - dbname.user
 
 store:
   type: FILE
-  store_file: "/tmp/mysql/offset.dat"
+  pathname: "/tmp/mysql/offset.dat"
 
 db_history_file: "/tmp/mysql/history.dat"
 ```

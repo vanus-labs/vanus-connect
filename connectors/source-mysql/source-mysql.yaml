@@ -12,14 +12,14 @@ data:
       port: 3306
       username: "root"
       password: "vanus123456"
-    include_databases:
+    database_include:
       - dbname
-    include_tables:
+    table_include:
       - dbname.user
 
     store:
       type: FILE
-      store_file: "/vance/data/offset.dat"
+      pathname: "/vance/data/offset.dat"
 
     db_history_file: "/vance/data/history.dat"
 

@@ -9,11 +9,11 @@ import io.cloudevents.jackson.JsonCloudEventData;
 
 import java.io.IOException;
 
-public class MySqlSource extends DebeziumSource {
+public class MySQLSource extends DebeziumSource {
 
   private ObjectMapper objectMapper = new ObjectMapper();
 
-  public MySqlSource() {
+  public MySQLSource() {
     objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
   }
 
@@ -24,7 +24,7 @@ public class MySqlSource extends DebeziumSource {
 
   @Override
   public Class<? extends Config> configClass() {
-    return MySqlConfig.class;
+    return MySQLConfig.class;
   }
 
   @Override

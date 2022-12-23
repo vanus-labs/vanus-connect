@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
-public class MySqlConfig extends DebeziumConfig {
+public class MySQLConfig extends DebeziumConfig {
 
   @JsonProperty("name")
   private String name;
@@ -31,17 +31,17 @@ public class MySqlConfig extends DebeziumConfig {
   @JsonProperty("db_history_file")
   private String dbHistoryFile;
 
-  @JsonProperty("include_databases")
-  private String[] includeDatabases;
+  @JsonProperty("database_include")
+  private String[] databaseInclude;
 
-  @JsonProperty("exclude_databases")
-  private String[] excludeDatabases;
+  @JsonProperty("database_exclude")
+  private String[] databaseExclude;
 
-  @JsonProperty("include_tables")
-  private String[] includeTables;
+  @JsonProperty("table_include")
+  private String[] tableInclude;
 
-  @JsonProperty("exclude_tables")
-  private String[] excludeTables;
+  @JsonProperty("table_exclude")
+  private String[] tableExclude;
 
   @Override
   public Class<?> secretClass() {
@@ -96,41 +96,39 @@ public class MySqlConfig extends DebeziumConfig {
     // https://debezium.io/documentation/reference/2.0/connectors/mysql.html#mysql-property-binary-handling-mode
     props.setProperty("binary.handling.mode", "base64");
 
-    if (includeDatabases != null
-        && includeDatabases.length > 0
-        && excludeDatabases != null
-        && excludeDatabases.length > 0) {
+    if (databaseInclude != null
+        && databaseInclude.length > 0
+        && databaseExclude != null
+        && databaseExclude.length > 0) {
       throw new IllegalArgumentException(
-          "the include_databases and exclude_databases can't be set together");
+          "the database_include and database_exclude can't be set together");
     }
     // database selection
-    if (includeDatabases != null && includeDatabases.length > 0) {
+    if (databaseInclude != null && databaseInclude.length > 0) {
       props.setProperty(
-          "database.include.list",
-          Arrays.stream(includeDatabases).collect(Collectors.joining(",")));
-    } else if (excludeDatabases != null && excludeDatabases.length > 0) {
+          "database.include.list", Arrays.stream(databaseInclude).collect(Collectors.joining(",")));
+    } else if (databaseExclude != null && databaseExclude.length > 0) {
       props.setProperty(
-          "database.exclude.list",
-          Arrays.stream(excludeDatabases).collect(Collectors.joining(",")));
+          "database.exclude.list", Arrays.stream(databaseExclude).collect(Collectors.joining(",")));
     }
 
-    if (includeTables != null
-        && includeTables.length > 0
-        && excludeTables != null
-        && excludeTables.length > 0) {
+    if (tableInclude != null
+        && tableInclude.length > 0
+        && tableExclude != null
+        && tableExclude.length > 0) {
       throw new IllegalArgumentException(
-          "the include_tables and exclude_tables can't be set together");
+          "the table_include and table_exclude can't be set together");
     }
-    if (includeTables != null && includeTables.length > 0) {
+    if (tableInclude != null && tableInclude.length > 0) {
       props.setProperty(
-          "table.include.list", Arrays.stream(includeTables).collect(Collectors.joining(",")));
-    } else if (excludeTables != null && excludeTables.length > 0) {
+          "table.include.list", Arrays.stream(tableInclude).collect(Collectors.joining(",")));
+    } else if (tableExclude != null && tableExclude.length > 0) {
       props.setProperty(
-          "table.exclude.list", Arrays.stream(excludeTables).collect(Collectors.joining(",")));
+          "table.exclude.list", Arrays.stream(tableExclude).collect(Collectors.joining(",")));
     }
     props.setProperty("converters", "boolean, datetime");
     props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
-    props.setProperty("datetime.type", MySqlDateTimeConverter.class.getCanonicalName());
+    props.setProperty("datetime.type", MySQLDateTimeConverter.class.getCanonicalName());
     return props;
   }
 }
