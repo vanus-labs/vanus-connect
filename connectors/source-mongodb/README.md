@@ -89,7 +89,7 @@ docker stop source-mongodb
 target: "http://localhost:8080",
 store:
   type: "FILE"
-  path: "/tmp/vance/source-mongodb/offset.data",
+  pathname: "/tmp/vance/source-mongodb/offset.data",
 name: "test",
 hosts: "127.0.0.1:27017",
 credential:
@@ -104,7 +104,7 @@ collection_include: ["test.demo"]
 |:-----------------------|:--------:|:-----------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | target                 | **YES**  |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
 | store.type             |    NO    |   MEMORY    | KV store type for metadata, one of MEMORY, FILE                                                                                                                                                                                                                                                                                                                     |
-| store.path             |    NO    |      -      | file path if `store.type=FILE                                                                                                                                                                                                                                                                                                                                       |
+| store.pathname         |    NO    |      -      | file pathname if `store.type=FILE                                                                                                                                                                                                                                                                                                                                   |
 | name                   | **YES**  |      -      | Unique name for the connector. Attempting to register again with the same name will fail.                                                                                                                                                                                                                                                                           |
 | connection_url         |    NO    |      -      | Specifies a connection string that the connector uses during the initial discovery of a MongoDB replica set. To use this option, you must set the value of mongodb.members.auto.discover to true. Do not set this property and the mongodb.hosts property at the same time.                                                                                         |
 | hosts                  |    NO    | empty array | The host addresses to use to connect to the MongoDB replica set                                                                                                                                                                                                                                                                                                     |
@@ -135,7 +135,7 @@ data:
     target: "http://localhost:8080",
     store:
       type: "FILE"
-      path: "/tmp/vance/source-mongodb/offset.data",
+      pathname: "/tmp/vance/source-mongodb/offset.data",
     name: "test",
     hosts: "127.0.0.1:27017",
     credential:

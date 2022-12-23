@@ -8,7 +8,7 @@ data:
     target: "http://localhost:8080",
     store:
       type: "FILE"
-      path: "/tmp/vance/source-mongodb/offset.data",
+      pathname: "/tmp/vance/source-mongodb/offset.data",
     name: "test",
     hosts: "127.0.0.1:27017",
     credential:
