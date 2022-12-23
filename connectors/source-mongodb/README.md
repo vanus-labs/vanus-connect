@@ -96,10 +96,8 @@ credential:
   username: "vanus"
   password: "abc123"
   auth_source: "admin"
-database: 
-  include: ["test"]
-collection: 
-  include: ["test.demo"]
+database_include: ["test"]
+collection_include: ["test.demo"]
 ```
 
 | Name                   | Required |   Default   | Description                                                                                                                                                                                                                                                                                                                                                         |
