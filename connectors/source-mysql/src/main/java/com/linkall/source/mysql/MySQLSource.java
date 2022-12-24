@@ -21,10 +21,9 @@ public class MySQLSource extends DebeziumSource {
   @Override
   protected CloudEventData convertData(Object data) throws IOException {
     Map<String, Object> m = (Map) data;
-    Object result = null;
-    if (m.containsKey("after")) {
-      result = m.get("after");
-    } else if (m.containsKey("before")) {
+    Object result = m.get("after");
+    if (result == null) {
+      // op:d
       result = m.get("before");
     }
     return JsonCloudEventData.wrap(objectMapper.valueToTree(result));
