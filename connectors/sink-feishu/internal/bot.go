@@ -99,11 +99,17 @@ func (b *bot) sendMessage(e *v2.Event) error {
 	v := e.Extensions()[xChatGroupID]
 	groupID, err := types.ToString(v)
 	if err != nil && !b.cfg.DynamicRoute {
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: errChatGroup,
+		})
 		return errChatGroup
 	} else {
 		wh, exist := b.cm[groupID]
 		if !exist {
 			if !b.cfg.DynamicRoute {
+				log.Warning("failed to send message", map[string]interface{}{
+					log.KeyError: errChatGroup,
+				})
 				return errChatGroup
 			}
 		} else {
@@ -115,16 +121,25 @@ func (b *bot) sendMessage(e *v2.Event) error {
 		v = e.Extensions()[xBotURL]
 		urlAttr, ok := v.(string)
 		if !ok {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: errInvalidAttributes,
+			})
 			return errInvalidAttributes
 		}
 		v = e.Extensions()[xBotSignature]
 		signatureAttr, ok := v.(string)
 		if !ok {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: errInvalidAttributes,
+			})
 			return errInvalidAttributes
 		}
 		urls := strings.Split(urlAttr, ",")
 		signatures := strings.Split(signatureAttr, ",")
 		if len(urls) != len(signatures) {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: errInvalidAttributeNumber,
+			})
 			return errInvalidAttributeNumber
 		}
 		for idx := range urls {
@@ -136,12 +151,18 @@ func (b *bot) sendMessage(e *v2.Event) error {
 	}
 
 	if len(whs) == 0 {
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: errNoBotWebhookFound,
+		})
 		return errNoBotWebhookFound
 	}
 
 	v = e.Extensions()[xMessageType]
 	t, ok := v.(string)
 	if !ok {
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: errMessageType,
+		})
 		return errMessageType
 	}
 	switch messageType(t) {
@@ -156,6 +177,9 @@ func (b *bot) sendMessage(e *v2.Event) error {
 	case interactiveMessage:
 		return b.sendInteractiveMessage(e, whs)
 	default:
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: errMessageType,
+		})
 		return errMessageType
 	}
 }
@@ -168,9 +192,15 @@ func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
 	for _, wh := range whs {
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.URL)
 		if err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 	}
@@ -179,7 +209,10 @@ func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
 
 func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
 	m := map[string]interface{}{}
-	if err := json.Unmarshal(e.Data(), &m); err != nil {
+	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: err,
+		})
 		return errInvalidPostMessage
 	}
 	content := map[string]interface{}{
@@ -188,9 +221,15 @@ func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
 	for _, wh := range whs {
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.URL)
 		if err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 	}
@@ -205,9 +244,15 @@ func (b *bot) sendShareChatMessage(e *v2.Event, whs []WebHook) error {
 	for _, wh := range whs {
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.URL)
 		if err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 	}
@@ -221,9 +266,15 @@ func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
 	for _, wh := range whs {
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.URL)
 		if err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 	}
@@ -232,7 +283,11 @@ func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
 
 func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
 	m := map[string]interface{}{}
-	if err := json.Unmarshal(e.Data(), &m); err != nil {
+
+	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
+		log.Warning("failed to send message", map[string]interface{}{
+			log.KeyError: err,
+		})
 		return errInvalidPostMessage
 	}
 
@@ -249,9 +304,15 @@ func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
 		}
 		res, err := b.httpClient.R().SetBody(payload).Post(wh.URL)
 		if err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
+			log.Warning("failed to send message", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return err
 		}
 		delete(payload, "sign")
@@ -293,4 +354,11 @@ func (b *bot) processResponse(e *v2.Event, res *resty.Response) error {
 		return nil
 	}
 	return fmt.Errorf("failed to call feishu: %s", string(res.Body()))
+}
+
+func trim(data []byte) []byte {
+	s := strings.ReplaceAll(string(data), "\\\"", "\"")
+	idx1 := strings.Index(s, "{")
+	idx2 := strings.LastIndex(s, "}")
+	return []byte(s[idx1 : idx2+1])
 }
