@@ -4,16 +4,9 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.0.0
-	github.com/linkall-labs/connector/proto v0.0.0
+	github.com/linkall-labs/cdk-go v0.3.3
 	github.com/pkg/errors v0.9.1
 	go.mongodb.org/mongo-driver v1.11.1
-	google.golang.org/protobuf v1.28.1
-)
-
-replace (
-	github.com/linkall-labs/cdk-go => ../../../cdk-go
-	github.com/linkall-labs/connector/proto => ../../proto/pkg
 )
 
 require (
