@@ -16,10 +16,9 @@ package main
 
 import (
 	"github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/connector/sink"
 	"github.com/linkall-labs/connector/mongodb-sink/internal"
 )
 
 func main() {
-	cdkgo.RunSink(sink.WrapProtobufSink(internal.NewMongoSink()))
+	cdkgo.RunSink(internal.NewConfig, internal.NewMongoSink)
 }

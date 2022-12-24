@@ -10,15 +10,11 @@ IMAGE_TAG ?= latest
 DOCKER_BUILD_ARG= --build-arg TARGETARCH=$(GOARCH) --build-arg TARGETOS=$(GOOS)
 DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 
-build-dev-java-image:
-	docker build -f build/java/Dockerfile \
-		--platform linux/amd64 \
-		--build-arg connector=${CONNECTOR} \
-		--build-arg version=dev  .
-
-build-go-image:
-	docker build $(DOCKER_BUILD_ARG) -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/go/Dockerfile \
-		--build-arg connector=${CONNECTOR} .
+push-java-image:
+	docker buildx build -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/java/Dockerfile \
+    		--platform ${DOCKER_PLATFORM} \
+    		--build-arg connector=${CONNECTOR} \
+    		--push .
 
 # make push-go-image CONNECTOR=source-http
 # make push-go-image DOCKER_REGISTRY=linkall.tencentcloudcr.com CONNECTOR=sink-feishu
