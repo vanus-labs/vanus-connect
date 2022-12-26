@@ -6,7 +6,7 @@ title: MongoDB
 
 ## Introduction
 
-The Sink MongoDB is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Sink MongoDB is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and insert/update/delete this data to mongodb.
 
 For examples, If incoming event looks like:
