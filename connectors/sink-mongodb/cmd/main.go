@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/mongodb-sink/internal"
+	"github.com/linkall-labs/connector/sink/mongodb/internal"
 )
 
 func main() {

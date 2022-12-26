@@ -99,10 +99,7 @@ func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) e
 	}
 
 	s.cfg = c
-	serverAPIOptions := options.ServerAPI(options.ServerAPIVersion1)
-	clientOptions := options.Client().
-		ApplyURI(s.cfg.ConnectionURI).
-		SetServerAPIOptions(serverAPIOptions)
+	clientOptions := options.Client().ApplyURI(s.cfg.ConnectionURI)
 	if s.cfg.Credential.IsSet() {
 		clientOptions.Auth = s.cfg.Credential.GetMongoDBCredential()
 	}
