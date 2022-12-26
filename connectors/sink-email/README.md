@@ -27,7 +27,7 @@ For example, if the incoming CloudEvent looks like:
 ```
 
 then recipients will receive an email like:
-![received.png](received.png)
+![received.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-email/received.png)
 
 ## Quick Start
 
