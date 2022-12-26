@@ -1,5 +1,5 @@
 ---
-title: PostgreSQL
+title: Tencent COS
 ---
 
 # Tencent COS Source Connector
