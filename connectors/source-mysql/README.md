@@ -40,11 +40,9 @@ The row record will be transformed into a CloudEvent looks like:
   "iodebeziumversion": "2.0.1.Final",
   "iodebeziumrow": "0",
   "data": {
-    "after": {
       "id": 100,
       "name": "user_name",
       "email": "user_email"
-    }
   }
 }
 ```
@@ -61,10 +59,10 @@ The row record will be transformed into a CloudEvent looks like:
 | db.port             | required    | integer port number of db                                                                         |
 | db.username         | required    | username of db                                                                                    |
 | db.password         | required    | password of db                                                                                    |
-| database_include   | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
-| database_exclude   | optional    | database name which don't want to capture changes,string array, can not set with include_database |
-| table_include      | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
-| table_exclude      | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
+| database_include    | optional    | database name which want to capture changes, string array, can not set with exclude_database      |
+| database_exclude    | optional    | database name which don't want to capture changes,string array, can not set with include_database |
+| table_include       | optional    | table name which want to capture changes, string array and format is databaseName.tableName       |
+| table_exclude       | optional    | table name which don't want to capture changes, string array and format is databaseName.tableName |
 | store.type          | required    | save offset type, support FILE, MEMORY                                                            |
 | store.pathname      | required    | it's needed when offset type is FIlE, save offset file name                                       |
 | db_history_file     | required    | save db schema history file name                                                                  |

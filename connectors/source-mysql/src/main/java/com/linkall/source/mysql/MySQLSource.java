@@ -8,6 +8,7 @@ import io.cloudevents.CloudEventData;
 import io.cloudevents.jackson.JsonCloudEventData;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class MySQLSource extends DebeziumSource {
 
@@ -19,7 +20,13 @@ public class MySQLSource extends DebeziumSource {
 
   @Override
   protected CloudEventData convertData(Object data) throws IOException {
-    return JsonCloudEventData.wrap(objectMapper.valueToTree(data));
+    Map<String, Object> m = (Map) data;
+    Object result = m.get("after");
+    if (result == null) {
+      // op:d
+      result = m.get("before");
+    }
+    return JsonCloudEventData.wrap(objectMapper.valueToTree(result));
   }
 
   @Override
