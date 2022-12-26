@@ -1,8 +1,12 @@
+---
+title: Feishu
+---
+
 # Feishu Sink
 
 ## Introduction
 
-The Feishu Sink is a [Vance Connector](../README.md) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Feishu Sink is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to  Feishu APIs.
 
 For example, if the incoming CloudEvent looks like:
@@ -95,7 +99,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a notice in your chat group.
-![received-notification](received-message.png)
+![received-notification](https://github.com/linkall-labs/vance/blob/main/connectors/sink-feishu/received-message.png)
 
 ### Clean
 
@@ -426,3 +430,5 @@ spec:
           configMap:
             name: sink-feishu
 ```
+
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

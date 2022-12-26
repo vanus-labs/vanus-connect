@@ -1,8 +1,12 @@
-# Sink MongoDB Connector
+---
+title: MongoDB
+---
+
+#  MongoDB Sink
 
 ## Introduction
 
-The Sink MongoDB is a [Vance Connector](../README.md) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Sink MongoDB is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and insert/update/delete this data to mongodb.
 
 For examples, If incoming event looks like:
@@ -338,3 +342,5 @@ spec:
           configMap:
             name: sink-mongodb
 ```
+
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

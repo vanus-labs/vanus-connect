@@ -1,3 +1,7 @@
+---
+title: Elasticsearch
+---
+
 # Elasticsearch Sink
 
 ## Introduction

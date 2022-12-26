@@ -1,3 +1,7 @@
+---
+title: AWS SNS
+---
+
 # AWS SNS Source
 
 ## Overview
