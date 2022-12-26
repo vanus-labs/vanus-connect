@@ -6,7 +6,7 @@ title: Feishu
 
 ## Introduction
 
-The Feishu Sink is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Feishu Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to  Feishu APIs.
 
 For example, if the incoming CloudEvent looks like:

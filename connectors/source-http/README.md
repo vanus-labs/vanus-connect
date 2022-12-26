@@ -6,7 +6,9 @@ title: HTTP
 
 ## Introduction
 
-The HTTP Source is a [Vance Connector](../vc) which aims to convert incoming HTTP Request to a CloudEvent.
+
+The HTTP Source is a [Vance Connector][vc] which aims to convert incoming HTTP Request to a CloudEvent.
+
 
 For example, if the incoming HTTP Request looks like:
 
