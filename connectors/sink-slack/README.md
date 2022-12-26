@@ -1,8 +1,12 @@
+---
+title: Slack
+---
+
 # Slack Sink
 
 ## Introduction
 
-The Slack Sink is a [Vance Connector](../README.md) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Slack Sink is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to Slack channels.
 
 For example, if the incoming CloudEvent looks like:
@@ -23,7 +27,7 @@ For example, if the incoming CloudEvent looks like:
 ```
 
 then channels will receive a message like:
-![message](message.png)
+![message](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png)
 
 ## Quick Start
 
@@ -77,7 +81,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a new slack in your mailbox.
-![message.png](message.png)
+![message.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png)
 
 ### Clean
 
@@ -252,3 +256,5 @@ spec:
           configMap:
             name: sink-slack
 ```
+
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

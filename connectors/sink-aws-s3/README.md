@@ -1,3 +1,7 @@
+---
+title: AWS S3
+---
+
 # AWS S3 Sink
 
 ## Overview

@@ -1,4 +1,8 @@
-# MongoDB Source Connector
+---
+title: MongoDB
+---
+
+# MongoDB Source
 
 ## Introduction
 

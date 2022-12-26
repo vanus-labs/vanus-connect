@@ -1,4 +1,8 @@
-# Kubernetes Sink Connector
+---
+title: Kubernetes
+---
+
+# Kubernetes Sink
 
 ## Introduction
 

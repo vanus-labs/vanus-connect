@@ -1,8 +1,12 @@
+---
+title: Email
+---
+
 # Email Sink
 
 ## Introduction
 
-The Email Sink is a [Vance Connector](../README.md) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Email Sink is a [Vance Connector](vc) which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to SMTP server.
 
 For example, if the incoming CloudEvent looks like:
@@ -74,7 +78,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a new email in your mailbox.
-![received.png](received.png)
+![received.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-email/received.png)
 
 ### Clean
 
@@ -239,3 +243,6 @@ spec:
           configMap:
             name: sink-email
 ```
+
+
+[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
