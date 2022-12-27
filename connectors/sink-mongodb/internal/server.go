@@ -44,8 +44,9 @@ var _ cdkgo.SinkConfigAccessor = &Config{}
 
 type Config struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	ConnectionURI    string     `json:"connection_uri" yaml:"connection_uri"`
-	Credential       Credential `json:"credential" yaml:"credential"`
+	ConnectionURI    string         `json:"connection_uri" yaml:"connection_uri"`
+	Credential       Credential     `json:"credential" yaml:"credential"`
+	ConvertConfig    *ConvertConfig `json:"convert" yaml:"convert"`
 }
 
 type Credential struct {
@@ -54,6 +55,16 @@ type Credential struct {
 	AuthSource              string            `json:"auth_source" yaml:"auth_source"`
 	AuthMechanism           string            `json:"auth_mechanism" yaml:"auth_mechanism"`
 	AuthMechanismProperties map[string]string `json:"auth_mechanism_properties" yaml:"auth_mechanism_properties"`
+}
+
+func (c *Config) Validate() error {
+	if c.ConvertConfig != nil {
+		err := c.ConvertConfig.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return c.SinkConfig.Validate()
 }
 
 func (c *Credential) IsSet() bool {
@@ -83,9 +94,10 @@ func (c *Config) GetSecret() cdkgo.SecretAccessor {
 var _ cdkgo.Sink = &mongoSink{}
 
 type mongoSink struct {
-	cfg      *Config
-	dbClient *mongo.Client
-	logger   log.Logger
+	cfg           *Config
+	dbClient      *mongo.Client
+	logger        log.Logger
+	convertStruct *convertStruct
 }
 
 func NewMongoSink() cdkgo.Sink {
@@ -118,6 +130,9 @@ func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) e
 		})
 	}
 	s.dbClient = mongoClient
+	if s.cfg.ConvertConfig != nil {
+		s.convertStruct = newConvert(s.cfg.ConvertConfig)
+	}
 	return nil
 }
 
@@ -148,6 +163,7 @@ type Delete struct {
 }
 
 func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.Result {
+	events = s.convertEvents(events...)
 	for idx := range events {
 		e := events[idx]
 
