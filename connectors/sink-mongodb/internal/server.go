@@ -43,10 +43,11 @@ const (
 var _ cdkgo.SinkConfigAccessor = &Config{}
 
 type Config struct {
-	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	ConnectionURI    string         `json:"connection_uri" yaml:"connection_uri"`
-	Credential       Credential     `json:"credential" yaml:"credential"`
-	ConvertConfig    *ConvertConfig `json:"convert" yaml:"convert"`
+	cdkgo.SinkConfig      `json:",inline" yaml:",inline"`
+	ConnectionURI         string         `json:"connection_uri" yaml:"connection_uri"`
+	Credential            Credential     `json:"credential" yaml:"credential"`
+	ConvertConfig         *ConvertConfig `json:"convert" yaml:"convert"`
+	IgnoreDuplicatedError bool           `json:"ignore_duplicated_error" yaml:"ignore_duplicated_error"`
 }
 
 type Credential struct {
@@ -163,18 +164,32 @@ type Delete struct {
 }
 
 func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.Result {
-	events = s.convertEvents(events...)
+	var err error
+	events, err = s.convertEvents(events...)
+	if err != nil {
+		return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+	}
+	var db string
+	var coll string
+	wms := make([]mongo.WriteModel, 0)
+	var inserts []interface{}
 	for idx := range events {
 		e := events[idx]
 
-		db, err := getAttr(e, mongoSinkDatabase)
-		if err != nil {
-			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+		if db == "" {
+			_db, err := getAttr(e, mongoSinkDatabase)
+			if err != nil {
+				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+			}
+			db = _db
 		}
 
-		coll, err := getAttr(e, mongoSinkCollection)
-		if err != nil {
-			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+		if coll == "" {
+			_coll, err := getAttr(e, mongoSinkCollection)
+			if err != nil {
+				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+			}
+			coll = _coll
 		}
 
 		c := Command{}
@@ -182,46 +197,35 @@ func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 
-		wms := make([]mongo.WriteModel, len(c.Inserts)+len(c.Updates)+len(c.Deletes))
-		var i = 0
-		for idx := range c.Inserts {
-			wms[i] = &mongo.InsertOneModel{
-				Document: c.Inserts[idx],
-			}
-			i++
-		}
+		inserts = append(inserts, c.Inserts...)
 
-		for idx := range c.Updates {
-			u := c.Updates[idx]
-			if u.UpdateMany {
-				wms[i] = &mongo.UpdateManyModel{
-					Filter: u.Filter,
-					Update: u.Update,
-				}
-			} else {
-				wms[i] = &mongo.UpdateOneModel{
-					Filter: u.Filter,
-					Update: u.Update,
-				}
-			}
-			i++
+		wm := getUpdateOrDeleteModels(&c)
+		if len(wm) > 0 {
+			wms = append(wms, wm...)
 		}
+	}
 
-		for idx := range c.Deletes {
-			d := c.Deletes[idx]
-			if d.DeleteMany {
-				wms[i] = &mongo.DeleteManyModel{
-					Filter: d.Filter,
-				}
-			} else {
-				wms[i] = &mongo.DeleteOneModel{
-					Filter: d.Filter,
+	if len(inserts) > 0 {
+		opt := options.InsertMany().SetOrdered(false)
+		if res, err := s.dbClient.Database(db).Collection(coll).InsertMany(ctx, inserts, opt); err != nil {
+
+			log.Warning("failed to insert many to mongodb", map[string]interface{}{
+				log.KeyError: err,
+				"inserted":   res.InsertedIDs,
+			})
+
+			if err != nil {
+				if !mongo.IsDuplicateKeyError(err) ||
+					(mongo.IsDuplicateKeyError(err) && !s.cfg.IgnoreDuplicatedError) {
+					return cdkgo.NewResult(http.StatusInternalServerError,
+						fmt.Sprintf("failed to insert many to mongodb: %s", err))
 				}
 			}
-			i++
 		}
+	}
 
-		if _, err = s.dbClient.Database(db).Collection(coll).BulkWrite(ctx, wms); err != nil {
+	if len(wms) > 0 {
+		if _, err := s.dbClient.Database(db).Collection(coll).BulkWrite(ctx, wms); err != nil {
 			log.Warning("failed to write mongodb", map[string]interface{}{
 				log.KeyError: err,
 			})
@@ -229,6 +233,7 @@ func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.
 				fmt.Sprintf("failed to write mongodb: %s", err))
 		}
 	}
+
 	return cdkgo.SuccessResult
 }
 
@@ -243,4 +248,40 @@ func getAttr(e *ce.Event, key string) (string, error) {
 		return "", fmt.Errorf("mongodb: invalid attribute %s=%v", key, val)
 	}
 	return str, nil
+}
+
+func getUpdateOrDeleteModels(c *Command) []mongo.WriteModel {
+	wms := make([]mongo.WriteModel, len(c.Updates)+len(c.Deletes))
+	var i = 0
+
+	for idx := range c.Updates {
+		u := c.Updates[idx]
+		if u.UpdateMany {
+			wms[i] = &mongo.UpdateManyModel{
+				Filter: u.Filter,
+				Update: u.Update,
+			}
+		} else {
+			wms[i] = &mongo.UpdateOneModel{
+				Filter: u.Filter,
+				Update: u.Update,
+			}
+		}
+		i++
+	}
+
+	for idx := range c.Deletes {
+		d := c.Deletes[idx]
+		if d.DeleteMany {
+			wms[i] = &mongo.DeleteManyModel{
+				Filter: d.Filter,
+			}
+		} else {
+			wms[i] = &mongo.DeleteOneModel{
+				Filter: d.Filter,
+			}
+		}
+		i++
+	}
+	return wms
 }

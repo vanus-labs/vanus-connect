@@ -15,12 +15,10 @@
 package internal
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	ce "github.com/cloudevents/sdk-go/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -69,9 +67,22 @@ func (c *convertStruct) convert(event *ce.Event) error {
 		return errors.Errorf("attribute %s must be string", debeziumOp)
 	}
 	var data map[string]interface{}
-	err := json.Unmarshal(event.Data(), &data)
+	d := json.NewDecoder(bytes.NewReader(event.Data()))
+	d.UseNumber()
+	err := d.Decode(&data)
 	if err != nil {
 		return errors.Wrap(err, "event data unmarshal error")
+	}
+	for key := range data {
+		n, ok := data[key].(json.Number)
+		if !ok {
+			continue
+		}
+		if i, err := n.Int64(); err == nil {
+			data[key] = i
+		} else {
+			data[key], _ = n.Float64()
+		}
 	}
 	event.SetExtension(mongoSinkDatabase, c.config.Database)
 	event.SetExtension(mongoSinkCollection, c.config.Collection)
@@ -141,9 +152,9 @@ func getValue(d []byte, path string) (interface{}, error) {
 	return res, nil
 }
 
-func (s *mongoSink) convertEvents(events ...*ce.Event) []*ce.Event {
+func (s *mongoSink) convertEvents(events ...*ce.Event) ([]*ce.Event, error) {
 	if s.convertStruct == nil {
-		return events
+		return events, nil
 	}
 	es := make([]*ce.Event, len(events))
 	for idx := range events {
@@ -153,9 +164,9 @@ func (s *mongoSink) convertEvents(events ...*ce.Event) []*ce.Event {
 				log.KeyError: err,
 				"event":      events[idx].ID(),
 			})
-			cdkgo.NewResult(http.StatusBadRequest, err.Error())
+			return nil, err
 		}
 		es[idx] = events[idx]
 	}
-	return es
+	return es, nil
 }

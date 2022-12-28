@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.3.3
+	github.com/linkall-labs/cdk-go v0.4.0
 	github.com/ohler55/ojg v1.14.5
 	github.com/pkg/errors v0.9.1
 	go.mongodb.org/mongo-driver v1.11.1
@@ -20,6 +20,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.1.2 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
