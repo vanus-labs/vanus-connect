@@ -105,6 +105,7 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 			log.Warning("failed to send message", map[string]interface{}{
 				log.KeyError: err,
 				"event":      string(d),
+				"webhooks":   whs,
 			})
 		}
 	}()
@@ -180,6 +181,9 @@ func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
 	}
 
 	for _, wh := range whs {
+		if wh.URL == "" {
+			continue
+		}
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.URL)
 		if err != nil {
 
@@ -203,13 +207,15 @@ func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
 		"post": m,
 	}
 	for _, wh := range whs {
+		if wh.URL == "" {
+			continue
+		}
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.URL)
 		if err != nil {
 
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
-
 			return err
 		}
 	}
@@ -222,13 +228,14 @@ func (b *bot) sendShareChatMessage(e *v2.Event, whs []WebHook) error {
 	}
 
 	for _, wh := range whs {
+		if wh.URL == "" {
+			continue
+		}
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.URL)
 		if err != nil {
-
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
-
 			return err
 		}
 	}
@@ -240,9 +247,11 @@ func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
 		"image_key": string(e.Data()),
 	}
 	for _, wh := range whs {
+		if wh.URL == "" {
+			continue
+		}
 		res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.URL)
 		if err != nil {
-
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
@@ -256,7 +265,6 @@ func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
 	m := map[string]interface{}{}
 
 	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
-
 		return errInvalidPostMessage
 	}
 
@@ -268,12 +276,14 @@ func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
 	}
 
 	for _, wh := range whs {
+		if wh.URL == "" {
+			continue
+		}
 		if wh.Signature != "" {
 			payload["sign"] = b.genSignature(t, wh.Signature)
 		}
 		res, err := b.httpClient.R().SetBody(payload).Post(wh.URL)
 		if err != nil {
-
 			return err
 		}
 		if err = b.processResponse(e, res); err != nil {
