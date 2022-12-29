@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	ce "github.com/cloudevents/sdk-go/v2"
@@ -67,23 +66,11 @@ func (c *convertStruct) convert(event *ce.Event) error {
 		return errors.Errorf("attribute %s must be string", debeziumOp)
 	}
 	var data map[string]interface{}
-	d := json.NewDecoder(bytes.NewReader(event.Data()))
-	d.UseNumber()
-	err := d.Decode(&data)
+	err := json.Unmarshal(event.Data(), &data)
 	if err != nil {
 		return errors.Wrap(err, "event data unmarshal error")
 	}
-	for key := range data {
-		n, ok := data[key].(json.Number)
-		if !ok {
-			continue
-		}
-		if i, err := n.Int64(); err == nil {
-			data[key] = i
-		} else {
-			data[key], _ = n.Float64()
-		}
-	}
+
 	event.SetExtension(mongoSinkDatabase, c.config.Database)
 	event.SetExtension(mongoSinkCollection, c.config.Collection)
 	uniqueValue := make([]interface{}, len(c.config.UniquePath))

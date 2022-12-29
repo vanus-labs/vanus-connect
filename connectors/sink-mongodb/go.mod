@@ -3,14 +3,17 @@ module github.com/linkall-labs/connector/sink/mongodb
 go 1.18
 
 require (
+	github.com/buger/jsonparser v1.1.1
 	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/linkall-labs/cdk-go v0.4.0
 	github.com/ohler55/ojg v1.14.5
 	github.com/pkg/errors v0.9.1
 	go.mongodb.org/mongo-driver v1.11.1
+	go.uber.org/ratelimit v0.2.0
 )
 
 require (
+	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect

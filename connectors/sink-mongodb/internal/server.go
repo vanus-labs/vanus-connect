@@ -15,10 +15,15 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 	"net/http"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
@@ -31,6 +36,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.uber.org/ratelimit"
 )
 
 const (
@@ -38,6 +44,8 @@ const (
 	mongoSinkCollection = "xvdatabasecoll"
 
 	name = "Sink MongoDB"
+
+	debeziumConnector = "iodebeziumconnector"
 )
 
 var _ cdkgo.SinkConfigAccessor = &Config{}
@@ -48,6 +56,16 @@ type Config struct {
 	Credential            Credential     `json:"credential" yaml:"credential"`
 	ConvertConfig         *ConvertConfig `json:"convert" yaml:"convert"`
 	IgnoreDuplicatedError bool           `json:"ignore_duplicated_error" yaml:"ignore_duplicated_error"`
+	Parallelism           int            `json:"parallelism" yaml:"parallelism"`
+	InsertWriteConcern    string         `json:"insert_write_concern" yaml:"insert_write_concern"`
+	RateLimit             int            `json:"rate_limit" yaml:"rate_limit"`
+	DebugSkip             bool           `json:"debug_skip" yaml:"debug_skip"`
+	ackDisable            bool
+	writeCon              writeconcern.Option
+}
+
+func (c *Config) GetWriteConcern() writeconcern.Option {
+	return c.writeCon
 }
 
 type Credential struct {
@@ -58,6 +76,10 @@ type Credential struct {
 	AuthMechanismProperties map[string]string `json:"auth_mechanism_properties" yaml:"auth_mechanism_properties"`
 }
 
+func (c *Config) GetSecret() cdkgo.SecretAccessor {
+	return &c.Credential
+}
+
 func (c *Config) Validate() error {
 	if c.ConvertConfig != nil {
 		err := c.ConvertConfig.Validate()
@@ -65,6 +87,50 @@ func (c *Config) Validate() error {
 			return err
 		}
 	}
+	if c.Parallelism == 0 {
+		c.Parallelism = 1
+	}
+
+	if c.Parallelism > 32 {
+		c.Parallelism = 32
+		log.Info("the parallelism is exceeded than the maximum value of 32, set it to 32", nil)
+	}
+
+	var opt = writeconcern.WMajority()
+	if c.InsertWriteConcern != "" {
+		w := strings.Split(c.InsertWriteConcern, ":")
+		if len(w) == 2 && w[0] == "w" {
+			i, err := strconv.ParseInt(w[1], 10, 64)
+			if err != nil || i > 3 {
+				log.Info("invalid insert_write_concern, use majority", map[string]interface{}{
+					"config":     c.InsertWriteConcern,
+					"ref":        "https://www.mongodb.com/docs/manual/reference/write-concern/",
+					log.KeyError: err,
+				})
+			}
+			if i == 0 {
+				log.Warning("insert unacknowledged is enable, watch carefully your mongodb instance ", nil)
+				c.ackDisable = true
+			}
+			opt = writeconcern.W(int(i))
+		}
+	} else {
+		log.Info("use default writeConcern: majority", nil)
+	}
+	c.writeCon = opt
+
+	if c.RateLimit == 0 {
+		if c.ackDisable {
+			c.RateLimit = 5000
+		} else {
+			c.RateLimit = 1 << 20
+		}
+	}
+
+	log.Info("config", map[string]interface{}{
+		"rate_limit": c.RateLimit,
+	})
+
 	return c.SinkConfig.Validate()
 }
 
@@ -88,10 +154,6 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 	return &Config{}
 }
 
-func (c *Config) GetSecret() cdkgo.SecretAccessor {
-	return &c.Credential
-}
-
 var _ cdkgo.Sink = &mongoSink{}
 
 type mongoSink struct {
@@ -99,10 +161,15 @@ type mongoSink struct {
 	dbClient      *mongo.Client
 	logger        log.Logger
 	convertStruct *convertStruct
+	db            map[string]map[string]*mongo.Collection
+	mutex         sync.RWMutex
+	rateLimit     ratelimit.Limiter
 }
 
 func NewMongoSink() cdkgo.Sink {
-	return &mongoSink{}
+	return &mongoSink{
+		db: map[string]map[string]*mongo.Collection{},
+	}
 }
 
 func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) error {
@@ -126,14 +193,14 @@ func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) e
 	if err = mongoClient.Ping(ctx, readpref.Primary()); err != nil {
 		return fmt.Errorf("failed to connect mongodb: %s", err.Error())
 	} else {
-		log.Info("mongodb is connected", map[string]interface{}{
-			"url": s.cfg.ConnectionURI,
-		})
+		log.Info("mongodb is connected", nil)
 	}
 	s.dbClient = mongoClient
 	if s.cfg.ConvertConfig != nil {
 		s.convertStruct = newConvert(s.cfg.ConvertConfig)
 	}
+	s.rateLimit = ratelimit.New(s.cfg.RateLimit)
+
 	return nil
 }
 
@@ -153,9 +220,9 @@ type Command struct {
 }
 
 type Update struct {
-	Filter     bson.M `json:"filter"`
-	Update     bson.M `json:"update"`
-	UpdateMany bool   `json:"update_many"`
+	Filter     map[string]interface{} `json:"filter"`
+	Update     map[string]interface{} `json:"update"`
+	UpdateMany bool                   `json:"update_many"`
 }
 
 type Delete struct {
@@ -164,74 +231,191 @@ type Delete struct {
 }
 
 func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.Result {
-	var err error
-	events, err = s.convertEvents(events...)
-	if err != nil {
-		return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+	if s.cfg.DebugSkip {
+		return cdkgo.SuccessResult
 	}
-	var db string
-	var coll string
+	var dbName string
+	var collName string
 	wms := make([]mongo.WriteModel, 0)
+	start := time.Now()
 	var inserts []interface{}
 	for idx := range events {
+		s.rateLimit.Take()
 		e := events[idx]
 
-		if db == "" {
+		v, exist := e.Extensions()[debeziumConnector]
+		if exist {
+			switch v {
+			case "mysql":
+				_e, err := s.convertEvents(e)
+				if err != nil {
+					return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+				}
+				e = _e[0]
+			}
+		}
+
+		if dbName == "" {
 			_db, err := getAttr(e, mongoSinkDatabase)
 			if err != nil {
 				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 			}
-			db = _db
+			dbName = _db
 		}
 
-		if coll == "" {
+		if collName == "" {
 			_coll, err := getAttr(e, mongoSinkCollection)
 			if err != nil {
 				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 			}
-			coll = _coll
+			collName = _coll
 		}
 
 		c := Command{}
-		if err := json.Unmarshal(e.Data(), &c); err != nil {
+		d := json.NewDecoder(bytes.NewReader(e.Data()))
+		d.UseNumber()
+
+		if err := d.Decode(&c); err != nil {
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 
+		c.Inserts = recursive(c.Inserts).([]interface{})
 		inserts = append(inserts, c.Inserts...)
 
+		c.Updates = recursive(c.Updates).([]Update)
+		c.Deletes = recursive(c.Deletes).([]Delete)
 		wm := getUpdateOrDeleteModels(&c)
 		if len(wm) > 0 {
 			wms = append(wms, wm...)
 		}
 	}
 
-	if len(inserts) > 0 {
-		opt := options.InsertMany().SetOrdered(false)
-		if res, err := s.dbClient.Database(db).Collection(coll).InsertMany(ctx, inserts, opt); err != nil {
+	cur := time.Now()
+	if cur.Sub(start) > 10*time.Millisecond {
+		log.Info("preparing data takes too long", map[string]interface{}{
+			"numbers": len(inserts),
+			"used":    cur.Sub(start),
+		})
+	}
 
-			log.Warning("failed to insert many to mongodb", map[string]interface{}{
-				log.KeyError: err,
-				"inserted":   res.InsertedIDs,
-			})
+	start = time.Now()
+	getColl := func() *mongo.Collection {
+		d, exist := s.db[dbName]
+		if !exist {
+			return nil
+		}
+		return d[collName]
+	}
 
-			if err != nil {
-				if !mongo.IsDuplicateKeyError(err) ||
-					(mongo.IsDuplicateKeyError(err) && !s.cfg.IgnoreDuplicatedError) {
-					return cdkgo.NewResult(http.StatusInternalServerError,
-						fmt.Sprintf("failed to insert many to mongodb: %s", err))
-				}
+	s.mutex.RLock()
+	collInstance := getColl()
+	s.mutex.RUnlock()
+
+	if collInstance == nil {
+		s.mutex.Lock()
+		collInstance = getColl()
+		if collInstance == nil {
+			collOpt := options.Collection().SetWriteConcern(writeconcern.New(s.cfg.GetWriteConcern()))
+			d, exist := s.db[dbName]
+			if !exist {
+				d = make(map[string]*mongo.Collection)
+				s.db[dbName] = d
 			}
+			collInstance = s.dbClient.Database(dbName).Collection(collName, collOpt)
+			d[collName] = collInstance
+		}
+		s.mutex.Unlock()
+	}
+
+	cur = time.Now()
+	if cur.Sub(start) > 10*time.Millisecond {
+		log.Info("take collection too long", map[string]interface{}{
+			"numbers": len(inserts),
+			"used":    cur.Sub(start),
+		})
+	}
+
+	start = time.Now()
+	var err error
+	if len(inserts) > 0 {
+		para := s.cfg.Parallelism
+		if para > len(inserts) {
+			para = len(inserts)
+		}
+		avg := len(inserts) / para
+		from := 0
+		end := from + avg
+		wg := sync.WaitGroup{}
+		mutex := sync.Mutex{}
+		insert := func(data []interface{}) {
+			defer wg.Done()
+			opt := options.InsertMany().SetOrdered(false)
+
+			if res, _err := collInstance.InsertMany(ctx, data, opt); _err != nil {
+				if _err == mongo.ErrUnacknowledgedWrite && s.cfg.ackDisable {
+					return
+				}
+				log.Warning("failed to insert many to mongodb", map[string]interface{}{
+					log.KeyError: _err,
+					"inserted":   res,
+				})
+				mutex.Lock()
+				if err == nil {
+					err = _err
+				} else if mongo.IsDuplicateKeyError(err) && !mongo.IsDuplicateKeyError(_err) {
+					err = _err
+				}
+				mutex.Unlock()
+			}
+		}
+
+		for idx := 0; idx < para; idx++ {
+			wg.Add(1)
+
+			if idx == para-1 {
+				go insert(inserts[from:])
+			} else {
+				go insert(inserts[from:end])
+			}
+			from = end
+			end = from + avg
+		}
+		wg.Wait()
+	}
+
+	if err != nil {
+		if !mongo.IsDuplicateKeyError(err) ||
+			(mongo.IsDuplicateKeyError(err) && !s.cfg.IgnoreDuplicatedError) {
+			return cdkgo.NewResult(http.StatusInternalServerError,
+				fmt.Sprintf("failed to insert many to mongodb: %s", err))
 		}
 	}
 
+	cur = time.Now()
+	if cur.Sub(start) > 100*time.Millisecond {
+		log.Info("insert mongodb takes too long", map[string]interface{}{
+			"numbers": len(inserts),
+			"used":    cur.Sub(start),
+		})
+	}
+
+	start = time.Now()
 	if len(wms) > 0 {
-		if _, err := s.dbClient.Database(db).Collection(coll).BulkWrite(ctx, wms); err != nil {
+		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, wms); err != nil {
 			log.Warning("failed to write mongodb", map[string]interface{}{
 				log.KeyError: err,
 			})
 			return cdkgo.NewResult(http.StatusInternalServerError,
 				fmt.Sprintf("failed to write mongodb: %s", err))
 		}
+	}
+
+	cur = time.Now()
+	if cur.Sub(start) > 100*time.Millisecond {
+		log.Info("update to mongodb takes too long", map[string]interface{}{
+			"numbers": len(wms),
+			"used":    cur.Sub(start),
+		})
 	}
 
 	return cdkgo.SuccessResult
@@ -284,4 +468,46 @@ func getUpdateOrDeleteModels(c *Command) []mongo.WriteModel {
 		i++
 	}
 	return wms
+}
+
+func recursive(val interface{}) interface{} {
+	switch val.(type) {
+	case json.Number:
+		v := val.(json.Number)
+		if i, err := v.Int64(); err == nil {
+			val = i
+		} else {
+			val, _ = v.Float64()
+		}
+	case map[string]interface{}:
+		v := val.(map[string]interface{})
+		for k := range v {
+			v[k] = recursive(v[k])
+		}
+	case []interface{}:
+		v := val.([]interface{})
+		for idx := range v {
+			v[idx] = recursive(v[idx])
+		}
+	case []Update:
+		v := val.([]Update)
+		for idx := range v {
+			v[idx] = recursive(v[idx]).(Update)
+		}
+	case Update:
+		v := val.(Update)
+		v.Filter = recursive(v.Filter).(map[string]interface{})
+		v.Update = recursive(v.Update).(map[string]interface{})
+	case []Delete:
+		v := val.([]Delete)
+		for idx := range v {
+			v[idx] = recursive(v[idx]).(Delete)
+		}
+	case Delete:
+		v := val.(Delete)
+		v.Filter = recursive(v.Filter).(map[string]interface{})
+	default:
+		return val
+	}
+	return val
 }

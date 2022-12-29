@@ -11,7 +11,7 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <debezium.version>2.0.1.Final</debezium.version>
+        <debezium.version>2.1.1.Final</debezium.version>
     </properties>
     <dependencies>
         <dependency>
