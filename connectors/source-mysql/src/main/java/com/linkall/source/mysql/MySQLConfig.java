@@ -1,19 +1,16 @@
 package com.linkall.source.mysql;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkall.cdk.database.debezium.DebeziumConfig;
 import com.linkall.cdk.database.debezium.KvStoreOffsetBackingStore;
 import io.debezium.connector.mysql.MySqlConnector;
-import io.debezium.connector.mysql.converters.TinyIntOneToBooleanConverter;
 import io.debezium.storage.file.history.FileSchemaHistory;
-import org.apache.kafka.connect.json.JsonConverter;
-import org.apache.kafka.connect.json.JsonConverterConfig;
-import org.apache.kafka.connect.storage.Converter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -62,11 +59,14 @@ public class MySQLConfig extends DebeziumConfig {
     props.setProperty("tombstones.on.delete", "false");
 
     if (binlogOffset != null) {
-      Converter valueConverter = new JsonConverter();
-      Map<String, Object> valueConfigs = new HashMap<>();
-      valueConfigs.put(JsonConverterConfig.SCHEMAS_ENABLE_CONFIG, false);
-      valueConverter.configure(valueConfigs, false);
-      byte[] offsetValue = valueConverter.fromConnectData(name, null, binlogOffset);
+      ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+      byte[] offsetValue;
+      try {
+        offsetValue = objectMapper.writeValueAsBytes(binlogOffset);
+      } catch (JsonProcessingException e) {
+        throw new RuntimeException("binlog offset convert to json error", e);
+      }
       props.setProperty(
           KvStoreOffsetBackingStore.OFFSET_CONFIG_VALUE,
           new String(offsetValue, StandardCharsets.UTF_8));
@@ -126,9 +126,9 @@ public class MySQLConfig extends DebeziumConfig {
       props.setProperty(
           "table.exclude.list", Arrays.stream(tableExclude).collect(Collectors.joining(",")));
     }
-//    props.setProperty("converters", "boolean, datetime");
-//    props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
-//    props.setProperty("datetime.type", MySQLDateTimeConverter.class.getCanonicalName());
+    //    props.setProperty("converters", "boolean, datetime");
+    //    props.setProperty("boolean.type", TinyIntOneToBooleanConverter.class.getCanonicalName());
+    //    props.setProperty("datetime.type", MySQLDateTimeConverter.class.getCanonicalName());
     return props;
   }
 }
