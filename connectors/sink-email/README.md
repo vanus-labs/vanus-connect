@@ -27,7 +27,7 @@ For example, if the incoming CloudEvent looks like:
 ```
 
 then recipients will receive an email like:
-![received.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-email/received.png)
+![received.png](https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/sink-email/received.png)
 
 ## Quick Start
 
@@ -78,7 +78,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a new email in your mailbox.
-![received.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-email/received.png)
+![received.png](https://raw.githubusercontent.com/linkall-labs/vance/main/connectors/sink-email/received.png)
 
 ### Clean
 
