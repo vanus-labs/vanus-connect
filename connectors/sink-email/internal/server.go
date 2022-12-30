@@ -125,7 +125,7 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 			return errInvalidRecipients
 		}
 		recipients := val.(string)
-		if subject == "" {
+		if recipients == "" {
 			return errInvalidRecipients
 		}
 		addrs, err := stdMail.ParseAddressList(recipients)
@@ -140,7 +140,9 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 
 		var to = make([]string, len(addrs))
 		for idx, v := range addrs {
-			to[idx] = v.Address
+			if v.Address != "" {
+				to[idx] = v.Address
+			}
 		}
 		if len(to) == 0 {
 			return errInvalidRecipients
