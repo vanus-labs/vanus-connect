@@ -77,8 +77,6 @@ and you will receive an event like this:
 }
 ```
 
-please see [Event Structure](#Event Structure) to understanding it.
-
 ### clean resource
 
 ```shell
