@@ -1,14 +1,14 @@
-# The Specification of Connector developing
+# The Specification of Connector Development
 
 ## Project Layout
-Each connector SHOULD follow the [templates](templates) directory's structure to make sure the necessary files will be added.
+When contributing a new connector, you MUST follow the [templates](templates) directory 
+structure to guarantee that all necessary files are added. 
 
 For the consistent developer's experience, each connector's README.md SHOULD be created according to [README-template.md](templates/README.md)
 
 ## Developer Experience
 
-This section gives some restrictions in order to make all connectors have a consistent style whatever any aspect, which can
-ensure developers have better experience in learning, understanding, and developing.
+This section gives some restrictions to make all connectors have a consistent style, which can ensure developers have a better experience in learning, understanding, and developing.
 
 ### Language
 Because the connectors aim to be serverless application, So, each connector's programming SHOULD prefer to Golang in 
@@ -48,7 +48,7 @@ each connector should provide 3 methods to run:
 - **docker**: how to run connector in a docker engine.
 - **k8s**: how to run connector in k8s cluster.
 
-These already included in [templates](templates/README.md), whose 'how to use' section has been displayed it.
+These are already included in [templates](templates/README.md), whose 'how to use' section has been displayed it.
 
 ## How to create a new connector
 
