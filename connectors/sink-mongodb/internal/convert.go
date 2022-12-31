@@ -17,10 +17,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	ce "github.com/cloudevents/sdk-go/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -73,6 +70,7 @@ func (c *convertStruct) convert(event *ce.Event) error {
 	if err != nil {
 		return errors.Wrap(err, "event data unmarshal error")
 	}
+
 	event.SetExtension(mongoSinkDatabase, c.config.Database)
 	event.SetExtension(mongoSinkCollection, c.config.Collection)
 	uniqueValue := make([]interface{}, len(c.config.UniquePath))
@@ -141,9 +139,9 @@ func getValue(d []byte, path string) (interface{}, error) {
 	return res, nil
 }
 
-func (s *mongoSink) convertEvents(events ...*ce.Event) []*ce.Event {
+func (s *mongoSink) convertEvents(events ...*ce.Event) ([]*ce.Event, error) {
 	if s.convertStruct == nil {
-		return events
+		return events, nil
 	}
 	es := make([]*ce.Event, len(events))
 	for idx := range events {
@@ -153,9 +151,9 @@ func (s *mongoSink) convertEvents(events ...*ce.Event) []*ce.Event {
 				log.KeyError: err,
 				"event":      events[idx].ID(),
 			})
-			cdkgo.NewResult(http.StatusBadRequest, err.Error())
+			return nil, err
 		}
 		es[idx] = events[idx]
 	}
-	return es
+	return es, nil
 }
