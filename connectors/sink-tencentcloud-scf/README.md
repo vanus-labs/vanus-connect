@@ -72,7 +72,7 @@ the `data` will be as payload to invoke function
 
 ### see logs in SCF console
 
-![log.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-tencentcloud-scf/scf-log.png)
+![log.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-tencentcloud-scf/scf-log.png?raw=true)
 
 ### clean resource
 
