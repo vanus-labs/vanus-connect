@@ -40,7 +40,7 @@ Go to your target group, click Chat Settings > Group Bots > Add Bot, and select 
 
 Enter a name and description for your bot, or set up an avatar for the bot, and then click "Add".
 
-![add-a-bot](https://github.com/linkall-labs/vance-docs/raw/main/resources/connectors/sink-feishu-bot/add-a-bot.gif)
+![add-a-bot](https://github.com/linkall-labs/vance/blob/main/connectors/sink-feishu/add-a-bot.gif?raw=true)
 
 You will get the webhook address of the bot in the following format:
 
@@ -50,7 +50,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 
 > ⚠️ Please keep this webhook address properly. Do not publish it on GitHub, blogs, and other publicly accessible sites to avoid it being maliciously called to send spam messages.
 
-![bot-config](https://github.com/linkall-labs/vance-docs/raw/main/resources/connectors/sink-feishu-bot/feishu-config.png)
+![bot-config](https://github.com/linkall-labs/vance/blob/main/connectors/sink-feishu/feishu-config.png?raw=true)
 
 > ⚠️ You must set your signature verification to make sure push messages work.
 
@@ -99,7 +99,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a notice in your chat group.
-![received-notification](https://github.com/linkall-labs/vance/blob/main/connectors/sink-feishu/received-message.png)
+![received-notification](https://github.com/linkall-labs/vance/blob/main/connectors/sink-feishu/received-message.png?raw=true)
 
 ### Clean
 
