@@ -411,11 +411,14 @@ func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.
 
 	start = time.Now()
 	for from := 0; from < len(wms); {
+		var models []mongo.WriteModel
 		end := from + s.cfg.BulkSize
 		if end >= len(wms) {
-			end = len(wms) - 1
+			models = wms[from:]
+		} else {
+			models = wms[from:end]
 		}
-		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, wms[from:end]); err != nil {
+		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, models); err != nil {
 			log.Warning("failed to write mongodb", map[string]interface{}{
 				log.KeyError: err,
 			})
