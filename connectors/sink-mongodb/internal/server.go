@@ -60,6 +60,8 @@ type Config struct {
 	InsertWriteConcern    string         `json:"insert_write_concern" yaml:"insert_write_concern"`
 	RateLimit             int            `json:"rate_limit" yaml:"rate_limit"`
 	DebugSkip             bool           `json:"debug_skip" yaml:"debug_skip"`
+	BulkSize              int            `json:"bulk_size" yaml:"bulk_size"`
+	Upsert                bool           `json:"upsert" yaml:"upsert"`
 	ackDisable            bool
 	writeCon              writeconcern.Option
 }
@@ -129,6 +131,14 @@ func (c *Config) Validate() error {
 
 	log.Info("config", map[string]interface{}{
 		"rate_limit": c.RateLimit,
+	})
+
+	if c.BulkSize == 0 {
+		c.BulkSize = 4
+	}
+
+	log.Info("config", map[string]interface{}{
+		"bulk_size": c.BulkSize,
 	})
 
 	return c.SinkConfig.Validate()
@@ -284,7 +294,7 @@ func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.
 
 		c.Updates = recursive(c.Updates).([]Update)
 		c.Deletes = recursive(c.Deletes).([]Delete)
-		wm := getUpdateOrDeleteModels(&c)
+		wm := getUpdateOrDeleteModels(&c, s.cfg.Upsert)
 		if len(wm) > 0 {
 			wms = append(wms, wm...)
 		}
@@ -400,14 +410,22 @@ func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.
 	}
 
 	start = time.Now()
-	if len(wms) > 0 {
-		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, wms); err != nil {
+	for from := 0; from < len(wms); {
+		var models []mongo.WriteModel
+		end := from + s.cfg.BulkSize
+		if end >= len(wms) {
+			models = wms[from:]
+		} else {
+			models = wms[from:end]
+		}
+		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, models); err != nil {
 			log.Warning("failed to write mongodb", map[string]interface{}{
 				log.KeyError: err,
 			})
 			return cdkgo.NewResult(http.StatusInternalServerError,
 				fmt.Sprintf("failed to write mongodb: %s", err))
 		}
+		from = end
 	}
 
 	cur = time.Now()
@@ -434,7 +452,7 @@ func getAttr(e *ce.Event, key string) (string, error) {
 	return str, nil
 }
 
-func getUpdateOrDeleteModels(c *Command) []mongo.WriteModel {
+func getUpdateOrDeleteModels(c *Command, upsert bool) []mongo.WriteModel {
 	wms := make([]mongo.WriteModel, len(c.Updates)+len(c.Deletes))
 	var i = 0
 
@@ -444,11 +462,13 @@ func getUpdateOrDeleteModels(c *Command) []mongo.WriteModel {
 			wms[i] = &mongo.UpdateManyModel{
 				Filter: u.Filter,
 				Update: u.Update,
+				Upsert: &upsert,
 			}
 		} else {
 			wms[i] = &mongo.UpdateOneModel{
 				Filter: u.Filter,
 				Update: u.Update,
+				Upsert: &upsert,
 			}
 		}
 		i++
