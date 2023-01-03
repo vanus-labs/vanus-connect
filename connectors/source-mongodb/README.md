@@ -49,35 +49,33 @@ and you will receive an event like this:
 
 ```json
 {
-  "specversion":"1.0",
-  "id":"4cbc7a65-5338-41aa-8f16-8fd164146975",
-  "source":"/debezium/mongodb/test",
-  "type":"io.debezium.mongodb.datachangeevent",
-  "datacontenttype":"application/json",
-  "time":"2022-12-21T21:23:40Z",
-  "data":{
-    "after":{
-      "_id":"63a3795c8835b568e786e26a",
-      "test":"demo"
+  "specversion": "1.0",
+  "id": "4cbc7a65-5338-41aa-8f16-8fd164146975",
+  "source": "/debezium/mongodb/test",
+  "type": "io.debezium.mongodb.datachangeevent",
+  "datacontenttype": "application/json",
+  "time": "2022-12-21T21:23:40Z",
+  "data": {
+    "after": {
+      "_id": "63a3795c8835b568e786e26a",
+      "test": "demo"
     }
   },
-  "iodebeziumversion":"2.0.1.Final",
-  "xvanuslogoffset":"AAAAAAAAAHk=",
-  "iodebeziumord":"1",
-  "iodebeziumdb":"test",
-  "iodebeziumrs":"replicaset-01",
-  "iodebeziumname":"test",
-  "iodebeziumcollection":"mongo_source",
-  "xvanusstime":"2022-12-21T21:23:41.109Z",
-  "iodebeziumsnapshot":"false",
-  "iodebeziumtsms":"1671657820000",
-  "xvanuseventbus":"test",
-  "iodebeziumconnector":"mongodb",
-  "iodebeziumop":"c"
+  "iodebeziumversion": "2.0.1.Final",
+  "xvanuslogoffset": "AAAAAAAAAHk=",
+  "iodebeziumord": "1",
+  "iodebeziumdb": "test",
+  "iodebeziumrs": "replicaset-01",
+  "iodebeziumname": "test",
+  "iodebeziumcollection": "mongo_source",
+  "xvanusstime": "2022-12-21T21:23:41.109Z",
+  "iodebeziumsnapshot": "false",
+  "iodebeziumtsms": "1671657820000",
+  "xvanuseventbus": "test",
+  "iodebeziumconnector": "mongodb",
+  "iodebeziumop": "c"
 }
 ```
-
-please see [Event Structure](#Event Structure) to understanding it.
 
 ### clean resource
 
@@ -105,7 +103,7 @@ collection_include: ["test.demo"]
 ```
 
 | Name                   | Required |   Default   | Description                                                                                                                                                                                                                                                                                                                                                         |
-|:-----------------------|:--------:|:-----------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| :--------------------- | :------: | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | target                 | **YES**  |      -      | Target URL will send CloudEvents to                                                                                                                                                                                                                                                                                                                                 |
 | store.type             |    NO    |   MEMORY    | KV store type for metadata, one of MEMORY, FILE                                                                                                                                                                                                                                                                                                                     |
 | store.pathname         |    NO    |      -      | file pathname if `store.type=FILE                                                                                                                                                                                                                                                                                                                                   |
@@ -118,16 +116,19 @@ collection_include: ["test.demo"]
 | database_include       |    NO    | empty array | Database names to be monitored; any database name not included in database.include is excluded from monitoring. By default all databases are monitored. Must not be used with database.exclude                                                                                                                                                                      |
 | database_exclude       |    NO    | empty array | Database names to be excluded from monitoring; any database name not included in database.exclude is monitored. Must not be used with database.include                                                                                                                                                                                                              |
 | collection_include     |    NO    | empty array | Match fully-qualified namespaces for MongoDB collections to be monitored; any collection not included in collection_include is excluded from monitoring. Each identifier is of the form databaseName.collectionName. By default the connector will monitor all collections except those in the local and admin databases. Must not be used with collection_exclude. |
-| collection_exclude     |    NO    | empty array | Match fully-qualified namespaces for MongoDB collections to be excluded from monitoring; any collection not included in collection_exclude is monitored. Each identifier is of the form databaseName.collectionName. Must not be used with collection_include                                                                                                       | 
+| collection_exclude     |    NO    | empty array | Match fully-qualified namespaces for MongoDB collections to be excluded from monitoring; any collection not included in collection_exclude is monitored. Each identifier is of the form databaseName.collectionName. Must not be used with collection_include                                                                                                       |
 
 Note: the `name` can't be modified once it has been started.
 
 For more explanation, you can view https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-example-configuration
+
 ## Example
+
 (TODO here can refer another page)
 Use `mongo-source` and `mysql-sink` to build a data pipeline in minutes.
 
 ## Run in Kubernetes
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
