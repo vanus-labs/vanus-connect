@@ -4,15 +4,11 @@ title: Display
 
 # Display Sink 
 
-## Overview
+## Introduction
 
 A [Vance Connector][vc] which prints received CloudEvents. This is commonly used as a logger to check incoming data.
 
-## Introduction
-
-The Display Sink is a single function [Connector][vc] which aims to print incoming CloudEvents in JSON format.
-
-For example, it will print the incoming CloudEvent looks like:
+For example, it will print incoming CloudEvent this way:
 
 ```http
 {
@@ -30,7 +26,7 @@ For example, it will print the incoming CloudEvent looks like:
 
 ## Quick Start
 
-### Start Using Docker
+### Start with Docker
 
 mapping 8080 to 31080 in order to avoid port conflict.
 
@@ -41,7 +37,8 @@ docker run -d -p 31080:8080 --rm \
 ```
 
 ### Test
-1. make a HTTP request
+Make a HTTP request to the display sink in a CloudEvent format.
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -58,7 +55,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-2. view logs
+Review the logs with the following command: 
 ```shell
 docker logs sink-display
 ```
@@ -79,8 +76,8 @@ receive a new event, in total: 1
   }
 }
 ```
-### Clean
 
+### Clean
 ```shell
 docker stop sink-display
 ```
