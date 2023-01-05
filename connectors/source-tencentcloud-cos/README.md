@@ -2,6 +2,7 @@
 title: Tencent COS
 ---
 
+
 # Tencent COS Source Connector
 
 ## Introduction
@@ -22,7 +23,7 @@ function:
   region: <region>
 EOF
 ```
-For full configuration, you can see [config](#config) section.
+For full configuration, you can see config section.
 
 ### create secret file
 
