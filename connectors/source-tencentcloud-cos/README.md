@@ -2,6 +2,7 @@
 title: Tencent COS
 ---
 
+
 # Tencent COS Source Connector
 
 ## Introduction
@@ -22,7 +23,7 @@ function:
   region: <region>
 EOF
 ```
-For full configuration, you can see [config](#config) section.
+For full configuration, you can see config section.
 
 ### create secret file
 
@@ -123,18 +124,18 @@ secret_id: "xxxx"
 secret_key: "xxxxx"
 ```
 
-| Name                 | Required |              Default               | Description                                                                      |
-|:---------------------|:--------:|:----------------------------------:|----------------------------------------------------------------------------------|
-| target               | **YES**  |                 -                  | Target URL will send CloudEvents to                                              |
-| eventbus             | **YES**  |                 -                  | target eventbus                                                                  |
-| bucket.endpoint      | **YES**  |                 -                  | which bucket you want to capture.                                                |
-| function.region      | **YES**  |                 -                  | which region the helper function will be deployed, suggest keep same with bucket |
-| function.name        |    NO    | vanus-cos-source-function-<number> |                                                                                  |
-| function.namespace   |    NO    |              default               | which namespace the function created to                                          |
-| function.code.bucket |    NO    |          vanus-1253760853          | Not recommended to modify                                                        |
-| function.code.region |    NO    |             ap-beijing             | Not recommended to modify                                                        |
-| function.code.path   |    NO    |   /vanus/cos-source/dev/main.zip   | Not recommended to modify                                                        |
-| debug                |    NO    |               false                | if print debug log                                                               |
+| Name                 | Required |             Default              | Description                                                                      |
+|:---------------------|:--------:|:--------------------------------:|----------------------------------------------------------------------------------|
+| target               | **YES**  |                -                 | Target URL will send CloudEvents to                                              |
+| eventbus             | **YES**  |                -                 | target eventbus                                                                  |
+| bucket.endpoint      | **YES**  |                -                 | which bucket you want to capture.                                                |
+| function.region      | **YES**  |                -                 | which region the helper function will be deployed, suggest keep same with bucket |
+| function.name        |    NO    | vanus-cos-source-function-number |                                                                                  |
+| function.namespace   |    NO    |             default              | which namespace the function created to                                          |
+| function.code.bucket |    NO    |         vanus-1253760853         | Not recommended to modify                                                        |
+| function.code.region |    NO    |            ap-beijing            | Not recommended to modify                                                        |
+| function.code.path   |    NO    |  /vanus/cos-source/dev/main.zip  | Not recommended to modify                                                        |
+| debug                |    NO    |              false               | if print debug log                                                               |
 
 ### secret
 
