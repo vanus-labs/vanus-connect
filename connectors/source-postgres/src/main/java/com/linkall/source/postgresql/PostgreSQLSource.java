@@ -1,33 +1,30 @@
 package com.linkall.source.postgresql;
 
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkall.cdk.config.Config;
 import com.linkall.cdk.database.debezium.DebeziumSource;
-import io.cloudevents.CloudEventData;
-import io.cloudevents.jackson.JsonCloudEventData;
+import io.cloudevents.core.builder.CloudEventBuilder;
+import io.debezium.connector.AbstractSourceInfo;
+import io.debezium.data.Envelope;
+import org.apache.kafka.connect.data.Struct;
 
-import java.io.IOException;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class PostgreSQLSource extends DebeziumSource {
-
-    private ObjectMapper objectMapper = new ObjectMapper();
-
-    public PostgreSQLSource() {
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-    }
+    protected static Set<String> extensionSourceName = new HashSet<>(Arrays.asList(
+            AbstractSourceInfo.DATABASE_NAME_KEY,
+            AbstractSourceInfo.TABLE_NAME_KEY,
+            AbstractSourceInfo.SCHEMA_NAME_KEY
+    ));
 
     @Override
-    protected CloudEventData convertData(Object data) throws IOException {
-        Map<String, Object> m = (Map) data;
-        Object result = m.get("after");
-        if (result==null) {
-            // op:d
-            result = m.get("before");
+    protected void eventExtension(CloudEventBuilder builder, Struct struct) {
+        Struct source = struct.getStruct(Envelope.FieldName.SOURCE);
+        for (String name : extensionSourceName) {
+            builder.withExtension(extensionName(name), source.getString(name));
         }
-        return JsonCloudEventData.wrap(objectMapper.valueToTree(result));
     }
 
     @Override
@@ -37,6 +34,8 @@ public class PostgreSQLSource extends DebeziumSource {
 
     @Override
     public String name() {
-        return null;
+        return "Source PostgreSQL";
     }
+
+
 }

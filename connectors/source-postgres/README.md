@@ -9,7 +9,7 @@ title: PostgreSQL CDC (Debezium)
 The PostgreSQL Source is a [Vance Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data
 in a PostgreSQL schema and then monitor and record all subsequent row-level changes to that data.
 
-For example,PostgreSQL dababase vance_test with schema public has table customers Look:
+For example, PostgreSQL database vance_test with schema public has table user Look:
 
 ```text
 Column      |          Type          | Collation | Nullable | Default
@@ -25,28 +25,16 @@ The row record will be transformed into a CloudEvent looks like:
 
 ```json
 {
-  "id": "name:quick_start;lsn:25090824;txId:826",
-  "source": "/debezium/postgresql/quick_start",
   "specversion": "1.0",
-  "type": "io.debezium.postgresql.datachangeevent",
-  "time": "2023-01-04T13:00:58.360Z",
+  "id": "e5f19d0a-8120-41a2-b4a3-ad3de6c66f6c",
+  "source": "/vanus/debezium/postgresql/quick_start",
+  "type": "vanus.debezium.postgresql.datachangeevent",
   "datacontenttype": "application/json",
-  "iodebeziumop": "r",
-  "iodebeziumversion": "2.1.1.Final",
-  "iodebeziumconnector": "postgresql",
-  "iodebeziumname": "quick_start",
-  "iodebeziumtsms": "1672837258360",
-  "iodebeziumsnapshot": "last",
-  "iodebeziumdb": "vance_test",
-  "iodebeziumsequence": "[null,\"25090824\"]",
-  "iodebeziumschema": "public",
-  "iodebeziumtable": "user",
-  "iodebeziumtxid": "826",
-  "iodebeziumlsn": "25090824",
-  "iodebeziumxmin": null,
-  "iodebeziumtxid": null,
-  "iodebeziumtxtotalorder": null,
-  "iodebeziumtxdatacollectionorder": null,
+  "time": "2023-01-11T03:23:20.973Z",
+  "xvdebeziumdb": "vance_test",
+  "xvdebeziumtable": "user",
+  "xvdebeziumop": "r",
+  "xvdebeziumschema": "public",
   "data": {
     "id": "1",
     "first_name": "Anne",

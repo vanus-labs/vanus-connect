@@ -26,27 +26,19 @@ The row record will be transformed into a CloudEvent looks like:
 ```json
 {
   "specversion": "1.0",
-  "id": "a67f31d6-a0c2-4124-b794-4139a9525ea8",
+  "id": "88767821-92c2-477d-9a6f-bfdfbed19c6a",
   "source": "/debezium/mysql/quick_start",
-  "type": "io.debezium.mysql.datachangeevent",
+  "type": "debezium.mysql.datachangeevent",
   "datacontenttype": "application/json",
-  "time": "2022-12-23T16:06:14Z",
-  "iodebeziumconnector": "mysql",
-  "iodebeziumserverid": "0",
-  "iodebeziumsnapshot": "last",
-  "iodebeziumdb": "dbname",
-  "iodebeziumfile": "binlog.000009",
-  "iodebeziumpos": "197",
-  "iodebeziumname": "quick_start",
-  "iodebeziumtsms": "1671811574000",
-  "iodebeziumtable": "user",
-  "iodebeziumop": "r",
-  "iodebeziumversion": "2.0.1.Final",
-  "iodebeziumrow": "0",
+  "time": "2023-01-11T07:25:39.557Z",
+  "xvdebeziumname": "quick_start",
+  "xvdebeziumop": "c",
+  "xvdebeziumdb": "dbname",
+  "xvdebeziumtable": "user",
   "data": {
-      "id": 100,
-      "name": "user_name",
-      "email": "user_email"
+    "id": 100,
+    "name": "user_name",
+    "email": "user_email"
   }
 }
 ```
@@ -113,4 +105,5 @@ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-my
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+
 [debezium]: https://debezium.io/documentation/reference/2.0/connectors/mysql.html
