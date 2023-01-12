@@ -1,8 +1,8 @@
 ---
-title: Tencent SCF
+title: Tencent Cloud SCF
 ---
 
-# Tencent SCF Sink
+# Tencent Cloud SCF Sink
 
 ## Introduction
 

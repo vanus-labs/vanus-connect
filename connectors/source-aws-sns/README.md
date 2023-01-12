@@ -1,8 +1,8 @@
 ---
-title: AWS SNS
+title: Amazon SNS
 ---
 
-# AWS SNS Source
+# Amazon SNS Source
 
 ## Overview
 AWS SNS(Simple Notification Service) Source is a Vance Source Connector which subscribe to the SNS topic and receive messages published to the topic, and then transform them into CloudEvents and deliver them to the target URL. 

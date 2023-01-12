@@ -2,7 +2,7 @@
 title: Amazon SQS
 ---
 
-# AWS-SQS Source
+# Amazon SQS Source
 This document provides a brief introduction of the SQS Source.
 It is also designed to guide you through the process of running an
 SQS Source Connector.

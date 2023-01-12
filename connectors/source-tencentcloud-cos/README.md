@@ -1,9 +1,9 @@
 ---
-title: Tencent COS
+title: Tencent Cloud COS
 ---
 
 
-# Tencent COS Source Connector
+# Tencent Cloud COS Source 
 
 ## Introduction
 
