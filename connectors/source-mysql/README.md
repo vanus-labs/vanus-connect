@@ -2,7 +2,7 @@
 title: MySQL CDC（Debezium)
 ---
 
-# MySQL CDC（Debezium) Source
+# MySQL CDC Source (Debezium)
 
 ## Introduction
 
