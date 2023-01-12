@@ -32,9 +32,10 @@ The row record will be transformed into a CloudEvent looks like:
   "datacontenttype": "application/json",
   "time": "2023-01-11T07:25:39.557Z",
   "xvdebeziumname": "quick_start",
-  "xvdebeziumop": "c",
-  "xvdebeziumdb": "dbname",
-  "xvdebeziumtable": "user",
+  "xvdebeziumop": "r",
+  "xvop": "c",
+  "xvdb": "dbname",
+  "xvtable": "user",
   "data": {
     "id": 100,
     "name": "user_name",

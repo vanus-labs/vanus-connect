@@ -31,10 +31,12 @@ The row record will be transformed into a CloudEvent looks like:
   "type": "vanus.debezium.postgresql.datachangeevent",
   "datacontenttype": "application/json",
   "time": "2023-01-11T03:23:20.973Z",
-  "xvdebeziumdb": "vance_test",
-  "xvdebeziumtable": "user",
+  "xvdebeziumname": "quick_start",
   "xvdebeziumop": "r",
-  "xvdebeziumschema": "public",
+  "xvop": "c",
+  "xvdb": "vance_test",
+  "xvtable": "user",
+  "xvschema": "public",
   "data": {
     "id": "1",
     "first_name": "Anne",
@@ -112,6 +114,9 @@ mvn exec:java -Dexec.mainClass="com.linkall.source.postgresql.Entrance"
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
+
 [debezium]: https://debezium.io/documentation/reference/1.9/connectors/postgresql.html
+
 [logical decoding plug-in]: https://debezium.io/documentation/reference/1.9/connectors/postgresql.html#postgresql-output-plugin
