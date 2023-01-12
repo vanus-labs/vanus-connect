@@ -2,7 +2,7 @@
 title: PostgreSQL CDC (Debezium)
 ---
 
-# PostgreSQL CDC (Debezium) Source
+# PostgreSQL CDC Source (Debezium)
 
 ## Introduction
 
