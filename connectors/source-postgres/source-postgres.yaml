@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: source-postgres-config
+  name: source-postgres
   namespace: vanus
 data:
   config.yaml: |-
@@ -14,20 +14,19 @@ data:
       password: "123456"
       database: "vance_test"
     schema_include: [ "public" ]
-    # format is schema.tableName
     table_include: [ "public.user" ]
 
     slot_name: vance_slot
     publication_name: vance_publication
-
+    
     store:
-      type: MEMORY
-      pathname: "/tmp/mysql/offset.dat"
+        type: FILE
+        pathname: "/vance/data/offset.dat"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: source-postgres-data
+  name: source-postgres
   namespace: vanus
 spec:
   accessModes:
@@ -65,7 +64,7 @@ spec:
       volumes:
         - name: source-postgres-config
           configMap:
-            name: source-postgres-config
+            name: source-postgres
         - name: source-postgres-data
           persistentVolumeClaim:
-            claimName: source-postgres-data
+            claimName: source-postgres

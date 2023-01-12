@@ -35,8 +35,8 @@ The row record will be transformed into a CloudEvent looks like:
   "xvdebeziumop": "r",
   "xvop": "c",
   "xvdb": "vance_test",
-  "xvtable": "user",
   "xvschema": "public",
+  "xvtable": "user",
   "data": {
     "id": "1",
     "first_name": "Anne",
@@ -54,69 +54,64 @@ Users can specify their configs by either setting environments variables or moun
 
 ### Config Fields of the PostgreSQL Source
 
-| name                | requirement | description                                                                                                               |
-|---------------------|-------------|---------------------------------------------------------------------------------------------------------------------------|
-| host                | required    | db host                                                                                                                   |
-| port                | required    | db port                                                                                                                   |
-| username            | required    | db username                                                                                                               |
-| password            | required    | db password                                                                                                               |
-| db_name             | required    | db database name                                                                                                          |
-| schema_name         | required    | the name of schema want to capture changes,default public                                                                 |
-| include_table       | optional    | the name of table want to capture changes, many split by comma                                                            |
-| plugin_name         | optional    | The name of the [logical decoding plug-in] installed on the PostgreSQL server,default pgoutput                            |
-| slot_name           | optional    | The name of the logical decoding slot that was created for streaming changes from a particular plug-in,default vance_slot |
-| publication_name    | optional    | The name of the publication created for streaming changes when using pgoutput,default vance_publication                   |
-| v_target            | required    | target URL will send CloudEvents to                                                                                       |
-| v_store_file        | required    | save offset file name                                                                                                     |
-| store_offset_key    | optional    | offset store use key, default is vance_debezium_offset                                                                    |
-| offset_lsn          | optional    | PostgreSQL Log Sequence Numbers which begin to capture the change                                                         |
+| name             | requirement | description                                                                                            |
+|------------------|-------------|--------------------------------------------------------------------------------------------------------|
+| target           | required    | target URL will send CloudEvents to                                                                    |
+| name             | required    | unique name for the connector                                                                          |
+| db.host          | required    | IP address or host name of db                                                                          |
+| db.port          | required    | integer port number of db                                                                              |
+| db.username      | required    | username of db                                                                                         |
+| db.password      | required    | password of db                                                                                         |
+| db.database      | required    | database of db                                                                                         |
+| schema_include   | optional    | schema name which want to capture changes, string array, can not set with schema_exclude               |
+| schema_exclude   | optional    | schema name which don't want to capture changes,string array, can not set with schema_include          |
+| table_include    | optional    | table name which want to capture changes, string array and format is schema.tableName                  |
+| table_exclude    | optional    | table name which don't want to capture changes, string array and format is schema.tableName            |
+| store.type       | required    | save offset type, support FILE, MEMORY                                                                 |
+| store.pathname   | required    | it's needed when offset type is FIlE, save offset file name                                            |
+| plugin_name      | optional    | The name of the [logical decoding plug-in] installed on the PostgreSQL server,default pgoutput         |
+| slot_name        | optional    | The name of the logical decoding slot that was created for streaming changes from a particular plug-in |
+| publication_name | optional    | The name of the publication created for streaming changes when using pgoutput                          |
+| offset.lsn       | optional    | PostgreSQL Log Sequence Numbers which begin to capture the change,such as "0/17EFB50"                  |
 
 ### Config Example
 
-```json
-{
-  "host": "localhost",
-  "port": "5432",
-  "username": "postgres",
-  "password": "123456",
-  "db_name": "dbname",
-  "include_table": "user",
-  "v_store_file": "/vance/data/offset.dat",
-  "v_target": "http://localhost:8080"
-}
+```yaml
+target: "http://localhost:8080"
+name: "quick_start"
+db:
+  host: "localhost"
+  port: 5432
+  username: "vance_test"
+  password: "123456"
+  database: "vance_test"
+schema_include: [ "public" ]
+table_include: [ "public.user" ]
+
+slot_name: vanus_slot
+publication_name: vanus_publication
 ```
 
 ## PostgreSQL Source Image
 
-> docker.io/vancehub/source-postgres
+> public.ecr.aws/vanus/connector/source-postgres
 
 ### Running with Docker
 
 ```shell
-docker run -v $(pwd)/config.json:/vance/config/config.json -v $(pwd)/data:/vance/data --rm vancehub/source-postgres
+docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-postgres
 ```
 
-## Local Development
-
-You can run the source codes of the PostgreSQL Source locally as well.
-
-### Building via Maven
+### K8S
 
 ```shell
-cd source-postgres 
-mvn clean package
-```
-
-### Running via Maven
-
-```shell
-mvn exec:java -Dexec.mainClass="com.linkall.source.postgresql.Entrance"
+  kubectl apply -f source-postgres.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
 
 [config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
 
-[debezium]: https://debezium.io/documentation/reference/1.9/connectors/postgresql.html
+[debezium]: https://debezium.io/documentation/reference/2.1/connectors/postgresql.html
 
-[logical decoding plug-in]: https://debezium.io/documentation/reference/1.9/connectors/postgresql.html#postgresql-output-plugin
+[logical decoding plug-in]: https://debezium.io/documentation/reference/2.1/connectors/postgresql.html#postgresql-output-plugin

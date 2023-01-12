@@ -84,11 +84,12 @@ public class PostgreSQLConfig extends DebeziumConfig {
             pluginName = "pgoutput";
         }
         props.setProperty("plugin.name", pluginName);
-        if (slotName!=null)
+        if (slotName!=null) {
             props.setProperty("slot.name", slotName);
-        if (publicationName!=null)
+        }
+        if (publicationName!=null) {
             props.setProperty("publication.name", publicationName);
-
+        }
         // db connection configuration
         props.setProperty("database.hostname", dbConfig.getHost());
         props.setProperty("database.port", String.valueOf(dbConfig.getPort()));
