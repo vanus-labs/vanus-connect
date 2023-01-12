@@ -7,10 +7,10 @@ title: HTTP
 ## Introduction
 
 
-The HTTP Source is a [Vance Connector][vc] which aims to convert incoming HTTP Request to a CloudEvent.
+The HTTP Source is a [Vance Connector][vc] which aims to convert an incoming HTTP Request to a CloudEvent.
 
 
-For example, if the incoming HTTP Request looks like:
+For example, the incoming HTTP Request looks like:
 
 ```bash
 curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def&test=demo' \
@@ -20,7 +20,7 @@ curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=45
 }'
 ```
 
-which is converted to
+which is converted to:
 
 ```json
 {
@@ -62,12 +62,11 @@ which is converted to
 
 ## Quick Start
 
-in this section, we show how HTTP Source convert HTTP request(made by cURL) to CloudEvent.
+This section shows how HTTP Source converts an HTTP request(made by cURL) to a CloudEvent
 
 ### Create Config file
 
-Assuming you use Vanus(https://github.com/linkall-labs/vanus) as CloudEvent receiver, if you have other receiver,
-just set target to your endpoint.
+This assumes you use [Vanus](https://github.com/linkall-labs/vanus) as a CloudEvent receiver. Otherwise, just set `target` to your endpoint if you have another receiver.
 
 ```shell
 cat << EOF > config.yml
@@ -78,7 +77,7 @@ EOF
 
 ### Start Using Docker
 
-mapping 8080 to 31080 in order to avoid port conflict.
+Mapping 8080 to 31080 in order to avoid port conflict.
 
 ```shell
 docker run -d -p 31080:8080 --rm \
@@ -96,8 +95,8 @@ curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=4
 }'
 ```
 
-now, you could use `vsctl event get <eventbus>` to view event just sent. If you can't see event you sent,
-try to use `--offset` to get event. (`vsctl` default retrieves event from earliest)
+Now, you could use `vsctl event get <eventbus>` to view the event you just sent. If you can't see the event you sent,
+try to use `--offset` to get the event. (`vsctl` default retrieves event from earliest)
 
 ```
 ~> vsctl event get <eventbus>
@@ -156,8 +155,7 @@ docker stop source-http
 
 ### Configuration
 
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell HTTP Source.
+The default path is `/vance/config/config.yml`. If you want to change the default path, you can set env `CONNECTOR_CONFIG` to another HTTP Source.
 
 
 | Name   | Required | Default | Description                         |
@@ -167,8 +165,7 @@ tell HTTP Source.
 ### Attributes
 
 #### Changing Default Required Attributes
-if you want change default attributes of `id`,`source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes))
-to you own, you could use query parameter to set them.
+If you want to change the default attributes of `id`, `source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes)) to your own, you could use the `Query Parameter` to set them.
 
 | Attribute  |      Default       | Query Parameter | Example                                 |
 |:----------:|:------------------:|:----------------|:----------------------------------------|
@@ -178,8 +175,7 @@ to you own, you could use query parameter to set them.
 |  subject   |       empty        | ?subject=xxx    | http://url:port/webhook?subject=xxxx    |
 | dataschema |       empty        | ?dataschema=xxx | http://url:port/webhook?dataschema=xxxx |
 
-`datacontenttype` will be auto infer based on request body, if body can be converted to `JSON`, the `application/json` will be set,
-otherwise `text/plain` will be set.
+`datacontenttype` will be automatically inferred based on the request body. If the body can be converted to `JSON`, the `application/json` will be set. Otherwise, `text/plain` will be set.
 
 #### Extension Attributes
 HTTP Source provides some [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
