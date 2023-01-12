@@ -1,0 +1,1 @@
+# Template for Vanus connectors documentation.
