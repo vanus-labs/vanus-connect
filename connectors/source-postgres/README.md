@@ -1,8 +1,8 @@
 ---
-title: PostgreSQL
+title: PostgreSQL CDC (Debezium)
 ---
 
-# PostgreSQL Source
+# PostgreSQL CDC Source (Debezium)
 
 ## Introduction
 

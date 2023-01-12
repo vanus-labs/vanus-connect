@@ -1,8 +1,8 @@
 ---
-title: MySQL
+title: MySQL (JDBC)
 ---
 
-# MySQL Sink
+# MySQL Sink (JDBC)
 This document provides a brief introduction to the MySQL Sink.
 It is also designed to guide you through the process of running a
 MySQL Sink Connector.

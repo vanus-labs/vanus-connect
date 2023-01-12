@@ -1,8 +1,8 @@
 ---
-title: AWS S3
+title: Amazon S3
 ---
 
-# AWS-S3 Source 
+# Amazon S3 Source 
 
 ## Overview
 

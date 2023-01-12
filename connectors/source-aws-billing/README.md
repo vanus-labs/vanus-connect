@@ -1,8 +1,8 @@
 ---
-title: AWS Billing
+title: Amazon Billing
 ---
 
-# AWS Billing Source
+# Amazon Billing Source
 
 ## Introduction
 

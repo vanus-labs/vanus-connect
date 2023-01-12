@@ -1,8 +1,8 @@
 ---
-title: AliCloud Billing
+title: Alibaba Cloud Billing
 ---
 
-# AliCloud Billing Source
+# Alibaba Cloud Billing Source
 
 ## Introduction
 

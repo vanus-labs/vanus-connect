@@ -1,8 +1,8 @@
 ---
-title: MySql
+title: MySQL CDC（Debezium)
 ---
 
-# MySql Source
+# MySQL CDC Source (Debezium)
 
 ## Introduction
 
