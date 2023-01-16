@@ -20,8 +20,6 @@ import (
 
 type billingConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	AccessKeyID        string `json:"access_key_id"`
-	SecretAccessKey    string `json:"secret_access_key"`
 	Endpoint           string `json:"endpoint" yaml:"endpoint"`
 	PullHour           int    `json:"pull_hour" yaml:"pull_hour"`
 	Secret             Secret `json:"secret" yaml:"secret"`

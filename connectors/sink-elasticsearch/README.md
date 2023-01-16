@@ -54,11 +54,11 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 | port        | optional     | 8080     | the port Elasticsearch Sink is listening on                         |
 | address     | required     |          | elasticsearch cluster address, multi split by ","                   |
 | index_name  | required     |          | elasticsearch index name                                            |
+| username    | optional     |          | elasticsearch cluster username                                      |
+| password    | optional     |          | elasticsearch cluster password                                      |
 | timeout     | optional     | 10000    | elasticsearch index document timeout, unit millisecond              |
 | insert_mode | optional     | insert   | elasticsearch index document type: insert or upsert                 |
 | primary_key | optional     |          | elasticsearch index document primary key in event, example: data.id |
-| username    | optional     |          | elasticsearch cluster username                                      |
-| password    | optional     |          | elasticsearch cluster password                                      |
 
 ## Image
 
