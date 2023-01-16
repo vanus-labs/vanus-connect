@@ -42,23 +42,18 @@ The Doris Sink will extract `data` field write to [Doris][doris] table like:
 
 ### Config
 
-| name          | requirement  | default       | description                               |
-|:--------------|:-------------|:--------------|:------------------------------------------|
-| port          | optional     | 8080          | the port Doris Sink is listening on       |
-| fenodes       | required     |               | doris fenodes, example: "17.0.0.1:8003"   |
-| db_name       | required     |               | doris database name                       |
-| table_name    | required     |               | doris table name                          |
-| stream_load   | optional     |               | doris stream load properties, map struct  |
-| load_interval | optional     | 5             | doris stream load interval, unit second   |
-| load_size     | optional     | 10*1024*1024  | doris stream load max body size           |
-| timeout       | optional     | 30            | doris stream load timeout, unit second    |
-
-### Secret
-
-| name          | requirement | default  | description    |
-|---------------|-------------|----------|----------------|
-| username      | required    |          | doris username |
-| password      | required    |          | doris password |
+| name          | requirement | default      | description                              |
+|:--------------|:------------|:-------------|:-----------------------------------------|
+| port          | optional    | 8080         | the port Doris Sink is listening on      |
+| fenodes       | required    |              | doris fenodes, example: "17.0.0.1:8003"  |
+| db_name       | required    |              | doris database name                      |
+| table_name    | required    |              | doris table name                         |
+| stream_load   | optional    |              | doris stream load properties, map struct |
+| load_interval | optional    | 5            | doris stream load interval, unit second  |
+| load_size     | optional    | 10*1024*1024 | doris stream load max body size          |
+| timeout       | optional    | 30           | doris stream load timeout, unit second   |
+| username      | required    |              | doris username                           |
+| password      | required    |              | doris password                           |
 
 ## Doris Sink Image
 
@@ -74,24 +69,18 @@ refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "port": 8080
-"fenodes": "172.31.57.192:8030"
-"db_name": "vance_test"
-"table_name": "user"
-```
-
-#### create secret file
-
-refer [secret](#Secret) to create `secret.yml`. for example:
-
-```yaml
-"username": "vance_test"
-"password": "123456"
+secret:
+  "fenodes": "172.31.57.192:8030"
+  "db_name": "vance_test"
+  "table_name": "user"
+  "username": "vance_test"
+  "password": "123456"
 ```
 
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/sink-doris
+ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/sink-doris
 ```
 
 ### K8S

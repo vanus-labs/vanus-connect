@@ -92,7 +92,7 @@ func (l *StreamLoad) Start() error {
 	l.loadInterval = time.Second * time.Duration(l.config.LoadInterval)
 	l.buffer = bytes.NewBuffer(make([]byte, 0, l.config.LoadSize+4*2<<10))
 
-	loadUrlStr := fmt.Sprintf("http://%s/api/%s/%s/_stream_load", l.config.Fenodes, l.config.DbName, l.config.TableName)
+	loadUrlStr := fmt.Sprintf("http://%s/api/%s/%s/_stream_load", l.config.Secret.Fenodes, l.config.Secret.DbName, l.config.Secret.TableName)
 	u, err := pkgurl.Parse(loadUrlStr)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func (l *StreamLoad) loadAndReset() {
 }
 
 func (l *StreamLoad) load() error {
-	label := fmt.Sprintf("vance_sink_%s_%d", l.config.TableName, time.Now().UnixMilli())
+	label := fmt.Sprintf("vance_sink_%s_%d", l.config.Secret.TableName, time.Now().UnixMilli())
 	ctx, cancel := context.WithTimeout(l.ctx, l.timeout)
 	defer cancel()
 	req := l.makeRequest(label)

@@ -19,17 +19,14 @@ import (
 )
 
 type dorisConfig struct {
-	cdkgo.SinkConfig
-	Fenodes   string `json:"fenodes" yaml:"fenodes" validate:"required"`
-	DbName    string `json:"db_name" yaml:"db_name" validate:"required"`
-	TableName string `json:"table_name" yaml:"table_name" validate:"required"`
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 
 	StreamLoad map[string]string `json:"stream_load" yaml:"stream_load"`
 
-	Timeout      int `json:"timeout" yaml:"timeout"`
-	LoadInterval int `json:"load_interval" yaml:"load_interval"`
-	LoadSize     int `json:"load_size" yaml:"load_size"`
-	Secret       Secret
+	Timeout      int    `json:"timeout" yaml:"timeout"`
+	LoadInterval int    `json:"load_interval" yaml:"load_interval"`
+	LoadSize     int    `json:"load_size" yaml:"load_size"`
+	Secret       Secret `json:"secret" yaml:"secret"`
 }
 
 func Config() cdkgo.SinkConfigAccessor {
@@ -41,6 +38,9 @@ func (cfg *dorisConfig) GetSecret() cdkgo.SecretAccessor {
 }
 
 type Secret struct {
-	Username string `json:"username" yaml:"username" validate:"required"`
-	Password string `json:"password" yaml:"password" validate:"required"`
+	Fenodes   string `json:"fenodes" yaml:"fenodes" validate:"required"`
+	DbName    string `json:"db_name" yaml:"db_name" validate:"required"`
+	TableName string `json:"table_name" yaml:"table_name" validate:"required"`
+	Username  string `json:"username" yaml:"username" validate:"required"`
+	Password  string `json:"password" yaml:"password" validate:"required"`
 }

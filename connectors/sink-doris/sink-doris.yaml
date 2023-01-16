@@ -20,9 +20,6 @@ metadata:
 data:
   config.yml: |-
     "port": 8080
-    "fenodes": "172.31.57.192:8030"
-    "db_name": "vance_test"
-    "table_name": "user"
 ---
 apiVersion: v1
 kind: Secret
@@ -31,6 +28,9 @@ metadata:
   namespace: vance
 data:
   secret.yml: |-
+    "fenodes": "172.31.57.192:8030"
+    "db_name": "vance_test"
+    "table_name": "user"
     "username": "vance_test"
     "password": "123456"
 ---
