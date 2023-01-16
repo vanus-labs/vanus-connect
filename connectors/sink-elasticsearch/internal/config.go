@@ -27,15 +27,13 @@ const (
 )
 
 type esConfig struct {
-	cdkgo.SinkConfig
-	Address   string `json:"address" yaml:"address" validate:"required"`
-	IndexName string `json:"index_name" yaml:"index_name" validate:"required"`
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 
 	Timeout    int        `json:"timeout" yaml:"timeout"`
 	PrimaryKey string     `json:"primary_key" yaml:"primary_key"`
 	InsertMode InsertMode `json:"insert_mode" yaml:"insert_mode"`
 
-	Secret Secret
+	Secret Secret `json:"secret" yaml:"secret"`
 }
 
 func Config() cdkgo.SinkConfigAccessor {
@@ -47,8 +45,10 @@ func (cfg *esConfig) GetSecret() cdkgo.SecretAccessor {
 }
 
 type Secret struct {
-	Username string `json:"username" yaml:"username"`
-	Password string `json:"password" yaml:"password"`
+	Address   string `json:"address" yaml:"address" validate:"required"`
+	IndexName string `json:"index_name" yaml:"index_name" validate:"required"`
+	Username  string `json:"username" yaml:"username"`
+	Password  string `json:"password" yaml:"password"`
 }
 
 func (cfg *esConfig) Validate() error {

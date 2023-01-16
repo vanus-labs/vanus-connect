@@ -1,6 +1,0 @@
-# receive event port
-"port": 8080
-# doris info
-"fenodes": "localhost:8030"
-"db_name": "vance_test"
-"table_name": "user"

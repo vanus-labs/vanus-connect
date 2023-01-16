@@ -62,8 +62,8 @@ func (s *alicloudBillingSource) Initialize(ctx context.Context, config cdkgo.Con
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	conf := &openapi.Config{
-		AccessKeyId:     tea.String(s.config.AccessKeyID),
-		AccessKeySecret: tea.String(s.config.SecretAccessKey),
+		AccessKeyId:     tea.String(s.config.Secret.AccessKeyID),
+		AccessKeySecret: tea.String(s.config.Secret.SecretAccessKey),
 		Endpoint:        tea.String(s.config.Endpoint),
 	}
 	client, err := bssopenapi.NewClient(conf)

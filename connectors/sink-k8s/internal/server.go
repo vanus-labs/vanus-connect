@@ -44,8 +44,8 @@ const (
 )
 
 type Config struct {
-	cdkgo.SinkConfig
-	Secret *Secret `json:"secret" yaml:"secret"`
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
+	Secret           *Secret `json:"secret" yaml:"secret"`
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {

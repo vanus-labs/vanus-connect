@@ -49,21 +49,16 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ### Config
 
-| name        | requirement  | default  | description                                                          |
-|:------------|:-------------|:---------|:---------------------------------------------------------------------|
-| port        | optional     | 8080     | the port Elasticsearch Sink is listening on                          |
-| address     | required     |          | elasticsearch cluster address, multi split by ","                    |
-| index_name  | required     |          | elasticsearch index name                                             |
-| timeout     | optional     | 10000    | elasticsearch index document timeout, unit millisecond               |
-| insert_mode | optional     | insert   | elasticsearch index document type: insert or upsert                  |
-| primary_key | optional     |          | elasticsearch index document primary key in event, example: data.id  |
-
-### Secret
-
-| name        | requirement | default  | description                     |
-|-------------|-------------|----------|---------------------------------|
-| username    | optional    |          | elasticsearch cluster username  |
-| password    | optional    |          | elasticsearch cluster password  |
+| name        | requirement  | default  | description                                                         |
+|:------------|:-------------|:---------|:--------------------------------------------------------------------|
+| port        | optional     | 8080     | the port Elasticsearch Sink is listening on                         |
+| address     | required     |          | elasticsearch cluster address, multi split by ","                   |
+| index_name  | required     |          | elasticsearch index name                                            |
+| username    | optional     |          | elasticsearch cluster username                                      |
+| password    | optional     |          | elasticsearch cluster password                                      |
+| timeout     | optional     | 10000    | elasticsearch index document timeout, unit millisecond              |
+| insert_mode | optional     | insert   | elasticsearch index document type: insert or upsert                 |
+| primary_key | optional     |          | elasticsearch index document primary key in event, example: data.id |
 
 ## Image
 
@@ -85,19 +80,10 @@ refer [config](#Config) to create `config.yml`. for example:
 "insert_mode": "upsert"
 ```
 
-#### create secret file
-
-refer [secret](#Secret) to create `secret.yml`. for example:
-
-```yaml
-"username": "elastic"
-"password": "elastic"
-```
-
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/sink-elasticsearch
+ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/sink-elasticsearch
 ```
 
 ### K8S

@@ -52,18 +52,13 @@ For example,billing data output a CloudEvent looks like:
 
 ### Config
 
-| name      | requirement | default               | description                                               |
-|:----------|:------------|:----------------------|:----------------------------------------------------------|
-| target    | required    |                       | target URL will send CloudEvents to                       |
-| endpoint  | optional    | business.aliyuncs.com | the AliCloud business api endpoint                        |
-| pull_hour | optional    | 2                     | AliCloud billing source pull billing data time(unit hour) |
-
-### Secret
-
-| name              | requirement | default  | description                                       |
-|-------------------|-------------|----------|---------------------------------------------------|
-| access_key_id     | required    |          | the AliCloud account [accessKeyID][accessKey]     |
-| secret_access_Key | required    |          | the AliCloud account [secretAccessKey][accessKey] |
+| name                | requirement | default               | description                                               |
+|:--------------------|:------------|:----------------------|:----------------------------------------------------------|
+| target              | required    |                       | target URL will send CloudEvents to                       |
+| endpoint            | optional    | business.aliyuncs.com | the AliCloud business api endpoint                        |
+| pull_hour           | optional    | 2                     | AliCloud billing source pull billing data time(unit hour) |
+| access_key_id       | required    |                       | the AliCloud account [accessKeyID][accessKey]             |
+| secret_access_Key   | required    |                       | the AliCloud account [secretAccessKey][accessKey]         |
 
 ## AliCloud Billing Source Image
 
@@ -79,21 +74,15 @@ refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "target": "http://localhost:8080"
-```
-
-#### create secret file
-
-refer [secret](#Secret) to create `secret.yml`. for example:
-
-```yaml
-"access_key_id": "xxxxxx"
-"secret_access_key": "xxxxxx"
+secret:
+  "access_key_id": "xxxxxx"
+  "secret_access_key": "xxxxxx"
 ```
 
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/source-alicloud-billing
+ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-alicloud-billing
 ```
 
 ### K8S

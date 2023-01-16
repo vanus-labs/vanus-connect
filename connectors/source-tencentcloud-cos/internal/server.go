@@ -54,12 +54,12 @@ var (
 var _ cdkgo.SourceConfigAccessor = &cosConfig{}
 
 type cosConfig struct {
-	cdkgo.SourceConfig
-	B        Bucket   `json:"bucket" yaml:"bucket"`
-	F        Function `json:"function" yaml:"function"`
-	Debug    bool     `json:"debug" yaml:"debug"`
-	Eventbus string   `json:"eventbus" yaml:"eventbus"`
-	Secret   *Secret  `json:"secret" yaml:"secret"`
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
+	B                  Bucket   `json:"bucket" yaml:"bucket"`
+	F                  Function `json:"function" yaml:"function"`
+	Debug              bool     `json:"debug" yaml:"debug"`
+	Eventbus           string   `json:"eventbus" yaml:"eventbus"`
+	Secret             *Secret  `json:"secret" yaml:"secret"`
 }
 
 func (c *cosConfig) GetSecret() cdkgo.SecretAccessor {
