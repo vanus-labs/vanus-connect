@@ -40,10 +40,10 @@ var (
 var _ cdkgo.SinkConfigAccessor = &scfConfig{}
 
 type scfConfig struct {
-	cdkgo.SinkConfig
-	F      Function `json:"function" yaml:"function"`
-	Debug  bool     `json:"debug" yaml:"debug"`
-	Secret *Secret  `json:"secret" yaml:"secret"`
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
+	F                Function `json:"function" yaml:"function"`
+	Debug            bool     `json:"debug" yaml:"debug"`
+	Secret           *Secret  `json:"secret" yaml:"secret"`
 }
 
 func (c *scfConfig) GetSecret() cdkgo.SecretAccessor {
