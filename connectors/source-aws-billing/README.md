@@ -32,18 +32,13 @@ by fix time.The data group by aws service For example,billing data output a Clou
 
 ### Config
 
-| name      | requirement | default                             | description                                           |
-|:----------|:------------|:------------------------------------|:------------------------------------------------------|
-| target    | required    |                                     | target URL will send CloudEvents to                   |
-| endpoint  | optional    | https://ce.us-east-1.amazonaws.com  | the aws cost explorer api endpoint                    |
-| pull_hour | optional    | 2                                   | aws billing source pull billing data time(unit hour)  |
-
-### Secret
-
-| name              | requirement | default  | description                                  |
-|-------------------|-------------|----------|----------------------------------------------|
-| access_key_id     | required    |          | the aws account [accessKeyID][accessKey]     |
-| secret_access_Key | required    |          | the aws account [secretAccessKey][accessKey] |
+| name              | requirement | default                            | description                                          |
+|:------------------|:------------|:-----------------------------------|:-----------------------------------------------------|
+| target            | required    |                                    | target URL will send CloudEvents to                  |
+| endpoint          | optional    | https://ce.us-east-1.amazonaws.com | the aws cost explorer api endpoint                   |
+| pull_hour         | optional    | 2                                  | aws billing source pull billing data time(unit hour) |
+| access_key_id     | required    |                                    | the aws account [accessKeyID][accessKey]             |
+| secret_access_Key | required    |                                    | the aws account [secretAccessKey][accessKey]         |
 
 ## AWS Billing Source Image
 
@@ -59,21 +54,15 @@ refer [config](#Config) to create `config.yml`. for example:
 
 ```yaml
 "target": "http://localhost:8080"
-```
-
-#### create secret file
-
-refer [secret](#Secret) to create `secret.yml`. for example:
-
-```yaml
-"access_key_id": "xxxxxx"
-"secret_access_key": "xxxxxx"
+"secret":
+  "access_key_id": "xxxxxx"
+  "secret_access_key": "xxxxxx"
 ```
 
 #### run
 
 ```shell
- docker run --rm -v ${PWD}:/vance/config -v ${PWD}:/vance/secret public.ecr.aws/vanus/connector/source-aws-billing
+ docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-aws-billing
 ```
 
 ### K8S
