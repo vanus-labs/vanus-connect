@@ -19,11 +19,11 @@ import (
 )
 
 type billingConfig struct {
-	cdkgo.SourceConfig
-	Endpoint string `json:"endpoint" yaml:"endpoint"`
-	PullHour int    `json:"pull_hour" yaml:"pull_hour"`
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
+	Endpoint           string `json:"endpoint" yaml:"endpoint"`
+	PullHour           int    `json:"pull_hour" yaml:"pull_hour"`
 
-	Secret Secret
+	Secret Secret `json:"secret" yaml:"secret"`
 }
 
 func Config() cdkgo.SourceConfigAccessor {
