@@ -10,6 +10,13 @@ IMAGE_TAG ?= latest
 DOCKER_BUILD_ARG= --build-arg TARGETARCH=$(GOARCH) --build-arg TARGETOS=$(GOOS)
 DOCKER_PLATFORM ?= linux/amd64,linux/arm64
 
+# make push-all-java-image DOCKER_REGISTRY=linkall.tencentcloudcr.com
+push-all-java-image:
+	sh build/java/push-image.sh "${DOCKER_REPO}" "${IMAGE_TAG}" "${DOCKER_PLATFORM}"
+
+push-all-go-image:
+	sh build/go/push-image.sh "${DOCKER_REPO}" "${IMAGE_TAG}" "${DOCKER_PLATFORM}"
+
 push-java-image:
 	docker buildx build -t ${DOCKER_REPO}/${CONNECTOR}:${IMAGE_TAG} -f build/java/Dockerfile \
     		--platform ${DOCKER_PLATFORM} \
