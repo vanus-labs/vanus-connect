@@ -19,12 +19,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+
 	"net/http"
 	"strings"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/elastic/go-elasticsearch/v7"
+	es "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
@@ -33,7 +34,7 @@ import (
 
 type elasticsearchSink struct {
 	config   *esConfig
-	esClient *elasticsearch.Client
+	esClient *es.Client
 
 	timeout    time.Duration
 	primaryKey PrimaryKey
@@ -52,7 +53,7 @@ func (s *elasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAcc
 	}
 	s.timeout = time.Duration(cfg.Timeout) * time.Millisecond
 	// init es client
-	esClient, err := elasticsearch.NewClient(generateEsConfig(cfg))
+	esClient, err := es.NewClient(generateEsConfig(cfg))
 	if err != nil {
 		return errors.Wrap(err, "new es client error")
 	}
@@ -108,7 +109,7 @@ func (s *elasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdk
 		body.WriteByte('}')
 		// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-update.html
 		req = esapi.UpdateRequest{
-			Index:        s.config.IndexName,
+			Index:        s.config.Secret.IndexName,
 			Body:         bytes.NewReader(body.Bytes()),
 			DocumentID:   documentID,
 			DocumentType: documentType,
@@ -116,7 +117,7 @@ func (s *elasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdk
 	} else {
 		// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-index_.html
 		req = esapi.IndexRequest{
-			Index:        s.config.IndexName,
+			Index:        s.config.Secret.IndexName,
 			Body:         bytes.NewReader(event.Data()),
 			DocumentID:   documentID,
 			DocumentType: documentType,
@@ -161,9 +162,9 @@ func (s *elasticsearchSink) Destroy() error {
 	return nil
 }
 
-func generateEsConfig(conf *esConfig) elasticsearch.Config {
-	config := elasticsearch.Config{
-		Addresses:     strings.Split(conf.Address, ","),
+func generateEsConfig(conf *esConfig) es.Config {
+	config := es.Config{
+		Addresses:     strings.Split(conf.Secret.Address, ","),
 		Username:      conf.Secret.Username,
 		Password:      conf.Secret.Password,
 		RetryOnStatus: []int{429, 502, 503, 504},
