@@ -39,12 +39,14 @@ type awsBillingSource struct {
 	config *billingConfig
 	events chan *cdkgo.Tuple
 	ctx    context.Context
+	cancel context.CancelFunc
 	wg     sync.WaitGroup
 }
 
 func Source() cdkgo.Source {
 	return &awsBillingSource{
 		events: make(chan *cdkgo.Tuple, 100),
+		cancel: func() {},
 	}
 }
 
@@ -62,6 +64,7 @@ func (s *awsBillingSource) Name() string {
 }
 
 func (s *awsBillingSource) Destroy() error {
+	s.cancel()
 	s.wg.Wait()
 	close(s.events)
 	return nil
@@ -76,7 +79,7 @@ func (s *awsBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAc
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://ce.us-east-1.amazonaws.com"
 	}
-	s.ctx = ctx
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.client = newCostExplorerClient(cfg)
 	// check
 	now := time.Now()
@@ -131,7 +134,9 @@ func (s *awsBillingSource) getCostAndUsageInput(start, end, nextToken *string) (
 		Metrics:       []string{"AmortizedCost", "BlendedCost", "NetAmortizedCost", "NetUnblendedCost", "UnblendedCost"},
 		NextPageToken: nextToken,
 	}
-	return s.client.GetCostAndUsage(s.ctx, input)
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return s.client.GetCostAndUsage(timeoutCtx, input)
 }
 
 func (s *awsBillingSource) getCost() {
