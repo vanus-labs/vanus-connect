@@ -18,12 +18,28 @@ by fix time.The data group by aws service For example,billing data output a Clou
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:05:55.777689Z",
   "data": {
-    "vanceSource": "cloud.aws.billing",
-    "vanceType": "aws.service.daily",
-    "date": "2022-06-13",
-    "service": "Amazon Elastic Compute Cloud - Compute",
-    "amount": "12.294",
-    "unit": "USD"
+    "date": "2023-01-15",
+    "service": "CloudWatch Events",
+    "amortizedCost": {
+      "amount": "0.0009189721",
+      "unit": "USD"
+    },
+    "blendedCost": {
+      "amount": "0.0009189721",
+      "unit": "USD"
+    },
+    "netAmortizedCost": {
+      "amount": "0.0009189721",
+      "unit": "USD"
+    },
+    "netUnblendedCost": {
+      "amount": "0.0009189721",
+      "unit": "USD"
+    },
+    "unblendedCost": {
+      "amount": "0.0009189721",
+      "unit": "USD"
+    }
   }
 }
 ```
