@@ -109,7 +109,8 @@ The <name> Source defines following [CloudEvents Extension Attributes](https://g
 |:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
 ...
 
-### Data
+<optional>
+### Data 
 <explain the structure of data>
 
 ### Run in Kubernetes
