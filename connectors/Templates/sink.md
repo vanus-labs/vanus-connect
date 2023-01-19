@@ -71,8 +71,7 @@ docker stop sink-<name>
 <optional>
 ### Extension Attributes
 
-Sink <name> has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
-to determine how to process events.
+The <name> Sink have additional reactions if the incoming CloudEvent contains following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
 
 
 | Attribute      | Required | Examples | Description                          |
