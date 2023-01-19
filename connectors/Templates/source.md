@@ -45,7 +45,7 @@ EOF
 ```
 
 
-### start with Docker
+### Start with Docker
 
 <mapping 8080(container port) to 31080(host port) to avoid conflict.>
 
