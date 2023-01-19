@@ -103,8 +103,9 @@ docker stop source-<name> sink-display
 <explain how required attributes will be set>
 
 
+<optional>
 ### Extension Attributes
-Source <name> added some [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+The <name> Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 
 |    Attribute     |  Type   | Description                                                                                                                      |
 |:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
