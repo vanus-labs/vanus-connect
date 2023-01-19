@@ -44,10 +44,6 @@ target: http://localhost:31081
 EOF
 ```
 
-<optional if have secret configs>
-### create the secret file
-...
-</optional>
 
 ### start with Docker
 
