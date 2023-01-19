@@ -68,22 +68,6 @@ docker stop sink-<name>
 
 ## How to use
 
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell Sink <Name>.
-
-
-| Name                                 | Required | Default | Description                                                                                                                                       |
-|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| port                                 |    NO    |  8080   | the pot Sink MongoDB receives incoming events                                                                                                     |
-...
-
-
-```yaml
-<full example>
-```
-
 ### Extension Attributes
 
 Sink <name> has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
