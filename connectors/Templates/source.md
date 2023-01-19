@@ -85,7 +85,7 @@ use `docker logs sink-display` to view events
 docker stop source-<name> sink-display
 ```
 
-## How to use
+## Source details
 
 
 
