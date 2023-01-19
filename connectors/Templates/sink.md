@@ -66,7 +66,7 @@ curl --location --request POST 'localhost:31080' \
 docker stop sink-<name>
 ```
 
-## How to use
+## Sink details
 
 <optional>
 ### Extension Attributes
