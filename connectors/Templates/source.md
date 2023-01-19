@@ -56,7 +56,7 @@ docker run --rm \
 
 ### Test
 
-Start display Sink with the following command, which received events that this source made:
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents out.
 ```shell
 docker run -d --rm \
   -p 31081:8080 \
