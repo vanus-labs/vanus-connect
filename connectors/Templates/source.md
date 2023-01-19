@@ -36,11 +36,6 @@ This section shows how <name> Source convert <xxxx> to a CloudEvent.
 
 ### Create the config file
 
-Assuming you use [Vanus](https://github.com/linkall-labs/vanus) as your CloudEvent receiver, if you have other receiver,
-config the target to your own address
-
-Replace `<vanus_gateway_url>`, `<port>`, and `<eventbus>` to yours.
-
 ```shell
 cat << EOF > config.yml
 # use local Sink Display container to verify events
