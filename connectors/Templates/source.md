@@ -48,9 +48,9 @@ EOF
 ### Start with Docker
 
 ```shell
-docker run -d --rm \
+docker run --rm \
   -p 31080:8080 \
-  -v ${PWD}:/vance/config \
+  -v ${PWD}:/vanus-connect/config \
   --name source-<name> public.ecr.aws/vanus/connector/source-<name>:latest
 ```
 
