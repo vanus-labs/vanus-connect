@@ -87,6 +87,7 @@ The <name> Sink have additional reactions if the incoming CloudEvent contains fo
 }
 ```
 
+<optional>
 ### Examples
 
 #### example1
