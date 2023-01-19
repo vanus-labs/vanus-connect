@@ -98,15 +98,6 @@ docker stop source-<name> sink-display
 
 ## How to use
 
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell HTTP Source.
-
-
-| Name   | Required | Default | Description                         |
-|:-------|:--------:|:-------:|-------------------------------------|
-| target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
 
 ### Required Attributes
 <explain how required attributes will be set>
