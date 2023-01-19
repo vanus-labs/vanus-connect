@@ -6,7 +6,7 @@ title: <name>
 
 ## Introduction
 
-The <name> Sink is a [Vanus Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept) that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The <name> Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and <must: description...>
 
 For example, If an incoming event looks like this:
