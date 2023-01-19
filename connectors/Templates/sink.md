@@ -128,24 +128,6 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-#### example3
-
-```shell
-curl --location --request POST 'localhost:31080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-    "source": "quick-start",
-    "specversion": "1.0",
-    "type": "sink-mongodb",
-    "datacontenttype": "application/json",
-    "time": "2022-10-26T10:38:29.345Z",
-    "<extension_attr3>": "test",
-    "data": {
-         <data2>
-    }
-}'
-```
 
 ### Run in kubernetes
 ```yaml
