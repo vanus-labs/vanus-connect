@@ -34,7 +34,7 @@ This section shows how <name> Source convert <xxxx> to a CloudEvent.
 - ...
 </optional>
 
-### create a config file
+### Create the config file
 
 Assuming you use [Vanus](https://github.com/linkall-labs/vanus) as your CloudEvent receiver, if you have other receiver,
 config the target to your own address
