@@ -9,7 +9,7 @@ title: <name>
 The <name> Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and <must: description...>
 
-For example, If an incoming event looks like this:
+For example, the incoming CloudEvent looks like this:
 
 ```json
 <incoming event example>
