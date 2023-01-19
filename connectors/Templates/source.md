@@ -6,7 +6,7 @@ title: <name>
 
 ## Introduction
 
-The <name> Source is a [Vanus Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md) which aims to convert incoming data ...
+The <name> Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to convert incoming data ...
 
 <optional: incoming request/message example>
 
