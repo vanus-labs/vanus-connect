@@ -25,7 +25,7 @@ which is converted to
 
 ## Quick Start
 
-in this section, we show how <name> Source convert <xxxx> to CloudEvents.
+This section shows how <name> Source convert <xxxx> to a CloudEvent.
 
 <optional prerequisites but recommended>
 
