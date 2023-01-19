@@ -80,10 +80,6 @@ The <name> Sink have additional reactions if the incoming CloudEvent contains fo
 
 ### Data format
 
-| Item                  | Required |   Type   | Default | Description                                                   |
-|:----------------------|:--------:|:--------:|:-------:|---------------------------------------------------------------|
-...
-
 
 ```json
 {
