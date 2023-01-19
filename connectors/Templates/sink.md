@@ -60,7 +60,7 @@ curl --location --request POST 'localhost:31080' \
 
 <show result with a paragraph>
 
-### clean resource
+### Clean resource
 
 ```shell
 docker stop sink-<name>
