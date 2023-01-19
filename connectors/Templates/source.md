@@ -47,8 +47,6 @@ EOF
 
 ### Start with Docker
 
-<mapping 8080(container port) to 31080(host port) to avoid conflict.>
-
 ```shell
 docker run -d --rm \
   -p 31080:8080 \
