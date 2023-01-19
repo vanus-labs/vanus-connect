@@ -38,7 +38,7 @@ cat << EOF > config.yml
 EOF
 ```
 
-### start with Docker
+### Start with Docker
 
 ```shell
 docker run --rm \
