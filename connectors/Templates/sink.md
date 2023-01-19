@@ -68,6 +68,7 @@ docker stop sink-<name>
 
 ## How to use
 
+<optional>
 ### Extension Attributes
 
 Sink <name> has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
