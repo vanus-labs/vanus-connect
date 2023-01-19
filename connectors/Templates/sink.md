@@ -26,7 +26,7 @@ The <name> Sink will ... (eg. send a message to the Slack channel)
 - ...
 </optional>
 
-### create the config file
+### Create the config file
 
 <option: explanation>
 
