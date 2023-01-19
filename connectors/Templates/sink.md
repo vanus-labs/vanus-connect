@@ -129,7 +129,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 
-### Run in kubernetes
+### Run in Kubernetes
 ```yaml
 <must: content>
 ```
