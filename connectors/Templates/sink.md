@@ -90,7 +90,7 @@ The <name> Sink have additional reactions if the incoming CloudEvent contains fo
 <optional>
 ### Examples
 
-#### example1
+#### Example1
 
 ```shell
 curl --location --request POST 'localhost:31080' \
