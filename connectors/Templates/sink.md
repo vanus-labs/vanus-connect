@@ -15,7 +15,7 @@ For example, the incoming CloudEvent looks like this:
 <incoming event example>
 ```
 
-It will be transformed in the following way.
+The <name> Sink will ... (eg. send a message to the Slack channel)
 
 ```json
 <transformed event example>
