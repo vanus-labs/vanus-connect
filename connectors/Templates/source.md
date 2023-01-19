@@ -99,8 +99,6 @@ docker stop source-<name> sink-display
 ## How to use
 
 
-### Required Attributes
-<explain how required attributes will be set>
 
 
 <optional>
