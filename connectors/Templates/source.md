@@ -20,9 +20,6 @@ which is converted to
 }
 ```
 
-
-
-
 ## Quick Start
 
 This section shows how <name> Source convert <xxxx> to a CloudEvent.
@@ -44,6 +41,12 @@ target: http://localhost:31081
 EOF
 ```
 
+| Name                                 | Required | Default | Description                                                                                                                                       |
+|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| target                                 |    YES    |  ""   | the target URL which <name> Source will send CloudEvents to                                                                                                  |
+...
+
+The <name> Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -56,12 +59,15 @@ docker run --rm \
 
 ### Test
 
-Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents out.
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
 ```shell
 docker run -d --rm \
   -p 31081:8080 \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
 <do some operation>
 
@@ -87,9 +93,6 @@ docker stop source-<name> sink-display
 
 ## Source details
 
-
-
-
 <optional>
 ### Extension Attributes
 The <name> Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
@@ -97,13 +100,51 @@ The <name> Source defines following [CloudEvents Extension Attributes](https://g
 |    Attribute     |  Type   | Description                                                                                                                      |
 |:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
 ...
+</optional>
 
 <optional>
 ### Data 
-<explain the structure of data>
+<optional the structure of data>
+</optional>
 
 ### Run in Kubernetes
 
+```shell
+kubectl apply -f name-source.yaml
+```
+
 ```yaml
 <content>
+```
+
+## Integrate with Vanus
+
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+### Prerequisites
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
+
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+```shell
+export VANUS_GATEWAY=192.168.49.2:30001
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Update the target config of the <name> Source
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
+
+4. Run the <name> Source
+```shell
+docker run --network=host \
+  --rm \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-<name> public.ecr.aws/vanus/connector/source-<name>:latest
 ```
