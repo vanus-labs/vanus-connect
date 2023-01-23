@@ -17,7 +17,6 @@ For example, the incoming CloudEvent looks like this:
 
 The <name> Sink will ... (eg. send a message to the Slack channel)
 
-
 ## Quickstart
 
 <optional prerequisites but recommended>
@@ -30,13 +29,19 @@ The <name> Sink will ... (eg. send a message to the Slack channel)
 
 <optional: explanation>
 
-Replace `<config1>`, `<config2>`, and `<config3>` to yours.
-
 ```shell
 cat << EOF > config.yml
 <example config content>
+...
 EOF
 ```
+
+| Name                                 | Required | Default | Description                                                                                                                                       |
+|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| port                                 |    NO    |  8080   | the port which <name> Sink listens on                                                                                                  |
+...
+
+The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -49,6 +54,8 @@ docker run --rm \
 
 ### Test
 <option: explanation>.
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -77,9 +84,11 @@ The <name> Sink have additional reactions if the incoming CloudEvent contains fo
 | Attribute      | Required | Examples | Description                          |
 |:---------------|:--------:|----------|--------------------------------------|
 ...
+</optional>
 
 ### Data format
 
+The <name> Sink requires following data format in CloudEvent's `data` field. 
 
 ```json
 {
@@ -128,8 +137,33 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-
 ### Run in Kubernetes
+
+```shell
+kubectl apply -f name-sink.yaml
+```
+
 ```yaml
 <must: content>
+```
+
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the name-sink.yaml
+```shell
+kubectl apply -f name-sink.yaml
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --eventbus quick-start \
+  --sink 'http://sink-name:8080'
 ```
