@@ -7,8 +7,8 @@ title: Amazon Billing
 ## Introduction
 
 The Amazon Billing Source is a [Vanus Connector][vc] which aims to convert billing data
-to a CloudEvent. The Amazon Billing Source use [AWS Cost Explorer][awsbill] api pull yesterday data
-at fix time.
+to a CloudEvent. The Amazon Billing Source uses [AWS Cost Explorer][awsbill] api and pulls 
+billing data from the previous day at a fixed time.
 
 The billing data is converted to:
 
@@ -49,7 +49,7 @@ The billing data is converted to:
 
 ## Quick Start
 
-This section shows how Amazon Billing Source convert billing data to a CloudEvent.
+This section shows how Amazon Billing Source converts billing data to a CloudEvent.
 
 ### Prerequisites
 
@@ -70,9 +70,9 @@ EOF
 
 | Name              | Required  | Default                            | Description                                               |
 |:------------------|:----------|:-----------------------------------|:----------------------------------------------------------|
-| target            | required  |                                    | the target URL will send CloudEvents to                   |
+| target            | required  |                                    | the target URL to send the CloudEvents.                   |
 | endpoint          | optional  | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
-| pull_hour         | optional  | 2                                  | Amazon Billing Source pull AWS billing data at which hour |
+| pull_hour         | optional  | 2                                  | specify the hour at which the billing data will be pulled.|
 | access_key_id     | required  |                                    | the AWS IAM [Access Key][accessKey]                       |
 | secret_access_key | required  |                                    | the AWS IAM [Secret Key][accessKey]                       |
 
@@ -98,7 +98,7 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
-then you view events like: 
+Here is the sort of CloudEvent you should expect to receive in the Display Sink: 
 
 ```json
 {
