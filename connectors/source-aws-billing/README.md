@@ -216,10 +216,7 @@ target: http://192.168.49.2:30001/gateway/quick-start
 
 4. Run the Amazon Billing Source
 ```shell
-docker run --network=host \
-  --rm \
-  -v ${PWD}:/vanus-connect/config \
-  --name source-aws-billing public.ecr.aws/vanus/connector/source-aws-billing
+kubectl apply -f source-aws-billing.yaml
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
