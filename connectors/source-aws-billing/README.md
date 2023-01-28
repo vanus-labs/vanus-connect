@@ -68,13 +68,13 @@ secret:
 EOF
 ```
 
-| Name              | Required  | Default                            | Description                                               |
-|:------------------|:----------|:-----------------------------------|:----------------------------------------------------------|
-| target            | required  |                                    | the target URL to send the CloudEvents.                   |
-| endpoint          | optional  | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
-| pull_hour         | optional  | 2                                  | specify the hour at which the billing data will be pulled.|
-| access_key_id     | required  |                                    | the AWS IAM [Access Key][accessKey]                       |
-| secret_access_key | required  |                                    | the AWS IAM [Secret Key][accessKey]                       |
+| Name              | Required | Default                            | Description                                               |
+|:------------------|:---------|:-----------------------------------|:----------------------------------------------------------|
+| target            | YES      |                                    | the target URL will send CloudEvents to                   |
+| endpoint          | NO       | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
+| pull_hour         | NO       | 2                                  | specify the hour at which the billing data will be pulled |
+| access_key_id     | YES      |                                    | the AWS IAM [Access Key][accessKey]                       |
+| secret_access_key | YES      |                                    | the AWS IAM [Secret Key][accessKey]                       |
 
 The Amazon Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
