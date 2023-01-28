@@ -86,16 +86,16 @@ This section shows how GitHub Source convert GitHub webhooks event data to a Clo
 cat << EOF > config.yml
 target: http://localhost:31081
 port: 8080
-github:
-  githubWebHookSecret: ""
+secret:
+  github_webhook_secret: ""
 EOF
 ```
 
-| Name                 | Required  | Default | Description                             |
-|:---------------------|:----------|:--------|:----------------------------------------|
-| target               | required  |         | the target URL will send CloudEvents to |
-| port                 | required  |         | the port receive GitHub webhook event   |
-| githubWebHookSecret  | optional  |         | the GitHub webhook secret               |
+| Name                     | Required  | Default | Description                             |
+|:-------------------------|:----------|:--------|:----------------------------------------|
+| target                   | required  |         | the target URL will send CloudEvents to |
+| port                     | required  |         | the port receive GitHub webhook event   |
+| github_webhook_secret    | optional  |         | the GitHub webhook secret               |
 
 The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -155,45 +155,61 @@ kubectl apply -f source-github.yaml
 
 ```yaml
 apiVersion: v1
+kind: Service
+metadata:
+   name: source-github
+   namespace: vanus
+spec:
+   selector:
+      app: source-github
+   type: ClusterIP
+   ports:
+      - port: 8080
+        name: source-github
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: source-github
-  namespace: vanus
+   name: source-github
+   namespace: vanus
 data:
-  config.yml: |-
-    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
-    secret:
-      access_key_id: AKIAIOSFODNN7EXAMPLE
-      secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+   config.yml: |-
+      target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+      port: 8080
+      secret:
+        github_webhook_secret: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: source-github
-  namespace: vanus
-  labels:
-    app: source-github
-spec:
-  selector:
-    matchLabels:
+   name: source-github
+   namespace: vanus
+   labels:
       app: source-github
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: source-github
-    spec:
-      containers:
-        - name: source-github
-          image: public.ecr.aws/vanus/connector/source-github
-          imagePullPolicy: Always
-          volumeMounts:
+spec:
+   selector:
+      matchLabels:
+         app: source-github
+   replicas: 1
+   template:
+      metadata:
+         labels:
+            app: source-github
+      spec:
+         containers:
+            - name: source-github
+              image: public.ecr.aws/vanus/connector/source-github
+              imagePullPolicy: Always
+              ports:
+                 - containerPort: 8080
+                      name: github
+              volumeMounts:
+                 - name: source-github-config
+                   mountPath: /vanus-connector/config
+         volumes:
             - name: source-github-config
-              mountPath: /vanus-connector/config
-      volumes:
-        - name: source-github-config
-          configMap:
-            name: source-github
+              configMap:
+                 name: source-github
 ```
 
 ## Integrate with Vanus
