@@ -4,14 +4,11 @@ title: GitHub
 
 # GitHub Source
 
-## Overview
-A Vance Connector which retrieves GitHub webhooks events, transform them into CloudEvents and deliver CloudEvents to the target URL.
+## Introduction
 
-## User Guidelines
-
-## Connector Introduction
-The GitHub Source is a [Vance Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md) designed to retrieves
-GitHub webhooks events in various format, transform them into CloudEvents based on [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md) and wrap the body of the original request into the data of CloudEvents.
+The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhooks events,
+transform them into CloudEvents based on [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md) 
+and wrap the body of the original request into the data of CloudEvents.
 
 The original GitHub webhooks events look like:
 ```JSON
@@ -57,48 +54,193 @@ The original GitHub webhooks events look like:
   }
 }
 ```
-This GitHub star event will be transformed into a CloudEvents like:
+
+which is converted to
+
 ```JSON
-CloudEvent:{
+{
 	id:"4ef226c0-08c7-11ed-998d-93772adf8abb", 
 	source:"https://api.github.com/repos/XXXX/test-repo", 
 	type:"com.github.watch.started", 
 	datacontenttype:"application/json", 
 	time:"2022-07-21T07:32:44.190Z", 
-	data:JsonCloudEventData{
-		"http request body"
+	data: {
+       "action": "created", 
+       ...
 	}
 }
 ```
-## GitHub Source Configs
-Users can specify their configs by either setting environments variables or mount a config.json to /vance/config/config.json when they run the connector. Find examples of setting configs [here](https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md).
-### Config Fields of the GitHub Source
-|  Configs    |  Description    																  |  Example    			  |  Required    |
-|  :----:     |  :----:         																  |  :----:     			  |  :----:      |
-|  v_target   |  v_target is used to specify the target URL HTTP Source will send CloudEvents to  |  "http://localhost:8081"  |  YES  		 |
-|  v_port     |  v_port is used to specify the port HTTP Source is listening on					  |  "8080"	                  |  YES         |
-## GitHub Source Secrets
-Users should set their sensitive data Base64 encoded in a secret file. And mount your local secret file to /vance/secret/secret.json when you run the connector.
-### Encode your sensitive data
-```Bash
-$ echo -n ABCDEFG | base64
-QUJDREVGRw==
+
+## Quick Start
+
+This section shows how GitHub Source convert GitHub webhooks event data to a CloudEvent.
+
+### Prerequisites
+
+- Have a container runtime (i.e., docker).
+- GitHub Repositories
+
+### Create the config file
+
+```shell
+cat << EOF > config.yml
+target: http://localhost:31081
+port: 8080
+secret:
+  github_webhook_secret: ""
+EOF
 ```
-Replace 'ABCDEFG' with your sensitive data.
-### Set your local secret file
-```Bash
-$ cat secret.json
+
+| Name                     | Required | Default | Description                           |
+|:-------------------------|:---------|:--------|:--------------------------------------|
+| target                   | YES      |         | the target URL to send CloudEvents    |
+| port                     | YES      | 8080    | the port receive GitHub webhook event |
+| github_webhook_secret    | NO       |         | the GitHub webhook secret             |
+
+The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
+
+```shell
+docker run -it --rm --network=host \
+  -p -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-github public.ecr.aws/vanus/connector/source-github
+```
+
+### Test
+
+1. Expose the GitHub Source service to the Internet, example use [ngrok](https://ngrok.com/download)
+2. Create a GitHub webhook for you repository
+   1. Create a webhook under the Settings tab in your GitHub repository
+   2. Set the configuration for your webhook
+
+3. Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
+```shell
+docker run -it --rm \
+  -p 31081:8080 \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display
+```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+
+4. Star your GitHub repository. 
+
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+```json
 {
-  "githubWebHookSecret": "${githubWebHookSecret}"
+  id:"4ef226c0-08c7-11ed-998d-93772adf8abb",
+  source:"https://api.github.com/repos/XXXX/test-repo",
+  type:"com.github.star.started",
+  datacontenttype:"application/json",
+  time:"2022-07-21T07:32:44.190Z",
+  data: {
+     "action": "created", 
+     ...
+  }
 }
 ```
-|  Secrets         		 |  Description    																  |  Example    			  |  Required    |
-|  :----:     			 |  :----:         																  |  :----:     			  |  :----:      |
-|  githubWebHookSecret   |  The githubWebHookSecret is used to verify your webhook secret key		      |  "YWJjZGU="				  |  YES  		 |
-## GitHub Source Image
->    
-### Run the GitHub-source image in a container
-Mount your local config file and secret file to specific positions with -v flags.
-```Bash
-docker run -v $(pwd)/secret.json:/vance/secret/secret.json -v $(pwd)/config.json:/vance/config/config.json -p 8081:8081 source-github
+
+### Clean
+
+```shell
+docker stop source-github sink-display
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f source-github.yaml
+```
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+   name: source-github
+   namespace: vanus
+spec:
+   selector:
+      app: source-github
+   type: ClusterIP
+   ports:
+      - port: 8080
+        name: source-github
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: source-github
+   namespace: vanus
+data:
+   config.yml: |-
+      target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+      port: 8080
+      secret:
+        github_webhook_secret: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+   name: source-github
+   namespace: vanus
+   labels:
+      app: source-github
+spec:
+   selector:
+      matchLabels:
+         app: source-github
+   replicas: 1
+   template:
+      metadata:
+         labels:
+            app: source-github
+      spec:
+         containers:
+            - name: source-github
+              image: public.ecr.aws/vanus/connector/source-github
+              imagePullPolicy: Always
+              ports:
+                 - containerPort: 8080
+                      name: github
+              volumeMounts:
+                 - name: source-github-config
+                   mountPath: /vanus-connector/config
+         volumes:
+            - name: source-github-config
+              configMap:
+                 name: source-github
+```
+
+## Integrate with Vanus
+
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+### Prerequisites
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
+
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+```shell
+export VANUS_GATEWAY=192.168.49.2:30001
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Update the target config of the GitHub Source
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
+
+4. Run the GitHub Source
+```shell
+docker run --network=host \
+  --rm \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-github public.ecr.aws/vanus/connector/source-github
 ```

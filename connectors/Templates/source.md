@@ -41,9 +41,9 @@ target: http://localhost:31081
 EOF
 ```
 
-| Name                                 | Required | Default | Description                                                                                                                                       |
-|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| target                                 |    YES    |  ""   | the target URL which <name> Source will send CloudEvents to                                                                                                  |
+| Name   | Required | Default | Description                                                 |
+|:-------|:---------|:--------|:------------------------------------------------------------|
+| target | YES      | ""      | the target URL which <name> Source will send CloudEvents to |
 ...
 
 The <name> Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -51,10 +51,10 @@ The <name> Source tries to find the config file at `/vanus-connect/config/config
 ### Start with Docker
 
 ```shell
-docker run --rm \
+docker run -it --rm --network=host \
   -p 31080:8080 \
   -v ${PWD}:/vanus-connect/config \
-  --name source-<name> public.ecr.aws/vanus/connector/source-<name>:latest
+  --name source-<name> public.ecr.aws/vanus/connector/source-<name>
 ```
 
 ### Test
@@ -62,7 +62,7 @@ docker run --rm \
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
 
 ```shell
-docker run -d --rm \
+docker run -it --rm \
   -p 31081:8080 \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
@@ -71,7 +71,7 @@ Make sure the `target` value in your config file is `http://localhost:31081` so 
 
 <do some operation>
 
-use `docker logs sink-display` to view events
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
 ```json
 {
@@ -97,8 +97,8 @@ docker stop source-<name> sink-display
 ### Extension Attributes
 The <name> Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 
-|    Attribute     |  Type   | Description                                                                                                                      |
-|:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
+| Attribute | Type | Description                                                                                                                      |
+|:----------|:-----|:---------------------------------------------------------------------------------------------------------------------------------|
 ...
 </optional>
 

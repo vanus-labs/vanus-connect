@@ -1,9 +1,9 @@
 package com.linkall.source.github;
 
-import com.linkall.vance.core.VanceApplication;
+import com.linkall.cdk.Application;
 
 public class Entrance {
     public static void main(String[] args) {
-        VanceApplication.run(GitHubHttpSource.class);
+        Application.run(GitHubHttpSource.class);
     }
 }

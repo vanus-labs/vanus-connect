@@ -1,6 +1,5 @@
 package com.linkall.source.github;
 
-import com.linkall.vance.core.Adapter2;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.vertx.core.buffer.Buffer;
@@ -12,11 +11,10 @@ import java.net.URI;
 import java.time.*;
 
 
-public class GitHubHttpAdapter implements Adapter2<HttpServerRequest, Buffer> {
+public class GitHubHttpAdapter {
 
     public static final CloudEventBuilder template = CloudEventBuilder.v1();
 
-    @Override
     public CloudEvent adapt(HttpServerRequest req, Buffer buffer) {
         template.withId(req.getHeader("X-GitHub-Delivery"));
         switch (req.getHeader("X-GitHub-Event")){

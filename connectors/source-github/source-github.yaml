@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-github
+  namespace: vanus
+spec:
+  selector:
+    app: source-github
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-github
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-github
+  namespace: vanus
+data:
+  config.yml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    port: 8080
+    secret:
+      github_webhook_secret: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-github
+  namespace: vanus
+  labels:
+    app: source-github
+spec:
+  selector:
+    matchLabels:
+      app: source-github
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-github
+    spec:
+      containers:
+        - name: source-github
+          image: public.ecr.aws/vanus/connector/source-github
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+                name: github
+          volumeMounts:
+            - name: source-github-config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: source-github-config
+          configMap:
+            name: source-github
