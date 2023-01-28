@@ -36,9 +36,9 @@ cat << EOF > config.yml
 EOF
 ```
 
-| Name                                 | Required | Default | Description                                                                                                                                       |
-|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| port                                 |    NO    |  8080   | the port which <name> Sink listens on                                                                                                  |
+| Name | Required | Default | Description                           |
+|:-----|:---------|:--------|---------------------------------------|
+| port | NO       | 8080    | the port which <name> Sink listens on |
 ...
 
 The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -46,10 +46,10 @@ The <name> Sink tries to find the config file at `/vanus-connect/config/config.y
 ### Start with Docker
 
 ```shell
-docker run --rm \
+docker run -it --rm \
   -p 31080:8080 \
   -v ${PWD}:/vanus-connect/config \
-  --name sink-<name> public.ecr.aws/vanus/connector/sink-<name>:latest
+  --name sink-<name> public.ecr.aws/vanus/connector/sink-<name>
 ```
 
 ### Test
@@ -81,8 +81,8 @@ docker stop sink-<name>
 The <name> Sink have additional reactions if the incoming CloudEvent contains following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
 
 
-| Attribute      | Required | Examples | Description                          |
-|:---------------|:--------:|----------|--------------------------------------|
+| Attribute      | Required | Examples  | Description                           |
+|:---------------|:--------:|:----------|:--------------------------------------|
 ...
 </optional>
 

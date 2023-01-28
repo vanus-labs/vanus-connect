@@ -18,7 +18,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    default: "test-app"
+    default: "test-app1"
     slack:
       - app_name: "test-app1"
         token: "xoxb-xxxxxxxxxx"
@@ -47,9 +47,7 @@ spec:
     spec:
       containers:
         - name: sink-slack
-#          For China mainland
-#          image: linkall.tencentcloudcr.com/vanus/connector/sink-slack:latest
-          image: public.ecr.aws/vanus/connector/sink-slack:latest
+          image: public.ecr.aws/vanus/connector/sink-slack
           resources:
             requests:
               memory: "128Mi"
@@ -63,7 +61,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
