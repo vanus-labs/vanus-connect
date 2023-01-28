@@ -125,8 +125,9 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
-4. star your GitHub repository. Then you view events like:
+4. Star your GitHub repository. 
 
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 ```json
 {
   id:"4ef226c0-08c7-11ed-998d-93772adf8abb",
