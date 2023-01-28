@@ -2,31 +2,31 @@ FROM golang:1.18.5 as builder
 
 ARG connector
 
-COPY . /build/vance
+COPY . /build/vanus-connector
 
-WORKDIR /build/vance/connectors/${connector}
+WORKDIR /build/vanus-connector/connectors/${connector}
 
 RUN go mod tidy
-RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vance/bin/${connector} ./cmd/main.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connector/bin/${connector} ./cmd/main.go
 
 FROM centos:8.4.2105
 
 ARG connector
 
-COPY --from=builder /build/vance/bin/${connector} /vance/bin/${connector}
+COPY --from=builder /build/vanus-connector/bin/${connector} /vanus-connector/bin/${connector}
 
 ENV CONNECTOR=${connector}
-ENV EXECUTABLE_FILE=/vance/bin/${connector}
-ENV CONNECTOR_HOME=/vance
-ENV CONNECTOR_CONFIG=/vance/config/config.yml
-ENV CONNECTOR_SECRET=/vance/secret/secret.yml
+ENV EXECUTABLE_FILE=/vanus-connector/bin/${connector}
+ENV CONNECTOR_HOME=/vanus-connector
+ENV CONNECTOR_CONFIG=/vanus-connector/config/config.yml
+ENV CONNECTOR_SECRET=/vanus-connector/secret/secret.yml
 ENV LOG_LEVEL=INFO
 
-RUN echo '#!/bin/sh' >> /vance/run.sh
-RUN echo $EXECUTABLE_FILE >> /vance/run.sh
-RUN chmod a+x /vance/bin/${connector}
-RUN chmod a+x /vance/run.sh
+RUN echo '#!/bin/sh' >> /vanus-connector/run.sh
+RUN echo $EXECUTABLE_FILE >> /vanus-connector/run.sh
+RUN chmod a+x /vanus-connector/bin/${connector}
+RUN chmod a+x /vanus-connector/run.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["/vance/run.sh"]
+ENTRYPOINT ["/vanus-connector/run.sh"]
