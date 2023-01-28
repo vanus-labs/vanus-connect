@@ -6,7 +6,7 @@ title: Slack
 
 ## Introduction
 
-The Slack Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Slack Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to Slack channels.
 
 For example, if the incoming CloudEvent looks like:
@@ -33,35 +33,44 @@ then channels will receive a message like:
 
 in this section, we show how to use Slack Sink sends a text message to recipients.
 
-### Create Config file
+### Prerequisites
+- Have a container runtime (i.e., docker).
+- Have a Slack App and should have at least `chat:write` and `chat:write.public` permission.
 
-replace `<app_id>`, `<custom app name>`, and `<oauth token>` to yours. If you haven't a Slack App, you could
-create one by following [Create your Slack App](https://api.slack.com/apps/new), the App should have
-at least `chat:write` and `chat:write.public` permission.
+### Create Config file
 
 ```shell
 cat << EOF > config.yml
-default: "<app_id>"
+default: "test_app"
 slack:
-  - app_name: "<custom app name>"
+  - app_name: "test_app"
     token: "<oauth token>"
     default_channel: "#general"
 EOF
 ```
 
-### Start Using Docker
+| Name                     | Required  | Default | Description                                                                                           |
+|:-------------------------|:---------:|:--------|:------------------------------------------------------------------------------------------------------|
+| port                     |    NO     | 8080    | the port which <name> Sink listens on                                                                 |
+| default                  |    YES    |         | the default app name if event attribute doesn't have `xvslackapp`                                     |
+| slack.[].app_name        |    YES    |         | custom slack app name as identifier                                                                   |
+| slack.[].token           |    YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                               |
+| slack.[].default_channel |    NO     |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples   |
 
-mapping 8080 to 31080 in order to avoid port conflict.
+The Slack Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-docker run -d -p 31080:8080 --rm \
-  -v ${PWD}:/vance/config \
-  --name sink-slack public.ecr.aws/vanus/connector/sink-slack:latest
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-slack public.ecr.aws/vanus/connector/sink-slack
 ```
 
 ### Test
 
-replace `<from_slack_address>`, `<from_slack_address>`, and `<smtp server address>` to yours.
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -89,31 +98,18 @@ now, you cloud see a new slack in your mailbox.
 docker stop sink-slack
 ```
 
-## How to use
-
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell Slack Sink.
-
-| Name                     | Required | Default | Description                                                                                         |
-| :----------------------- | :------: | :-----: | --------------------------------------------------------------------------------------------------- |
-| default                  | **YES**  |    -    | Slack Sink supports multiple slack apps as target, you could set the default app by this field      |
-| slack.[].app_name        | **YES**  |    -    | custom slack app name as identifier                                                                 |
-| slack.[].token           | **YES**  |    -    | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                             |
-| slack.[].default_channel |    NO    |    -    | set default channel the messages send to if attribute was not be set, use `,` to separate multiples |
+## Sink details
 
 ### Extension Attributes
 
-Slack Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
-to determine how to process event.
+The <name> Sink have additional reactions if the incoming CloudEvent contains following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
 
-| Attribute       | Required | Examples         | Description                                |
-| :-------------- | :------: | ---------------- | ------------------------------------------ |
-| xvslackapp      |    NO    | test_app         | Which slack app this event want to send to |
-| xvslackchannels |    NO    | #general,#random | use `,` to separate multiples              |
+| Attribute       | Required  | Examples          | Description                                 |
+|:----------------|:---------:|:------------------|:--------------------------------------------|
+| xvslackapp      |    NO     | test_app          | Which slack app this event want to send to  |
+| xvslackchannels |    NO     | #general,#random  | use `,` to separate multiples               |
 
-### Data
+### Data format
 
 the event data must be `JSON` format, and only two key `subject` and `message` is valid for using, example:
 
@@ -124,9 +120,9 @@ the event data must be `JSON` format, and only two key `subject` and `message` i
 }
 ```
 
-## Examples
+### Examples
 
-### Sending message to the default app and default channel
+#### Sending message to the default app and default channel
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -145,7 +141,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Sending message to the specified app and specified channel
+#### Sending message to the specified app and specified channel
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -166,7 +162,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Sending message to the specified app and multiple channels
+#### Sending message to the specified app and multiple channels
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -210,7 +206,7 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    default: "test-app"
+    default: "test-app1"
     slack:
       - app_name: "test-app1"
         token: "xoxb-xxxxxxxxxx"
@@ -239,9 +235,7 @@ spec:
     spec:
       containers:
         - name: sink-slack
-          #          For China mainland
-          #          image: linkall.tencentcloudcr.com/vanus/connector/sink-slack:latest
-          image: public.ecr.aws/vanus/connector/sink-slack:latest
+          image: public.ecr.aws/vanus/connector/sink-slack
           resources:
             requests:
               memory: "128Mi"
@@ -255,11 +249,33 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
             name: sink-slack
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-slack.yaml
+```shell
+kubectl apply -f sink-slack.yaml
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-name:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
