@@ -103,7 +103,7 @@ The GitHub Source tries to find the config file at `/vanus-connect/config/config
 
 ```shell
 docker run -it --rm --network=host \
-  -p -p 31080:8080 \
+  -p 31080:8080 \
   -v ${PWD}:/vanus-connect/config \
   --name source-github public.ecr.aws/vanus/connector/source-github
 ```
