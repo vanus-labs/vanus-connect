@@ -15,32 +15,32 @@ The billing data is converted to:
 ```json
 {
   "specversion": "1.0",
-  "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
+  "id": "026046e2-3cb0-4116-895e-c77877072dd2",
   "source": "cloud.aws.billing",
   "type": "aws.service.daily",
   "datacontenttype": "application/json",
-  "time": "2022-06-14T07:05:55.777689Z",
+  "time": "2023-01-28T06:11:10.012579049Z",
   "data": {
-    "date": "2023-01-15",
-    "service": "CloudWatch Events",
+    "date": "2023-01-27",
+    "service": "Amazon Relational Database Service",
     "amortizedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "blendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "netAmortizedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "netUnblendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "unblendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     }
   }
@@ -103,32 +103,32 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 ```json
 {
   "specversion": "1.0",
-  "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
+  "id": "026046e2-3cb0-4116-895e-c77877072dd2",
   "source": "cloud.aws.billing",
   "type": "aws.service.daily",
   "datacontenttype": "application/json",
-  "time": "2022-06-14T07:05:55.777689Z",
+  "time": "2023-01-28T06:11:10.012579049Z",
   "data": {
-    "date": "2023-01-15",
-    "service": "CloudWatch Events",
+    "date": "2023-01-27",
+    "service": "Amazon Relational Database Service",
     "amortizedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "blendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "netAmortizedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "netUnblendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     },
     "unblendedCost": {
-      "amount": "0.0009189721",
+      "amount": "0.2672917174",
       "unit": "USD"
     }
   }
