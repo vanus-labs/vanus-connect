@@ -65,8 +65,8 @@ which is converted to
 	datacontenttype:"application/json", 
 	time:"2022-07-21T07:32:44.190Z", 
 	data: {
-      "action": "created",
-      ...
+       "action": "created", 
+       ...
 	}
 }
 ```
@@ -136,8 +136,8 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
   datacontenttype:"application/json",
   time:"2022-07-21T07:32:44.190Z",
   data: {
-    "action": "created",
-    ...
+     "action": "created", 
+     ...
   }
 }
 ```
