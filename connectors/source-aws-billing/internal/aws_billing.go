@@ -25,7 +25,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
-
 	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/linkall-labs/cdk-go/log"
 )
@@ -47,6 +46,7 @@ type awsBillingSource struct {
 func Source() cdkgo.Source {
 	return &awsBillingSource{
 		events: make(chan *cdkgo.Tuple, 100),
+		cancel: func() {},
 	}
 }
 
@@ -64,12 +64,13 @@ func (s *awsBillingSource) Name() string {
 }
 
 func (s *awsBillingSource) Destroy() error {
+	s.cancel()
 	s.wg.Wait()
 	close(s.events)
 	return nil
 }
 
-func (s *awsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
+func (s *awsBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAccessor) error {
 	cfg := config.(*billingConfig)
 	s.config = cfg
 	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
@@ -78,8 +79,16 @@ func (s *awsBillingSource) Initialize(_ context.Context, config cdkgo.ConfigAcce
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://ce.us-east-1.amazonaws.com"
 	}
-	s.ctx, s.cancel = context.WithCancel(context.TODO())
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.client = newCostExplorerClient(cfg)
+	// check
+	now := time.Now()
+	endDayFmt := FormatTimeDay(now)
+	dayFmt := FormatTimeDay(now.Add(time.Hour * 24 * -1))
+	_, err := s.getCostAndUsageInput(aws.String(dayFmt), aws.String(endDayFmt), nil)
+	if err != nil {
+		return err
+	}
 	s.start()
 	return nil
 }
@@ -107,32 +116,38 @@ func (s *awsBillingSource) start() {
 	}()
 }
 
+func (s *awsBillingSource) getCostAndUsageInput(start, end, nextToken *string) (*costexplorer.GetCostAndUsageOutput, error) {
+	input := &costexplorer.GetCostAndUsageInput{
+		Granularity: types.GranularityDaily,
+		TimePeriod: &types.DateInterval{
+			Start: start,
+			End:   end,
+		},
+		//GroupDefinitionTypeDimension type
+		//AZ, INSTANCE_TYPE, LINKED_ACCOUNT, OPERATION, PURCHASE_TYPE, SERVICE, USAGE_TYPE, PLATFORM,
+		//TENANCY, RECORD_TYPE, LEGAL_ENTITY_NAME, INVOICING_ENTITY, DEPLOYMENT_OPTION,
+		//DATABASE_ENGINE, CACHE_ENGINE, INSTANCE_TYPE_FAMILY, REGION, BILLING_ENTITY,
+		//RESERVATION_ID, SAVINGS_PLANS_TYPE, SAVINGS_PLAN_ARN, OPERATING_SYSTEM
+		GroupBy: []types.GroupDefinition{
+			{Key: aws.String("SERVICE"), Type: types.GroupDefinitionTypeDimension},
+		},
+		Metrics:       []string{"AmortizedCost", "BlendedCost", "NetAmortizedCost", "NetUnblendedCost", "UnblendedCost"},
+		NextPageToken: nextToken,
+	}
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return s.client.GetCostAndUsage(timeoutCtx, input)
+}
+
 func (s *awsBillingSource) getCost() {
-	ctx := s.ctx
 	log.Info("get cost begin", nil)
 	now := time.Now()
 	endDayFmt := FormatTimeDay(now)
 	dayFmt := FormatTimeDay(now.Add(time.Hour * 24 * -1))
 	var nextToken *string
+	var total int
 	for {
-		input := &costexplorer.GetCostAndUsageInput{
-			Granularity: types.GranularityDaily,
-			TimePeriod: &types.DateInterval{
-				Start: aws.String(dayFmt),
-				End:   aws.String(endDayFmt),
-			},
-			//GroupDefinitionTypeDimension type
-			//AZ, INSTANCE_TYPE, LINKED_ACCOUNT, OPERATION, PURCHASE_TYPE, SERVICE, USAGE_TYPE, PLATFORM,
-			//TENANCY, RECORD_TYPE, LEGAL_ENTITY_NAME, INVOICING_ENTITY, DEPLOYMENT_OPTION,
-			//DATABASE_ENGINE, CACHE_ENGINE, INSTANCE_TYPE_FAMILY, REGION, BILLING_ENTITY,
-			//RESERVATION_ID, SAVINGS_PLANS_TYPE, SAVINGS_PLAN_ARN, OPERATING_SYSTEM
-			GroupBy: []types.GroupDefinition{
-				{Key: aws.String("SERVICE"), Type: types.GroupDefinitionTypeDimension},
-			},
-			Metrics:       []string{"BlendedCost"},
-			NextPageToken: nextToken,
-		}
-		output, err := s.client.GetCostAndUsage(ctx, input)
+		output, err := s.getCostAndUsageInput(aws.String(dayFmt), aws.String(endDayFmt), nextToken)
 		if err != nil {
 			log.Error("get cost and usage error", map[string]interface{}{
 				log.KeyError: err,
@@ -142,14 +157,32 @@ func (s *awsBillingSource) getCost() {
 		for _, result := range output.ResultsByTime {
 			for _, item := range result.Groups {
 				data := BillingData{
-					VanceSource: EventSource,
-					VanceType:   EventType,
-					Date:        dayFmt,
-					Service:     item.Keys[0],
+					Date:    dayFmt,
+					Service: item.Keys[0],
+				}
+				if cost, exist := item.Metrics["AmortizedCost"]; exist {
+					data.AmortizedCost.Amount = cost.Amount
+					data.AmortizedCost.Unit = cost.Unit
 				}
 				if cost, exist := item.Metrics["BlendedCost"]; exist {
-					data.Amount = cost.Amount
-					data.Unit = cost.Unit
+					data.BlendedCost.Amount = cost.Amount
+					data.BlendedCost.Unit = cost.Unit
+				}
+				if cost, exist := item.Metrics["BlendedCost"]; exist {
+					data.BlendedCost.Amount = cost.Amount
+					data.BlendedCost.Unit = cost.Unit
+				}
+				if cost, exist := item.Metrics["NetAmortizedCost"]; exist {
+					data.NetAmortizedCost.Amount = cost.Amount
+					data.NetAmortizedCost.Unit = cost.Unit
+				}
+				if cost, exist := item.Metrics["NetUnblendedCost"]; exist {
+					data.NetUnblendedCost.Amount = cost.Amount
+					data.NetUnblendedCost.Unit = cost.Unit
+				}
+				if cost, exist := item.Metrics["UnblendedCost"]; exist {
+					data.UnblendedCost.Amount = cost.Amount
+					data.UnblendedCost.Unit = cost.Unit
 				}
 				event := ce.NewEvent()
 				event.SetID(uuid.New().String())
@@ -160,6 +193,7 @@ func (s *awsBillingSource) getCost() {
 				s.events <- &cdkgo.Tuple{
 					Event: &event,
 				}
+				total++
 			}
 		}
 		nextToken = output.NextPageToken
@@ -167,5 +201,7 @@ func (s *awsBillingSource) getCost() {
 			break
 		}
 	}
-	log.Info("get cost end", nil)
+	log.Info("get cost end", map[string]interface{}{
+		"total": total,
+	})
 }

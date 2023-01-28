@@ -15,10 +15,16 @@
 package internal
 
 type BillingData struct {
-	VanceSource string  `json:"vanceSource"`
-	VanceType   string  `json:"vanceType"`
-	Date        string  `json:"date"`
-	Service     string  `json:"service"`
-	Amount      *string `json:"amount"`
-	Unit        *string `json:"unit"`
+	Date             string `json:"date"`
+	Service          string `json:"service"`
+	AmortizedCost    Cost   `json:"amortizedCost"`
+	BlendedCost      Cost   `json:"blendedCost"`
+	NetAmortizedCost Cost   `json:"netAmortizedCost"`
+	NetUnblendedCost Cost   `json:"netUnblendedCost"`
+	UnblendedCost    Cost   `json:"unblendedCost"`
+}
+
+type Cost struct {
+	Amount *string `json:"amount"`
+	Unit   *string `json:"unit"`
 }
