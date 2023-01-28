@@ -70,7 +70,7 @@ EOF
 
 | Name              | Required | Default                            | Description                                               |
 |:------------------|:---------|:-----------------------------------|:----------------------------------------------------------|
-| target            | YES      |                                    | the target URL will send CloudEvents to                   |
+| target            | YES      |                                    | the target URL to send CloudEvents                        |
 | endpoint          | NO       | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
 | pull_hour         | NO       | 2                                  | specify the hour at which the billing data will be pulled |
 | access_key_id     | YES      |                                    | the AWS IAM [Access Key][accessKey]                       |

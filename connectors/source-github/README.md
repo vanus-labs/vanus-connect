@@ -91,11 +91,11 @@ secret:
 EOF
 ```
 
-| Name                     | Required | Default | Description                             |
-|:-------------------------|:---------|:--------|:----------------------------------------|
-| target                   | YES      |         | the target URL will send CloudEvents to |
-| port                     | YES      |         | the port receive GitHub webhook event   |
-| github_webhook_secret    | NO       |         | the GitHub webhook secret               |
+| Name                     | Required | Default | Description                           |
+|:-------------------------|:---------|:--------|:--------------------------------------|
+| target                   | YES      |         | the target URL to send CloudEvents    |
+| port                     | YES      |         | the port receive GitHub webhook event |
+| github_webhook_secret    | NO       |         | the GitHub webhook secret             |
 
 The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
