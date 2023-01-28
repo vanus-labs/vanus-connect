@@ -4,9 +4,9 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG connector
 
-COPY . /build/vance
+COPY . /build/vanus-connect
 
-WORKDIR /build/vance/connectors/${connector}
+WORKDIR /build/vanus-connect/connectors/${connector}
 
 RUN microdnf install libatomic
 RUN mvn clean package -Dmaven.javadoc.skip=true
@@ -17,19 +17,19 @@ FROM openjdk:17
 
 ARG connector
 
-COPY --from=builder /build/executable.jar /vance/bin/${connector}.jar
+COPY --from=builder /build/executable.jar /vanus-connect/bin/${connector}.jar
 
 ENV CONNECTOR=${connector}
-ENV EXECUTABLE_FILE=/vance/bin/${connector}.jar
-ENV CONNECTOR_HOME=/vance
-ENV CONNECTOR_CONFIG=/vance/config/config.yml
-ENV CONNECTOR_SECRET=/vance/secret/secret.yml
+ENV EXECUTABLE_FILE=/vanus-connect/bin/${connector}.jar
+ENV CONNECTOR_HOME=/vanus-connect
+ENV CONNECTOR_CONFIG=/vanus-connect/config/config.yml
+ENV CONNECTOR_SECRET=/vanus-connect/secret/secret.yml
 ENV CONNECTOR_SECRET_ENABLE=false
 
-RUN echo '#!/bin/sh' >> /vance/run.sh
-RUN echo 'java -jar $EXECUTABLE_FILE' >> /vance/run.sh
-RUN chmod a+x /vance/run.sh
+RUN echo '#!/bin/sh' >> /vanus-connect/run.sh
+RUN echo 'java -jar $EXECUTABLE_FILE' >> /vanus-connect/run.sh
+RUN chmod a+x /vanus-connect/run.sh
 
 EXPOSE 8080
 
-ENTRYPOINT ["/vance/run.sh"]
+ENTRYPOINT ["/vanus-connect/run.sh"]
