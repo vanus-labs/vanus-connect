@@ -48,6 +48,7 @@ type alicloudBillingSource struct {
 func Source() cdkgo.Source {
 	return &alicloudBillingSource{
 		events: make(chan *cdkgo.Tuple, 10),
+		cancel: func() {},
 	}
 }
 
@@ -80,6 +81,7 @@ func (s *alicloudBillingSource) Name() string {
 }
 
 func (s *alicloudBillingSource) Destroy() error {
+	s.cancel()
 	s.wg.Wait()
 	close(s.events)
 	return nil
