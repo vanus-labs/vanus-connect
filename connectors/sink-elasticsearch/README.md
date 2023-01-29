@@ -6,24 +6,23 @@ title: Elasticsearch
 
 ## Introduction
 
-The Elasticsearch Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts
-the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster
+The Elasticsearch Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts
+the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster.
 
-For example, if the incoming CloudEvent looks like:
+For example, the incoming CloudEvent looks like:
 
 ```json
 {
   "specversion": "1.0",
   "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
-  "source": "vance.source.test",
-  "type": "vance.type.test",
+  "source": "vanus.source.test",
+  "type": "vanus.type.test",
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:05:55.777689Z",
   "data": {
+    "id": 123,
     "date": "2022-06-13",
-    "service": "test data",
-    "amount": "12.294",
-    "unit": "USD"
+    "service": "test data"
   }
 }
 ```
@@ -32,65 +31,195 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 
 ```json
 {
-  "_index": "vance_test",
+  "_index": "vanus_test",
   "_type": "_doc",
   "_id": "CqFnBIEBzJc0Oa5TERDD",
   "_version": 1,
   "_source": {
+    "id": 123,
     "date": "2022-06-13",
-    "service": "test data",
-    "amount": "12.294",
-    "unit": "USD"
+    "service": "test data"
   }
 }
 ```
 
-## Elasticsearch Sink Configs
 
-### Config
+## Quickstart
 
-| name        | requirement  | default  | description                                                         |
-|:------------|:-------------|:---------|:--------------------------------------------------------------------|
-| port        | optional     | 8080     | the port Elasticsearch Sink is listening on                         |
-| address     | required     |          | elasticsearch cluster address, multi split by ","                   |
-| index_name  | required     |          | elasticsearch index name                                            |
-| username    | optional     |          | elasticsearch cluster username                                      |
-| password    | optional     |          | elasticsearch cluster password                                      |
-| timeout     | optional     | 10000    | elasticsearch index document timeout, unit millisecond              |
-| insert_mode | optional     | insert   | elasticsearch index document type: insert or upsert                 |
-| primary_key | optional     |          | elasticsearch index document primary key in event, example: data.id |
+### Prerequisites
+- Have a container runtime (i.e., docker).
+- Have an Elasticsearch cluster.
 
-## Image
+### Create the config file
 
-> public.ecr.aws/vanus/connector/sink-elasticsearch
+```shell
+cat << EOF > config.yml
+port: 8080
+insert_mode: "upsert"
+primary_key: "data.id"
+secret:
+  address: "http://localhost:9200"
+  index_name: "vanus_test"
+  username: "elastic"
+  password: "elastic"
+EOF
+```
 
-## Deploy
+| name        | requirement |  default  | description                                                                                                           |
+|:------------|:-----------:|:---------:|:----------------------------------------------------------------------------------------------------------------------|
+| port        |     NO      |   8080    | the port which Elasticsearch Sink listens on                                                                          |
+| address     |     YES     |           | elasticsearch cluster address, multi split by ","                                                                     |
+| index_name  |     YES     |           | elasticsearch index name                                                                                              |
+| username    |     YES     |           | elasticsearch cluster username                                                                                        |
+| password    |     YES     |           | elasticsearch cluster password                                                                                        |
+| timeout     |     NO      |   10000   | elasticsearch index document timeout, unit millisecond                                                                |
+| insert_mode |     NO      |  insert   | elasticsearch index document type: insert or upsert                                                                   |
+| primary_key |     NO      |           | elasticsearch index document primary key in event, it can't be empty if insert_mode is upsert. example: data.id or id |
 
-### Docker
+The Elasticsearch Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
-#### create config file
+### Start with Docker
 
-refer [config](#Config) to create `config.yml`. for example:
+```shell
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-elasticsearch public.ecr.aws/vanus/connector/sink-elasticsearch
+```
+
+### Test
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
+
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "specversion": "1.0",
+  "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
+  "source": "vanus.source.test",
+  "type": "vanus.type.test",
+  "datacontenttype": "application/json",
+  "time": "2022-06-14T07:05:55.777689Z",
+  "data": {
+    "id": 123,
+    "date": "2022-06-13",
+    "service": "test data"
+  }
+}'
+```
+
+use following command get an es document
+
+```shell
+curl http://localhost:9200/vanus_test/_search?pretty
+```
+
+```json
+{
+  "_index": "vanus_test",
+  "_type": "_doc",
+  "_id": "123",
+  "_version": 1,
+  "_source": {
+    "id": 123,
+    "date": "2022-06-13",
+    "service": "test data"
+  }
+}
+```
+
+### Clean resource
+
+```shell
+docker stop sink-elasticsearch
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f sink-es.yaml
+```
 
 ```yaml
-"port": 8080
-"address": "http://localhost:9200"
-"index_name": "vance_test"
-"primary_key": "data.id"
-"insert_mode": "upsert"
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-es
+  namespace: vanus
+spec:
+  selector:
+    app: sink-es
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-es
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-es
+  namespace: vanus
+data:
+  config.yml: |-
+    port: 8080
+    secret:
+      address: "http://localhost:9200"
+      index_name: "vanus_test"
+      username: "elastic"
+      password: "elastic"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-es
+  namespace: vanus
+  labels:
+    app: sink-es
+spec:
+  selector:
+    matchLabels:
+      app: sink-es
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-es
+    spec:
+      containers:
+        - name: sink-es
+          image: public.ecr.aws/vanus/connector/sink-elasticsearch
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-es
 ```
 
-#### run
+## Integrate with Vanus
 
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-es.yaml
 ```shell
- docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/sink-elasticsearch
+kubectl apply -f sink-es.yaml
 ```
 
-### K8S
-
+2. Create an eventbus
 ```shell
-  kubectl apply -f sink-es.yaml
+vsctl eventbus create --name quick-start
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-es:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [es]: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
