@@ -6,35 +6,16 @@ title: Feishu
 
 ## Introduction
 
-The Feishu Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and deliver these extracted `data` to  Feishu APIs.
-
-For example, if the incoming CloudEvent looks like:
-
-```http
-{
-  "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
-  "source" : "vance-http-source",
-  "specversion" : "V1",
-  "type" : "http",
-  "datacontenttype" : "application/json",
-  "time" : "2022-05-17T18:44:02.681+08:00",
-  "vancefeishusinkservice": "bot",
-  "data" : {
-    ...
-  }
-}
-```
-
-### Supported Feishu Service
-
-- Bot: pushing a message to Group Chat with message of text, post, share_chat, image, and interactive.
+The Feishu Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+original event and deliver these extracted `data` to  Feishu APIs. Now the Sink support Feishu Bot: pushing a message to Group Chat with message of text, post, share_chat, image, and interactive.
 
 ## Quick Start
 
 in this section, we show how to use Feishu Sink push a text message to your group chat.
 
-### Add a bot to your group chat
+### Prerequisites
+
+#### Add a bot to your group chat
 
 Go to your target group, click Chat Settings > Group Bots > Add Bot, and select Custom Bot to add the bot to the group chat.
 
@@ -54,7 +35,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 
 > ⚠️ You must set your signature verification to make sure push messages work.
 
-### Create Config file
+### Create the config file
 
 replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
 
@@ -65,21 +46,33 @@ bot:
   webhooks:
     - chat_group: "bot1"
       signature: "xxxxxxx"
-      address: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxx"
+      url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxx"
 EOF
 ```
 
-### Start Using Docker
 
-mapping 8080 to 31080 in order to avoid port conflict.
+| Name                       | Required | Default | Description                                                                       |
+|:---------------------------|:--------:|:-------:|-----------------------------------------------------------------------------------|
+| enable                     | **YES**  |    -    | service list you want Feishu Sink is enabled                                      |
+| bot.webhooks               | **YES**  |    -    | list of chat-group's configuration                                                |
+| bot.webhooks.[].chat_group | **YES**  |    -    | the chat_group name, you can set any value to it                                  |
+| bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
+| bot.webhooks.[].url        | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
+
+The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-docker run -d -p 31080:8080 --rm \
-  -v ${PWD}:/vance/config \
-  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu:latest
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-feishu public.ecr.aws/vanus/connector/sink-feishu
 ```
 
 ### Test
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -107,21 +100,7 @@ now, you cloud see a notice in your chat group.
 docker stop sink-feishu
 ```
 
-## How to use
-
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell Feishu Sink.
-
-
-| Name                       | Required | Default | Description                                                                       |
-|:---------------------------|:--------:|:-------:|-----------------------------------------------------------------------------------|
-| enable                     | **YES**  |    -    | service list you want Feishu Sink is enabled                                      |
-| bot.webhooks               | **YES**  |    -    | list of chat-group's configuration                                                |
-| bot.webhooks.[].chat_group | **YES**  |    -    | the chat_group name, you can set any value to it                                  |
-| bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign reqeust, you can get it when you create Chat Bot            |
-| bot.webhooks.[].address    | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
+## Sink details
 
 ### Extension Attributes
 
@@ -356,6 +335,10 @@ curl --location --request POST 'localhost:31080' \
 
 ## Run in Kubernetes
 
+```shell
+kubectl apply -f sink-feishu.yaml
+```
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -408,8 +391,6 @@ spec:
     spec:
       containers:
         - name: sink-feishu
-          #          For China mainland
-          #          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
           image: public.ecr.aws/vanus/connector/sink-feishu:latest
           resources:
             requests:
@@ -424,11 +405,33 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
             name: sink-feishu
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-feishu.yaml
+```shell
+kubectl apply -f sink-feishu.yaml
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-feishu:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect

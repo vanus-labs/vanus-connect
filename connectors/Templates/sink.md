@@ -6,7 +6,7 @@ title: <name>
 
 ## Introduction
 
-The <name> Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The <name> Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and <must: description...>
 
 For example, the incoming CloudEvent looks like this:
@@ -36,9 +36,9 @@ cat << EOF > config.yml
 EOF
 ```
 
-| Name | Required | Default | Description                           |
-|:-----|:---------|:--------|---------------------------------------|
-| port | NO       | 8080    | the port which <name> Sink listens on |
+| Name | Required  | Default | Description                           |
+|:-----|:---------:|:--------|---------------------------------------|
+| port |    NO     | 8080    | the port which <name> Sink listens on |
 ...
 
 The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -137,10 +137,10 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Run in Kubernetes
+## Run in Kubernetes
 
 ```shell
-kubectl apply -f name-sink.yaml
+kubectl apply -f sink-<name>.yaml
 ```
 
 ```yaml
@@ -151,9 +151,9 @@ kubectl apply -f name-sink.yaml
 
 This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
-1. Run the name-sink.yaml
+1. Run the sink-<name>.yaml
 ```shell
-kubectl apply -f name-sink.yaml
+kubectl apply -f sink-<name>.yaml
 ```
 
 2. Create an eventbus
@@ -164,6 +164,9 @@ vsctl eventbus create --name quick-start
 3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
 ```shell
 vsctl subscription create \
+  --name quick-start \
   --eventbus quick-start \
   --sink 'http://sink-name:8080'
 ```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect

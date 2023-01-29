@@ -49,12 +49,9 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           imagePullPolicy: Always
-          env:
-            - name: LOG_LEVEL
-              value: INFO
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
