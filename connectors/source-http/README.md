@@ -69,9 +69,10 @@ EOF
 ```
 
 
-| Name   | Required | Default | Description                         |
-|:-------|:---------|:--------|:------------------------------------|
-| target | YES      | ""      | the target URL to send CloudEvents  |
+| Name   | Required  | Default | Description                        |
+|:-------|:---------:|:-------:|:-----------------------------------|
+| target |    YES    |         | the target URL to send CloudEvents |
+| port   |    NO     |  8080   | the port to receive HTTP request   |
 
 The HTTP Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -80,7 +81,7 @@ The HTTP Source tries to find the config file at `/vanus-connect/config/config.y
 ```shell
 docker run -it --rm --network=host \
   -v ${PWD}:/vanus-connect/config \
-  --name source-<name> public.ecr.aws/vanus/connector/source-http
+  --name source-http public.ecr.aws/vanus/connector/source-http
 ```
 
 ### Test
@@ -98,7 +99,7 @@ Make sure the `target` value in your config file is `http://localhost:31081` so 
 Open a terminal and use the following command to send http request to HTTP Source
 
 ```shell
-curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=456&subject=def' \
+curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def' \
 --header 'Content-Type: text/plain' \
 --data-raw '{
     "test":"demo"
