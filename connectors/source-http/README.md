@@ -79,7 +79,6 @@ The HTTP Source tries to find the config file at `/vanus-connect/config/config.y
 
 ```shell
 docker run -it --rm --network=host \
-  -p 31080:8080 \
   -v ${PWD}:/vanus-connect/config \
   --name source-<name> public.ecr.aws/vanus/connector/source-http
 ```
