@@ -4,17 +4,13 @@ title: Display
 
 # Display Sink 
 
-## Overview
-
-A [Vance Connector][vc] which prints received CloudEvents. This is commonly used as a logger to check incoming data.
-
 ## Introduction
 
-The Display Sink is a single function [Connector][vc] which aims to print incoming CloudEvents in JSON format.
+The Display Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to print incoming CloudEvents in JSON format.
 
 For example, it will print the incoming CloudEvent looks like:
 
-```http
+```json
 {
   "specversion": "1.0",
   "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -30,18 +26,18 @@ For example, it will print the incoming CloudEvent looks like:
 
 ## Quick Start
 
-### Start Using Docker
-
-mapping 8080 to 31080 in order to avoid port conflict.
+### Start with Docker
 
 ```shell
-docker run -d -p 31080:8080 --rm \
-  -v ${PWD}:/vance/config \
-  --name sink-display public.ecr.aws/vanus/connector/sink-display:latest
+docker run -it --rm \
+-p 31080:8080 \
+--name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
 ### Test
-1. make a HTTP request
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
+
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -58,15 +54,12 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-2. view logs
-```shell
-docker logs sink-display
-```
+The Display Sink will print:
 
 ```shell
-time="2022-12-12T02:20:07.532592849Z" level=info msg="logger level is set" log_level=INFO
-time="2022-12-12T02:20:07.53882172Z" level=info msg="the connector started" connector-name="Display Sink" listening=8080
-receive a new event, in total: 1
+INFO[2022-10-26T06:22:41.754221044Z] logger level is set  log_level=INFO
+INFO[2022-10-26T06:22:41.849166961Z] the connector started  connector-name="Display Sink" listening=8080
+INFO[2022-10-26T03:25:26.262083591Z] receive a new event  in_total=1
 {
   "specversion": "1.0",
   "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -79,15 +72,18 @@ receive a new event, in total: 1
   }
 }
 ```
-### Clean
+### Clean resource
 
 ```shell
 docker stop sink-display
 ```
 
-## How to use
+## Run in Kubernetes
 
-### Run in Kubernetes
+```shell
+kubectl apply -f sink-display.yaml
+```
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -129,6 +125,28 @@ spec:
               cpu: "100m"
             limits:
               memory: "128Mi"
+```
+
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-display.yaml
+```shell
+kubectl apply -f sink-display.yaml
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-display:8080'
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
