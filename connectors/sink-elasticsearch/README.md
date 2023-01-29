@@ -81,8 +81,7 @@ The Elasticsearch Sink tries to find the config file at `/vanus-connect/config/c
 ### Start with Docker
 
 ```shell
-docker run -it --rm \
-  -p 31080:8080 \
+docker run -it --rm --network=host\
   -v ${PWD}:/vanus-connect/config \
   --name sink-elasticsearch public.ecr.aws/vanus/connector/sink-elasticsearch
 ```
@@ -92,7 +91,7 @@ docker run -it --rm \
 Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
-curl --location --request POST 'localhost:31080' \
+curl --location --request POST 'localhost:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
   "specversion": "1.0",

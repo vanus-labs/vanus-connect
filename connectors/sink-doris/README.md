@@ -53,7 +53,7 @@ secret:
   # doris info
   fenodes: "localhost:8030"
   db_name: "vanus_test"
-  table_name: "user"
+  table_name: "vanus_test"
   username: "vanus_test"
   password: "123456"
 EOF
@@ -78,8 +78,7 @@ The Doris Sink tries to find the config file at `/vanus-connect/config/config.ym
 ### Start with Docker
 
 ```shell
-docker run -it --rm \
-  -p 31080:8080 \
+docker run -it --rm --network=host\
   -v ${PWD}:/vanus-connect/config \
   --name sink-doris public.ecr.aws/vanus/connector/sink-doris
 ```
@@ -98,7 +97,7 @@ CREATE TABLE IF NOT EXISTS vanus_test.vanus_test
     `birthday` DATE NOT NULL COMMENT "birthday"
 )
 AGGREGATE KEY(`id`, `username`, `birthday`)
-DISTRIBUTED BY HASH(`id`) BUCKETS 1
+DISTRIBUTED BY HASH(`id`) BUCKETS 10
 PROPERTIES (
     "replication_allocation" = "tag.location.default: 1"
 );
@@ -107,7 +106,7 @@ PROPERTIES (
 Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
-curl --location --request POST 'localhost:31080' \
+curl --location --request POST 'localhost:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
   "specversion": "1.0",
@@ -137,7 +136,7 @@ you will see data in doris table vanus_test
 ### Clean resource
 
 ```shell
-docker stop sink-<name>
+docker stop sink-doris
 ```
 
 ## Run in Kubernetes

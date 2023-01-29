@@ -1,4 +1,4 @@
-FROM golang:1.18.5 as builder
+FROM --platform=$BUILDPLATFORM golang:1.18.5 as builder
 
 ARG connector
 

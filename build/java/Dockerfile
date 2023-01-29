@@ -1,4 +1,4 @@
-FROM maven:3.8.5-openjdk-17 as builder
+FROM --platform=$BUILDPLATFORM maven:3.8.5-openjdk-17 as builder
 
 ARG TARGETOS
 ARG TARGETARCH
