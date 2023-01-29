@@ -6,11 +6,10 @@ title: GitHub
 
 ## Introduction
 
-The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhooks events,
-transform them into CloudEvents based on [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md) 
-and wrap the body of the original request into the data of CloudEvents.
+The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md) 
+by wrapping the body of the original request into the data field.
 
-The original GitHub webhooks events look like:
+An original GitHub webhook event looks like:
 ```JSON
 {
   "action": "created",
@@ -73,29 +72,29 @@ which is converted to
 
 ## Quick Start
 
-This section shows how GitHub Source convert GitHub webhooks event data to a CloudEvent.
+This section will teach you how to use GitHub Source to convert events from GitHub webhook into CloudEvents.
 
 ### Prerequisites
 
 - Have a container runtime (i.e., docker).
-- GitHub Repositories
+- Have a GitHub Repository.
 
 ### Create the config file
 
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
-port: 8080
+port: 8082
 secret:
   github_webhook_secret: ""
 EOF
 ```
 
-| Name                     | Required | Default | Description                           |
-|:-------------------------|:---------|:--------|:--------------------------------------|
-| target                   | YES      |         | the target URL to send CloudEvents    |
-| port                     | YES      | 8080    | the port receive GitHub webhook event |
-| github_webhook_secret    | NO       |         | the GitHub webhook secret             |
+| Name                     | Required | Default | Description                              |
+|:-------------------------|:---------|:--------|:-----------------------------------------|
+| target                   | YES      |         | the target URL to send CloudEvents       |
+| port                     | YES      | 8080    | the port to receive GitHub webhook event |
+| github_webhook_secret    | NO       |         | the GitHub webhook secret                |
 
 The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -103,17 +102,19 @@ The GitHub Source tries to find the config file at `/vanus-connect/config/config
 
 ```shell
 docker run -it --rm --network=host \
-  -p 31080:8080 \
   -v ${PWD}:/vanus-connect/config \
   --name source-github public.ecr.aws/vanus/connector/source-github
 ```
 
 ### Test
+We have designed for you a sandbox environment, removing the need to use your local
+machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
 
-1. Expose the GitHub Source service to the Internet, example use [ngrok](https://ngrok.com/download)
-2. Create a GitHub webhook for you repository
-   1. Create a webhook under the Settings tab in your GitHub repository
-   2. Set the configuration for your webhook
+1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL.
+![Payload img](https://raw.githubusercontent.com/Michaelg22/vanus-connect/Update-Github/connectors/source-github/payload.png)
+2. Create a GitHub webhook for you repository.
+   1. Create a webhook under the Settings tab inside your GitHub repository.
+   2. Set the configuration for your webhook.
 
 3. Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
 
@@ -243,4 +244,4 @@ docker run --network=host \
   --rm \
   -v ${PWD}:/vanus-connect/config \
   --name source-github public.ecr.aws/vanus/connector/source-github
-```
+  ```
