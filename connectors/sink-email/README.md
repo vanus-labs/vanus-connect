@@ -44,17 +44,18 @@ email:
   - account: "<from_email_address>"
     password: "<password>"
     host: "<smtp server address>"
+    format: text
 EOF
 ```
 
 | Name              | Required | Default | Description                                                                                            |
 |:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
-| port              | NO       | 8080    | the port which <name> Sink listens on                                                                  |
+| port              |    NO    |  8080   | the port which <name> Sink listens on                                                                  |
 | default           | **YES**  |    -    | Email Sink supports multiple email accounts as sender, you could set the default account by this field |
 | email.[].account  | **YES**  |    -    | email account address you want to use                                                                  |
 | email.[].password | **YES**  |    -    | password for account authentication                                                                    |
 | email.[].host     | **YES**  |    -    | SMTP server address                                                                                    |
-| email.[].format   |    NO    |  text   | `text` or `html`                                                                                       |
+| email.[].format   | **YES**  |    -    | `text` or `html`                                                                                       |
 
 The Email Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
