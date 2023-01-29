@@ -49,8 +49,6 @@ spec:
     spec:
       containers:
         - name: sink-email
-#          For China mainland
-#          image: linkall.tencentcloudcr.com/vanus/connector/sink-email:latest
           image: public.ecr.aws/vanus/connector/sink-email:latest
           resources:
             requests:
@@ -65,7 +63,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connnect/config
       volumes:
         - name: config
           configMap:

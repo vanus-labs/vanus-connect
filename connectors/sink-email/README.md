@@ -6,10 +6,10 @@ title: Email
 
 ## Introduction
 
-The Email Sink is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
+The Email Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
 original event and deliver these extracted `data` to SMTP server.
 
-For example, if the incoming CloudEvent looks like:
+For example, the incoming CloudEvent looks like:
 
 ```json
 {
@@ -47,14 +47,24 @@ email:
 EOF
 ```
 
-### Start Using Docker
+| Name              | Required | Default | Description                                                                                            |
+|:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
+| port              | NO       | 8080    | the port which <name> Sink listens on                                                                  |
+| default           | **YES**  |    -    | Email Sink supports multiple email accounts as sender, you could set the default account by this field |
+| email.[].account  | **YES**  |    -    | email account address you want to use                                                                  |
+| email.[].password | **YES**  |    -    | password for account authentication                                                                    |
+| email.[].host     | **YES**  |    -    | SMTP server address                                                                                    |
+| email.[].format   |    NO    |  text   | `text` or `html`                                                                                       |
 
-mapping 8080 to 31080 in order to avoid port conflict.
+The Email Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-docker run -d -p 31080:8080 --rm \
-  -v ${PWD}:/vance/config \
-  --name sink-email public.ecr.aws/vanus/connector/sink-email:latest
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-email public.ecr.aws/vanus/connector/sink-email
 ```
 
 ### Test
@@ -86,20 +96,7 @@ now, you cloud see a new email in your mailbox.
 docker stop sink-email
 ```
 
-## How to use
-
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell Email Sink.
-
-| Name              | Required | Default | Description                                                                                            |
-|:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
-| default           | **YES**  |    -    | Email Sink supports multiple email accounts as sender, you could set the default account by this field |
-| email.[].account  | **YES**  |    -    | email account address you want to use                                                                  |
-| email.[].password | **YES**  |    -    | password for account authentication                                                                    |
-| email.[].host     | **YES**  |    -    | SMTP server address                                                                                    |
-| email.[].format   |    NO    |  text   | `text` or `html`                                                                                       |
+## Sink details
 
 ### Extension Attributes
 
@@ -113,9 +110,9 @@ to determine how to process event.
 | xvemailfrom       |    NO    | example@example.com         | Which email account(from address) that configured in Sink you want to use |
 | xvemailformat     |    NO    | text                        | what format of your email content, `text` or `html`                       |
 
-## Examples
+### Examples
 
-### Sending email to single recipient with default account
+#### Sending email to single recipient with default account
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -132,7 +129,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Sending email to multiple recipients with default account
+#### Sending email to multiple recipients with default account
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -149,7 +146,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Sending email to multiple recipients with specified account
+#### Sending email to multiple recipients with specified account
 ```shell
 curl --location --request POST 'localhost:31080' \
 --header 'Content-Type: application/cloudevents+json' \
@@ -168,6 +165,10 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 ## Run in Kubernetes
+
+```shell
+kubectl apply -f sink-email.yaml
+```
 
 ```yaml
 apiVersion: v1
@@ -221,8 +222,6 @@ spec:
     spec:
       containers:
         - name: sink-email
-          #          For China mainland
-          #          image: linkall.tencentcloudcr.com/vanus/connector/sink-email:latest
           image: public.ecr.aws/vanus/connector/sink-email:latest
           resources:
             requests:
@@ -237,12 +236,33 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connnect/config
       volumes:
         - name: config
           configMap:
             name: sink-email
 ```
 
+## Integrate with Vanus
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-email.yaml
+```shell
+kubectl apply -f sink-email.yaml
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-email:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
