@@ -6,9 +6,7 @@ title: HTTP
 
 ## Introduction
 
-
-The HTTP Source is a [Vance Connector][vc] which aims to convert an incoming HTTP Request to a CloudEvent.
-
+The HTTP Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to convert an incoming HTTP Request to a CloudEvent.
 
 For example, the incoming HTTP Request looks like:
 
@@ -24,34 +22,32 @@ which is converted to:
 
 ```json
 {
-  "specversion":"1.0",
-  "id":"abc",
-  "source":"123",
-  "type":"456",
-  "subject":"def",
-  "datacontenttype":"application/json",
-  "data":{
-    "body":{
-      "xxxx":"aaa"
+  "specversion": "1.0",
+  "id": "abc",
+  "source": "123",
+  "type": "456",
+  "subject": "def",
+  "datacontenttype": "application/json",
+  "time": "2023-01-29T03:25:26.229114Z",
+  "data": {
+    "body": {
+      "test": "demo"
     },
-    "headers":{
-      "Accept":"*/*",
-      "Accept-Encoding":"gzip, deflate, br",
-      "Connection":"keep-alive",
-      "Content-Length":"20",
-      "Content-Type":"text/plain",
-      "Host":"localhost:12321",
-      "Postman-Token":"6abb2398-d4f3-4eb1-9c57-65b6934b84c1",
-      "User-Agent":"PostmanRuntime/7.29.2"
+    "headers": {
+      "Accept": "*/*",
+      "Content-Length": "21",
+      "Content-Type": "text/plain",
+      "Host": "localhost:8080",
+      "User-Agent": "curl/7.85.0"
     },
-    "method":"POST",
-    "path":"/webhook",
-    "query_args":{
-      "id":"abc",
-      "source":"123",
-      "subject":"def",
-      "test":"demo",
-      "type":"456"
+    "method": "POST",
+    "path": "/webhook",
+    "query_args": {
+      "id": "abc",
+      "source": "123",
+      "subject": "def",
+      "test": "demo",
+      "type": "456"
     }
   },
   "xvhttpremoteip":"::1",
@@ -66,26 +62,41 @@ This section shows how HTTP Source converts an HTTP request(made by cURL) to a C
 
 ### Create Config file
 
-This assumes you use [Vanus](https://github.com/linkall-labs/vanus) as a CloudEvent receiver. Otherwise, just set `target` to your endpoint if you have another receiver.
-
 ```shell
 cat << EOF > config.yml
-# change url, port and eventbus to yours
-target: http://<url>:<port>/gateway/<eventbus>
+target: http://localhost:31081
 EOF
 ```
 
-### Start Using Docker
 
-Mapping 8080 to 31080 in order to avoid port conflict.
+| Name   | Required | Default | Description                         |
+|:-------|:---------|:--------|:------------------------------------|
+| target | YES      | ""      | the target URL to send CloudEvents  |
+
+The HTTP Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-docker run -d -p 31080:8080 --rm \
-  -v ${PWD}:/vance/config \
-  --name source-http public.ecr.aws/vanus/connector/source-http:latest
+docker run -it --rm --network=host \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-<name> public.ecr.aws/vanus/connector/source-http
 ```
 
 ### Test
+
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
+```shell
+docker run -it --rm \
+  -p 31081:8080 \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display
+```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+
+Open a terminal and use the following command to send http request to HTTP Source
 
 ```shell
 curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=456&subject=def' \
@@ -95,72 +106,50 @@ curl --location --request POST 'localhost:31080/webhook?source=123&id=abc&type=4
 }'
 ```
 
-Now, you could use `vsctl event get <eventbus>` to view the event you just sent. If you can't see the event you sent,
-try to use `--offset` to get the event. (`vsctl` default retrieves event from earliest)
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
-```
-~> vsctl event get <eventbus>
-+-----+----------------------------------------------------------------+
-|     | Context Attributes,                                            |
-|     |   specversion: 1.0                                             |
-|     |   type: 456                                                    |
-|     |   source: 123                                                  |
-|     |   subject: def                                                 |
-|     |   id: abc                                                      |
-|     |   time: 2022-12-11T11:42:50.135762Z                            |
-|     |   datacontenttype: application/json                            |
-|     | Extensions,                                                    |
-|     |   xvanuseventbus: wwf                                          |
-|     |   xvanuslogoffset: AAAAAAAAAAQ=                                |
-|     |   xvanusstime: 2022-12-11T11:42:50.874Z                        |
-|     |   xvhttpbodyisjson: true                                       |
-|     |   xvhttpremoteaddr: [::1]:57822                                |
-|     |   xvhttpremoteip: ::1                                          |
-|     | Data,                                                          |
-|     |   {                                                            |
-|     |     "body": {                                                  |
-|     |       "xxxx": "aaa"                                            |
-|     |     },                                                         |
-|  0  |     "headers": {                                               |
-|     |       "Accept": "*/*",                                         |
-|     |       "Accept-Encoding": "gzip, deflate, br",                  |
-|     |       "Connection": "keep-alive",                              |
-|     |       "Content-Length": "20",                                  |
-|     |       "Content-Type": "text/plain",                            |
-|     |       "Host": "localhost:12321",                               |
-|     |       "Postman-Token": "6abb2398-d4f3-4eb1-9c57-65b6934b84c1", |
-|     |       "User-Agent": "PostmanRuntime/7.29.2"                    |
-|     |     },                                                         |
-|     |     "method": "POST",                                          |
-|     |     "path": "/webhook",                                        |
-|     |     "query_args": {                                            |
-|     |       "id": "abc",                                             |
-|     |       "source": "123",                                         |
-|     |       "subject": "def",                                        |
-|     |       "test": "demo",                                          |
-|     |       "type": "456"                                            |
-|     |     }                                                          |
-|     |   }                                                            |
-|     |                                                                |
-+-----+----------------------------------------------------------------+
+```json
+{
+  "specversion": "1.0",
+  "id": "abc",
+  "source": "123",
+  "type": "456",
+  "subject": "def",
+  "datacontenttype": "application/json",
+  "time": "2023-01-29T03:25:26.229114Z",
+  "data": {
+    "body": {
+      "test": "demo"
+    },
+    "headers": {
+      "Accept": "*/*",
+      "Content-Length": "21",
+      "Content-Type": "text/plain",
+      "Host": "localhost:8080",
+      "User-Agent": "curl/7.85.0"
+    },
+    "method": "POST",
+    "path": "/webhook",
+    "query_args": {
+      "id": "abc",
+      "source": "123",
+      "subject": "def",
+      "type": "456"
+    }
+  },
+  "xvhttpremoteip":"::1",
+  "xvhttpremoteaddr":"[::1]:57822",
+  "xvhttpbodyisjson":true
+}
 ```
 
 ### Clean
 
 ```shell
-docker stop source-http
+docker stop source-http sink-display
 ```
 
-## How to use
-
-### Configuration
-
-The default path is `/vance/config/config.yml`. If you want to change the default path, you can set env `CONNECTOR_CONFIG` to another HTTP Source.
-
-
-| Name   | Required | Default | Description                         |
-|:-------|:--------:|:-------:|-------------------------------------|
-| target | **YES**  |    -    | the endpoint of CloudEvent sent to. |
+## Source details
 
 ### Attributes
 
@@ -178,7 +167,8 @@ If you want to change the default attributes of `id`, `source`, `type`, and `sub
 `datacontenttype` will be automatically inferred based on the request body. If the body can be converted to `JSON`, the `application/json` will be set. Otherwise, `text/plain` will be set.
 
 #### Extension Attributes
-HTTP Source provides some [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+
+The HTTP Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 
 |    Attribute     |  Type   | Description                                                                                                                      |
 |:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
@@ -188,6 +178,10 @@ HTTP Source provides some [CloudEvents Extension Attributes](https://github.com/
 
 
 ## Run in Kubernetes
+
+```shell
+kubectl apply -f source-http.yaml
+```
 
 ```yaml
 apiVersion: v1
@@ -241,16 +235,42 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           imagePullPolicy: Always
-          env:
-            - name: LOG_LEVEL
-              value: INFO
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
             name: source-http
+```
+
+## Integrate with Vanus
+
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+### Prerequisites
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
+
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+```shell
+export VANUS_GATEWAY=192.168.49.2:30001
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Update the target config of the HTTP Source
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
+
+4. Run the HTTP Source
+```shell
+kubectl apply -f source-http.yaml
 ```
 
 [vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md

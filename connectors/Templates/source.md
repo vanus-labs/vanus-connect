@@ -77,7 +77,7 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 {
  "id" : "ef26ed7b-9377-4bf5-b8d4-4fc6347e4fa2",
  "source" : "kafka.host.docker.internal.topic1",
- "specversion" : "V1",
+ "specversion" : "1.0",
  "type" : "kafka.message",
  "datacontenttype" : "plain/text",
  "time" : "2022-12-05T09:00:42.618Z",
@@ -110,7 +110,7 @@ The <name> Source defines following [CloudEvents Extension Attributes](https://g
 ### Run in Kubernetes
 
 ```shell
-kubectl apply -f name-source.yaml
+kubectl apply -f source-<name>.yaml
 ```
 
 ```yaml
