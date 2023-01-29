@@ -49,8 +49,6 @@ spec:
     spec:
       containers:
         - name: sink-feishu
-#          For China mainland
-#          image: linkall.tencentcloudcr.com/vanus/connector/sink-feishu:latest
           image: public.ecr.aws/vanus/connector/sink-feishu:latest
           resources:
             requests:
@@ -65,7 +63,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
