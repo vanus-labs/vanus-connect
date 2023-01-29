@@ -26,6 +26,8 @@ RUN echo '#!/bin/sh' >> /vanus-connect/run.sh
 RUN echo $EXECUTABLE_FILE >> /vanus-connect/run.sh
 RUN chmod a+x /vanus-connect/bin/${connector}
 RUN chmod a+x /vanus-connect/run.sh
+RUN mkdir /vanus-connect/config
+RUN touch /vanus-connect/config/config.yml
 
 EXPOSE 8080
 
