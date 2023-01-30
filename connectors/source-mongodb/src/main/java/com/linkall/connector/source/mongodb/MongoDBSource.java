@@ -16,18 +16,28 @@ package com.linkall.connector.source.mongodb;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkall.cdk.config.Config;
+import com.linkall.cdk.database.debezium.DebeziumSource;
 import io.cloudevents.CloudEventData;
+import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.jackson.JsonCloudEventData;
+import io.debezium.connector.mongodb.SourceInfo;
+import io.debezium.data.Envelope;
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSource {
+public class MongoDBSource extends DebeziumSource {
     private static final String CONNECTOR_NAME = "Source MongoDB";
     private final ObjectMapper mapper = new ObjectMapper();
+    protected static Set<String> extensionSourceName = new HashSet<>(Arrays.asList(
+            SourceInfo.DATABASE_NAME_KEY,
+            SourceInfo.COLLECTION_NAME_KEY,
+            SourceInfo.REPLICA_SET_NAME
+    ));
 
     @Override
     public Class<? extends Config> configClass() {
@@ -39,7 +49,6 @@ public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSou
         return CONNECTOR_NAME;
     }
 
-    @Override
     protected CloudEventData convertData(Object data) throws IOException {
         Map<String, Object> m = (Map) data;
         Map<String, Object> result = new HashMap<>();
@@ -84,6 +93,26 @@ public class MongoDBSource extends com.linkall.cdk.database.debezium.DebeziumSou
             result.put(entry.getKey(), value);
         }
         return result;
+    }
+
+    @Override
+    protected byte[] eventData(Struct struct) {
+        String fieldName = Envelope.FieldName.AFTER;
+        Object dataValue = struct.get(fieldName);
+        if (dataValue==null) {
+            fieldName = Envelope.FieldName.BEFORE;
+            dataValue = struct.get(fieldName);
+        }
+        Schema dataSchema = struct.schema().field(fieldName).schema();
+        return jsonDataConverter.fromConnectData("debezium", dataSchema, dataValue);
+    }
+
+    @Override
+    protected void eventExtension(CloudEventBuilder builder, Struct struct) {
+        Struct source = struct.getStruct(Envelope.FieldName.SOURCE);
+        for (String name : extensionSourceName) {
+            builder.withExtension(extensionName(name), source.getString(name));
+        }
     }
 }
 

@@ -15,11 +15,12 @@
 package com.linkall.connector.source.mongodb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.linkall.cdk.database.debezium.DebeziumConfig;
 
 import java.util.Arrays;
 import java.util.Properties;
 
-public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumConfig {
+public class MongoDBConfig extends DebeziumConfig {
     private static final String DEBEZIUM_CLASS = "io.debezium.connector.mongodb.MongoDbConnector";
 
     @JsonProperty("name")
@@ -102,5 +103,10 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
         }
 
         return props;
+    }
+
+    @Override
+    protected Object getOffset() {
+        return null;
     }
 }
