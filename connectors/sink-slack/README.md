@@ -6,10 +6,9 @@ title: Slack
 
 ## Introduction
 
-The Slack Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and deliver these extracted `data` to Slack channels.
+The Slack Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents by extracting the `data` part of the original event and delivering it to a Slack channel.
 
-For example, if the incoming CloudEvent looks like:
+For example, if an incoming CloudEvent looks like:
 
 ```json
 {
@@ -26,18 +25,18 @@ For example, if the incoming CloudEvent looks like:
 }
 ```
 
-then channels will receive a message like:
+The Slack channel will receive a message like:
 ![message](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ## Quick Start
 
-in this section, we show how to use Slack Sink sends a text message to recipients.
+In this section will show you how to use Slack Sink to send a message to a Slack Channel.
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).
-- Have a Slack App and should have at least `chat:write` and `chat:write.public` permission.
+- Have a [Slack App](https://api.slack.com/apps) with the permissions `chat:write` and `chat:write.public`.
 
-### Create Config file
+### Create the config file
 
 ```shell
 cat << EOF > config.yml
@@ -69,8 +68,27 @@ docker run -it --rm \
 ```
 
 ### Test
+  
+We have designed for you a sandbox environment, removing the need to use your local machine. 
+You can run Connectors directly and safely on the Playground.
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+  1. Create an app on slack.
+  2. Select `From scratch`.
+  3. Set the bot name and Workspace.
+  4. Click on permissions in the central menu.
+  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
+  6. Install to workspace.
+  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
+  8. Start Slack Sink with docker.
+  
+  ```shell
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-slack public.ecr.aws/vanus/connector/sink-slack
+```
+  
+9. Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -89,7 +107,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-now, you cloud see a new slack in your mailbox.
+Now, you should see in your slack channel your message.
 ![message.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ### Clean
@@ -102,7 +120,7 @@ docker stop sink-slack
 
 ### Extension Attributes
 
-The <name> Sink have additional reactions if the incoming CloudEvent contains following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
+The Slack Sink has additional options if the incoming CloudEvent contains the following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
 
 | Attribute       | Required  | Examples          | Description                                 |
 |:----------------|:---------:|:------------------|:--------------------------------------------|
@@ -122,7 +140,7 @@ the event data must be `JSON` format, and only two key `subject` and `message` i
 
 ### Examples
 
-#### Sending message to the default app and default channel
+#### Sending a message from the default app to the default channel.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -141,7 +159,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-#### Sending message to the specified app and specified channel
+#### Sending a message from a specific app to a specific channel.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -162,7 +180,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-#### Sending message to the specified app and multiple channels
+#### Sending a message from a specific app to multiple channels.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
