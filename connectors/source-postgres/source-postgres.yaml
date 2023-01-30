@@ -5,23 +5,23 @@ metadata:
   namespace: vanus
 data:
   config.yaml: |-
-    target: "http://localhost:8080"
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
     name: "quick_start"
     db:
       host: "localhost"
       port: 5432
-      username: "vance_test"
+      username: "vanus_test"
       password: "123456"
-      database: "vance_test"
+      database: "vanus_test"
     schema_include: [ "public" ]
     table_include: [ "public.user" ]
 
-    slot_name: vance_slot
-    publication_name: vance_publication
+    slot_name: vanus_slot
+    publication_name: vanus_publication
     
     store:
         type: FILE
-        pathname: "/vance/data/offset.dat"
+        pathname: "/vanus-connect/data/offset.dat"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -57,14 +57,14 @@ spec:
           image: public.ecr.aws/vanus/connector/source-postgres
           imagePullPolicy: Always
           volumeMounts:
-            - name: source-postgres-config
-              mountPath: /vance/config
-            - name: source-postgres-data
-              mountPath: /vance/data
+            - name: config
+              mountPath: /vanus-connect/config
+            - name: data
+              mountPath: /vanus-connect/data
       volumes:
-        - name: source-postgres-config
+        - name: config
           configMap:
             name: source-postgres
-        - name: source-postgres-data
+        - name: data
           persistentVolumeClaim:
             claimName: source-postgres

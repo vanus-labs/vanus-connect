@@ -1,33 +1,32 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: source-mysql-config
+  name: source-mysql
   namespace: vanus
 data:
   config.yml: |-
-    target: "http://localhost:8080"
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
     name: "quick_start"
     db:
       host: "localhost"
       port: 3306
       username: "root"
       password: "vanus123456"
-    database_include:
-      - dbname
-    table_include:
-      - dbname.user
+    database_include: [ "dbname" ]
+    # format is dbname.tableName
+    table_include: [ "dbname.user" ]
 
     store:
       type: FILE
-      pathname: "/vance/data/offset.dat"
+      pathname: "/vanus-connect/data/offset.dat"
 
-    db_history_file: "/vance/data/history.dat"
+    db_history_file: "/vanus-connect/data/history.dat"
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: source-mysql-data
+  name: source-mysql
   namespace: vanus
 spec:
   accessModes:
@@ -56,16 +55,16 @@ spec:
       containers:
         - name: source-mysql
           image: public.ecr.aws/vanus/connector/source-mysql
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
-            - name: source-mysql-config
-              mountPath: /vance/config
-            - name: source-mysql-data
-              mountPath: /vance/data
+            - name: config
+              mountPath: /vanus-connect/config
+            - name: data
+              mountPath: /vanus-connect/data
       volumes:
-        - name: source-mysql-config
+        - name: config
           configMap:
-            name: source-mysql-config
-        - name: source-mysql-data
+            name: source-mysql
+        - name: data
           persistentVolumeClaim:
-            claimName: source-mysql-data
+            claimName: source-mysql
