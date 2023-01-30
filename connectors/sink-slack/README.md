@@ -30,7 +30,7 @@ The Slack channel will receive a message like:
 
 ## Quick Start
 
-In this section will show you how to use Slack Sink to send a message to a Slack Channel.
+In this section we will show you how to use Slack Sink to send a message to a Slack Channel.
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).
