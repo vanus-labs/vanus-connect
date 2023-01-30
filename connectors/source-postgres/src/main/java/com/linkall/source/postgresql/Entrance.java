@@ -1,19 +1,9 @@
 package com.linkall.source.postgresql;
 
-import com.linkall.vance.common.config.ConfigUtil;
-import com.linkall.vance.core.VanceApplication;
-
-import java.io.File;
+import com.linkall.cdk.Application;
 
 public class Entrance {
-  public static void main(String[] args) throws Exception {
-    String storeFile = ConfigUtil.getEnvOrConfigOrDefault("v_store_file");
-    if (storeFile != null && storeFile != "") {
-      File f = new File(storeFile);
-      if (!f.exists()) {
-        f.createNewFile();
-      }
+    public static void main(String[] args) throws Exception {
+        Application.run(PostgreSQLSource.class);
     }
-    VanceApplication.run(PostgreSQLSource.class);
-  }
 }

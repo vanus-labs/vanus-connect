@@ -106,7 +106,7 @@ The <name> Source defines following [CloudEvents Extension Attributes](https://g
 <optional the structure of data>
 </optional>
 
-### Run in Kubernetes
+## Run in Kubernetes
 
 ```shell
 kubectl apply -f source-<name>.yaml

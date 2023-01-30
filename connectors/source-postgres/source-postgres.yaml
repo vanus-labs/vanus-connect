@@ -1,29 +1,33 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: source-postgres-config
-  namespace: vance
+  name: source-postgres
+  namespace: vanus
 data:
-  config.json: |-
-    {
-      "host": "172.31.57.192",
-      "port": "5432",
-      "username": "vance_test",
-      "password": "123456",
-      "db_name": "vance_test",
-      "schema_name": "public",
-      "include_table": "user",
+  config.yaml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    name: "quick_start"
+    db:
+      host: "localhost"
+      port: 5432
+      username: "vanus_test"
+      password: "123456"
+      database: "vanus_test"
+    schema_include: [ "public" ]
+    table_include: [ "public.user" ]
+
+    slot_name: vanus_slot
+    publication_name: vanus_publication
     
-      "v_store_file": "/vance/data/offset.dat",
-    
-      "v_target": "http://vanus-gateway.vanus:8080/gateway/authing"
-    }
+    store:
+        type: FILE
+        pathname: "/vanus-connect/data/offset.dat"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: source-postgres-data
-  namespace: vance
+  name: source-postgres
+  namespace: vanus
 spec:
   accessModes:
     - ReadWriteOnce
@@ -35,7 +39,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: source-postgres
-  namespace: vance
+  namespace: vanus
   labels:
     app: source-postgres
 spec:
@@ -50,21 +54,17 @@ spec:
     spec:
       containers:
         - name: source-postgres
-          image: vancehub/source-postgres:0.1
-          imagePullPolicy: IfNotPresent
-          #command: ['sh', '-c', 'sleep 360000']
-          env:
-            - name: LOG_LEVEL
-              value: DEBUG
+          image: public.ecr.aws/vanus/connector/source-postgres
+          imagePullPolicy: Always
           volumeMounts:
-            - name: source-postgres-config
-              mountPath: /vance/config
-            - name: source-postgres-data
-              mountPath: /vance/data
+            - name: config
+              mountPath: /vanus-connect/config
+            - name: data
+              mountPath: /vanus-connect/data
       volumes:
-        - name: source-postgres-config
+        - name: config
           configMap:
-            name: source-postgres-config
-        - name: source-postgres-data
+            name: source-postgres
+        - name: data
           persistentVolumeClaim:
-            claimName: source-postgres-data
+            claimName: source-postgres

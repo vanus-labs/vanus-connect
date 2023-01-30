@@ -1,41 +1,39 @@
 package com.linkall.source.mysql;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linkall.cdk.config.Config;
 import com.linkall.cdk.database.debezium.DebeziumSource;
-import io.cloudevents.CloudEventData;
-import io.cloudevents.jackson.JsonCloudEventData;
+import io.cloudevents.core.builder.CloudEventBuilder;
+import io.debezium.connector.AbstractSourceInfo;
+import io.debezium.data.Envelope;
+import org.apache.kafka.connect.data.Struct;
 
-import java.io.IOException;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MySQLSource extends DebeziumSource {
 
-  private ObjectMapper objectMapper = new ObjectMapper();
+    protected static Set<String> extensionSourceName = new HashSet<>(Arrays.asList(
+            AbstractSourceInfo.DATABASE_NAME_KEY,
+            AbstractSourceInfo.TABLE_NAME_KEY
+    ));
 
-  public MySQLSource() {
-    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-  }
-
-  @Override
-  protected CloudEventData convertData(Object data) throws IOException {
-    Map<String, Object> m = (Map) data;
-    Object result = m.get("after");
-    if (result == null) {
-      // op:d
-      result = m.get("before");
+    @Override
+    protected void eventExtension(CloudEventBuilder builder, Struct struct) {
+        Struct source = struct.getStruct(Envelope.FieldName.SOURCE);
+        for (String name : extensionSourceName) {
+            builder.withExtension(extensionName(name), source.getString(name));
+        }
     }
-    return JsonCloudEventData.wrap(objectMapper.valueToTree(result));
-  }
 
-  @Override
-  public Class<? extends Config> configClass() {
-    return MySQLConfig.class;
-  }
 
-  @Override
-  public String name() {
-    return "Source MySQL";
-  }
+    @Override
+    public Class<? extends Config> configClass() {
+        return MySQLConfig.class;
+    }
+
+    @Override
+    public String name() {
+        return "Source MySQL";
+    }
 }

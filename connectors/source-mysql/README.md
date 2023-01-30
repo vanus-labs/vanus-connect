@@ -6,19 +6,17 @@ title: MySQL CDC（Debezium)
 
 ## Introduction
 
-The MySql Source is a [Vance Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data in a
+The MySQL Source is a [Vanus Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data in a
 MySql database and then monitor and record all subsequent row-level changes to that data.
 
-For example,MySql database dbname has table user Look:
+For example, MySQL database vanus_test has table user Look:
 
 ```text
-+-------------+--------------+------+-----+---------+----------------+
-| Field       | Type         | Null | Key | Default | Extra          |
-+-------------+--------------+------+-----+---------+----------------+
-| id          | int          | NO   | PRI | NULL    | auto_increment |
-| name        | varchar(100) | NO   |     | NULL    |                |
-| email       | varchar(100) | NO   |     | NULL    |                |
-+-------------+--------------+------+-----+---------+----------------+
++----------+-----------+-----------------+
+| id       | name      | email           |
++----------+-----------+-----------------+
+| 100      | vanus     | dev@example.com |
++----------+-----------+-----------------+
 ```
 
 The row record will be transformed into a CloudEvent looks like:
@@ -26,34 +24,106 @@ The row record will be transformed into a CloudEvent looks like:
 ```json
 {
   "specversion": "1.0",
-  "id": "a67f31d6-a0c2-4124-b794-4139a9525ea8",
+  "id": "88767821-92c2-477d-9a6f-bfdfbed19c6a",
   "source": "/debezium/mysql/quick_start",
-  "type": "io.debezium.mysql.datachangeevent",
+  "type": "debezium.mysql.datachangeevent",
   "datacontenttype": "application/json",
-  "time": "2022-12-23T16:06:14Z",
-  "iodebeziumconnector": "mysql",
-  "iodebeziumserverid": "0",
-  "iodebeziumsnapshot": "last",
-  "iodebeziumdb": "dbname",
-  "iodebeziumfile": "binlog.000009",
-  "iodebeziumpos": "197",
-  "iodebeziumname": "quick_start",
-  "iodebeziumtsms": "1671811574000",
-  "iodebeziumtable": "user",
-  "iodebeziumop": "r",
-  "iodebeziumversion": "2.0.1.Final",
-  "iodebeziumrow": "0",
+  "time": "2023-01-11T07:25:39.557Z",
+  "xvdebeziumname": "quick_start",
+  "xvdebeziumop": "r",
+  "xvop": "c",
+  "xvdb": "vanus_test",
+  "xvtable": "user",
   "data": {
-      "id": 100,
-      "name": "user_name",
-      "email": "user_email"
+    "id": 100,
+    "name": "vanus",
+    "email": "dev@example.com"
   }
 }
 ```
 
-## MySql Source Configs
+## Quick Start
 
-### Config
+This section shows how MySQL Source convert db record to a CloudEvent.
+
+### Prerequisites
+- Have a container runtime (i.e., docker).
+- Have a MySQL Server `8.0`, `5.7`, or `5.6`.
+
+#### Setting up MySQL
+
+1. Enable binary logging.
+         
+   You must enable binary logging for MySQL replication. The binary logs record transaction updates for replication tools to propagate changes.
+You can configure your MySQL server configuration file with the following properties, which are described in below:
+
+    ```text
+    server-id         = 223344
+    log_bin           = mysql-bin
+    binlog_format     = ROW
+    binlog_row_image  = FULL
+    expire_logs_days  = 10
+    ```
+    
+    See the [MySQL doc](https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html) for more details;
+
+2. Enable GTIDs (Optional).
+
+   GTIDs are available in MySQL 5.6.5 and later. See the [MySQL doc](https://dev.mysql.com/doc/refman/8.0/en/replication-options-gtids.html#option_mysqld_gtid-mode) for more details.
+   1. Enable gtid_mode
+      ```sql
+       mysql> gtid_mode=ON;
+      ```
+   2. Enable enforce_gtid_consistency
+      ```sql
+       mysql> enforce_gtid_consistency=ON;
+      ```
+
+#### Prepare data
+
+1. Create database and table 
+   ```sql
+   create database vanus_test;
+   CREATE TABLE IF NOT EXISTS vanus_test.user
+   (
+     `id` int NOT NULL,
+     `name` varchar(100) NOT NULL,
+     `email` varchar(100) NOT NULL,
+     PRIMARY KEY (`id`)
+   ) ENGINE=InnoDB;
+   ```
+2. Insert data
+   ```sql
+   insert into vanus_test.`user` values(100,"vanus","dev@example.com");
+   ```
+3. Create user and grant role
+   ```sql
+   CREATE USER 'vanus_test'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+   GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'vanus_test'@'%';
+   ```
+
+### Create the config file
+
+```shell
+cat << EOF > config.yml
+target: http://localhost:31081
+name: "quick_start"
+db:
+  host: "localhost"
+  port: 3306
+  username: "vanus_test"
+  password: "123456"
+database_include: [ "vanus_test" ]
+# format is vanus_test.tableName
+table_include: [ "vanus_test.user" ]
+
+store:
+  type: FILE
+  pathname: "/vanus-connect/data/offset.dat"
+
+db_history_file: "/vanus-connect/data/history.dat"
+EOF
+```
 
 | name                | requirement | description                                                                                       |
 |---------------------|-------------|---------------------------------------------------------------------------------------------------|
@@ -74,43 +144,166 @@ The row record will be transformed into a CloudEvent looks like:
 | binlog_offset.pos   | optional    | binlog position, use with config offset_binlog_file                                               |
 | binlog_offset.gtids | optional    | binlog grids                                                                                      |
 
-### Config Example
+The MySQL Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
-```yaml
-target: "http://localhost:8080"
-name: "quick_start"
-db:
-  host: "localhost"
-  port: 3306
-  username: "root"
-  password: "vanus123456"
-database_include:
-  - dbname
-table_include:
-  - dbname.user
-
-store:
-  type: FILE
-  pathname: "/tmp/mysql/offset.dat"
-
-db_history_file: "/tmp/mysql/history.dat"
-```
-
-## MySql Source Image
-
-> public.ecr.aws/vanus/connector/source-mysql
-
-### Running with Docker
+### Start with Docker
 
 ```shell
-docker run --rm -v ${PWD}:/vance/config public.ecr.aws/vanus/connector/source-mysql
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  -v ${PWD}:/vanus-connect/data \
+  --name source-mysql public.ecr.aws/vanus/connector/source-mysql
 ```
 
-### K8S
+### Test
+
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
+```shell
+docker run -it --rm \
+  -p 31081:8080 \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display
+```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+ 
+
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+
+```json
+{
+  "specversion": "1.0",
+  "id": "88767821-92c2-477d-9a6f-bfdfbed19c6a",
+  "source": "/debezium/mysql/quick_start",
+  "type": "debezium.mysql.datachangeevent",
+  "datacontenttype": "application/json",
+  "time": "2023-01-11T07:25:39.557Z",
+  "xvdebeziumname": "quick_start",
+  "xvdebeziumop": "r",
+  "xvop": "c",
+  "xvdb": "vanus_test",
+  "xvtable": "user",
+  "data": {
+    "id": 100,
+    "name": "vanus",
+    "email": "dev@example.com"
+  }
+}
+```
+
+### Clean
+
+```shell
+docker stop source-mysql sink-display
+```
+
+## Run in Kubernetes
 
 ```shell
   kubectl apply -f source-mysql.yaml
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-mysql
+  namespace: vanus
+data:
+  config.yml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    name: "quick_start"
+    db:
+      host: "localhost"
+      port: 3306
+      username: "root"
+      password: "123456"
+    database_include: [ "vanus_test" ]
+    # format is vanus_test.tableName
+    table_include: [ "vanus_test.user" ]
+
+    store:
+      type: FILE
+      pathname: "/vanus-connect/data/offset.dat"
+
+    db_history_file: "/vanus-connect/data/history.dat"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: source-mysql
+  namespace: vanus
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-mysql
+  namespace: vanus
+  labels:
+    app: source-mysql
+spec:
+  selector:
+    matchLabels:
+      app: source-mysql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-mysql
+    spec:
+      containers:
+        - name: source-mysql
+          image: public.ecr.aws/vanus/connector/source-mysql
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+            - name: data
+              mountPath: /vanus-connect/data
+      volumes:
+        - name: config
+          configMap:
+            name: source-mysql
+        - name: data
+          persistentVolumeClaim:
+            claimName: source-mysql
+```
+
+## Integrate with Vanus
+
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+### Prerequisites
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
+
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+```shell
+export VANUS_GATEWAY=192.168.49.2:30001
+```
+
+2. Create an eventbus
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Update the target config of the MySQL Source
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
+
+4. Run the MySQL Source
+```shell
+  kubectl apply -f source-mysql.yaml
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [debezium]: https://debezium.io/documentation/reference/2.0/connectors/mysql.html
