@@ -83,7 +83,7 @@ public class SnsSource implements Source {
                         }
                     }
 
-                    CloudEvent ce = adapter.adapt(request, body);
+                    CloudEvent ce = adapter.adapt(request.request(), body);
                     Tuple tuple = new Tuple(new Element(ce, jsonObject), () -> {
                         LOGGER.info("send event success,{}", ce.getId());
                         eventNum.getAndAdd(1);
