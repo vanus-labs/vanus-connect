@@ -126,9 +126,9 @@ EOF
 
 | Name                  | Required | Default | Description                                                                                                                  |
 |:----------------------|:--------:|:-------:|:-----------------------------------------------------------------------------------------------------------------------------|
+| target                |   YES    |         | the target URL to send CloudEvents                                                                                           |
 | aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                                                                                          |
 | aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                                                                                          |
-| target                |   YES    |         | the target URL to send CloudEvents                                                                                           |
 | s3_bucket_arn         |   YES    |         | your S3 bucket arn, example: "arn:aws:s3:::mybucket"                                                                         |
 | s3_events             |   YES    |         | it is an array consisting of [s3 events][s3event] you're interested in. example: ["s3:ObjectCreated:*","s3:ObjectRemoved:*"] |
 | region                |    NO    |         | it describes where the SQS queue will be created at. This field is only required when you didn't specify your sqsArn.        |
@@ -282,3 +282,4 @@ kubectl apply -f source-aws-s3.yaml
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [ceas]: https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md
 [s3event]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html

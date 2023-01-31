@@ -101,10 +101,10 @@ EOF
 
 | Name                  | Required | Default | Description                                               |
 |:----------------------|:--------:|:-------:|:----------------------------------------------------------|
-| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                       |
-| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                       |
 | target                |   YES    |         | the target URL to send CloudEvents                        |
 | port                  |   YES    |  8080   | the port to receive SNS message                           |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                       |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                       |
 | sns_arn               |   YES    |         | the arn of the SNS topic                                  |
 | endpoint              |   YES    |         | the SNS Source export internet url of http/https endpoint |
 | protocol              |   YES    |         | the protocol used to subscribe SNS topic                  |
@@ -267,3 +267,4 @@ kubectl apply -f source-aws-sns.yaml
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [ceas]: https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-sns.md
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
