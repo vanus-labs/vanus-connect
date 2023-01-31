@@ -33,7 +33,7 @@ public class SnsSource implements Source {
     private SnsClient snsClient;
     private String subscribeArn;
 
-    public SnsSource(){
+    public SnsSource() {
         queue = new LinkedBlockingQueue<>(100);
     }
 
@@ -60,8 +60,8 @@ public class SnsSource implements Source {
         }
 
         vertx.createHttpServer()
-                .exceptionHandler(failed->{
-                    LOGGER.error("unknown error",failed.getCause());
+                .exceptionHandler(failed -> {
+                    LOGGER.error("unknown error", failed.getMessage(), failed.getCause());
                 })
                 .requestHandler(request -> {
                     String messageType = request.getHeader("x-amz-sns-message-type");
