@@ -1,6 +1,5 @@
 package com.linkall.source.aws.s3;
 
-import com.linkall.vance.core.Adapter1;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.cloudevents.types.Time;
@@ -8,9 +7,8 @@ import io.vertx.core.json.JsonObject;
 
 import java.net.URI;
 
-public class S3Adapter implements Adapter1<JsonObject> {
+public class S3Adapter  {
     private static final CloudEventBuilder template = CloudEventBuilder.v1();
-    @Override
     public CloudEvent adapt(JsonObject record) {
         JsonObject responseElements = record.getJsonObject("responseElements");
         template.withId(responseElements.getString("x-amz-request-id")+"."+responseElements.getString("x-amz-id-2"));

@@ -1,6 +1,5 @@
 package com.linkall.source.aws.utils;
 
-import com.linkall.vance.common.file.GenericFileUtil;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
@@ -15,9 +14,10 @@ import java.util.Map;
 public class SQSUtil {
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSUtil.class);
 
-    private static final String SQS_POLICY = "s3-sqs-policy-axzvf";
+    private static final String SQS_POLICY = "vanus-connect-s3-sqs-policy";
 
-    public static String getRegion(String sqsArn){
+
+    public static String getRegion(String sqsArn) {
         String[] arr = sqsArn.split(":");
         return arr[3];
     }
@@ -59,52 +59,53 @@ public class SQSUtil {
         return messages;
     }
 
-    public static JsonObject getQueuePolicy(SqsClient sqsClient,String queUrl){
-        LOGGER.info("====== Get the policy of a SQS queue [" + queUrl+"] Start ======" );
+    public static JsonObject getQueuePolicy(SqsClient sqsClient, String queUrl) {
+        LOGGER.info("====== Get the policy of a SQS queue [" + queUrl + "] Start ======");
         GetQueueAttributesRequest req = GetQueueAttributesRequest.builder()
                 .attributeNames(QueueAttributeName.POLICY)
                 .queueUrl(queUrl).build();
         GetQueueAttributesResponse response = sqsClient.getQueueAttributes(req);
         String policy = response.attributes().get(QueueAttributeName.POLICY);
-        LOGGER.info("====== Get the policy of a SQS queue [" + queUrl+"] End ======" );
+        LOGGER.info("====== Get the policy of a SQS queue [" + queUrl + "] End ======");
         return new JsonObject(policy);
     }
+
     /**
-     *
      * @param sqsClient
      * @param queueUrl
      * @param policy
      * @return queue Arn
      */
-    public static boolean setQueuePolicy(SqsClient sqsClient, String queueUrl, JsonObject policy){
+    public static boolean setQueuePolicy(SqsClient sqsClient, String queueUrl, JsonObject policy) {
 
         //System.out.println(policy.encodePrettily());
-        LOGGER.info("====== Set the policy of a SQS queue [" + queueUrl+"] Start ======" );
-        Map<QueueAttributeName,String> map = new HashMap<>();
-        map.put(QueueAttributeName.POLICY,policy.encodePrettily());
+        LOGGER.info("====== Set the policy of a SQS queue [" + queueUrl + "] Start ======");
+        Map<QueueAttributeName, String> map = new HashMap<>();
+        map.put(QueueAttributeName.POLICY, policy.encodePrettily());
         SetQueueAttributesRequest req = SetQueueAttributesRequest.builder()
                 .queueUrl(queueUrl)
                 .attributes(map)
                 .build();
         SetQueueAttributesResponse response = sqsClient.setQueueAttributes(req);
-        LOGGER.info("====== Set the policy of a SQS queue [" + queueUrl+"] End ======" );
+        LOGGER.info("====== Set the policy of a SQS queue [" + queueUrl + "] End ======");
         return response.sdkHttpResponse().isSuccessful();
     }
 
     /**
      * get the sqs Arn by queueUrl
+     *
      * @param sqsClient
      * @param queueUrl
      * @return
      */
-    public static String getQueueArn(SqsClient sqsClient, String queueUrl){
+    public static String getQueueArn(SqsClient sqsClient, String queueUrl) {
         GetQueueAttributesRequest request = GetQueueAttributesRequest.builder()
                 .queueUrl(queueUrl)
                 .attributeNames(QueueAttributeName.QUEUE_ARN)
                 .build();
         GetQueueAttributesResponse response = sqsClient.getQueueAttributes(request);
         String queArn = response.attributes().get(QueueAttributeName.QUEUE_ARN);
-        return  queArn;
+        return queArn;
     }
 
     public static List<String> listQueues(SqsClient sqsClient, String prefix) {
@@ -113,13 +114,15 @@ public class SQSUtil {
             ListQueuesRequest listQueuesRequest = ListQueuesRequest.builder().queueNamePrefix(prefix).build();
             ListQueuesResponse listQueuesResponse = sqsClient.listQueues(listQueuesRequest);
 
-            if(listQueuesResponse.hasQueueUrls()) return  listQueuesResponse.queueUrls();
+            if (listQueuesResponse.hasQueueUrls()) {
+                return listQueuesResponse.queueUrls();
+            }
             for (String url : listQueuesResponse.queueUrls()) {
-                System.out.println(url);
+                LOGGER.error("sqs queue url:{}", url);
             }
 
         } catch (SqsException e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
+            LOGGER.error("list sqs queue error,{}", e.awsErrorDetails());
             System.exit(1);
         }
 
@@ -128,11 +131,12 @@ public class SQSUtil {
 
     /**
      * check the vance-sqs exists or not
+     *
      * @return vance-sqs queueUrl if it exists
      */
-    public static String obtainVanceQueueUrl(SqsClient sqsClient){
-        List<String> queueUrls = listQueues(sqsClient,"vance-s3-source-sqs");
-        if(queueUrls!=null){
+    public static String obtainVanceQueueUrl(SqsClient sqsClient, String sqsName) {
+        List<String> queueUrls = listQueues(sqsClient, sqsName);
+        if (queueUrls!=null) {
             return queueUrls.get(0);
         }
         return null;
@@ -140,21 +144,22 @@ public class SQSUtil {
 
     /**
      * Create a SQS queue
+     *
      * @param sqsClient
      * @param queueName
      * @return the queue Url
      */
     public static String createQueue(SqsClient sqsClient, String queueName) {
-        LOGGER.info("====== Create a SQS queue [" + queueName+"] Start ======" );
+        LOGGER.info("====== Create a SQS queue [" + queueName + "] Start ======");
         CreateQueueRequest createQueueRequest = CreateQueueRequest.builder()
                 .queueName(queueName)
                 .build();
         try {
             CreateQueueResponse response = sqsClient.createQueue(createQueueRequest);
-            LOGGER.info("====== Create a SQS queue ["+queueName+"] successful ======");
+            LOGGER.info("====== Create a SQS queue [" + queueName + "] successful ======");
             return response.queueUrl();
         } catch (SqsException e) {
-            LOGGER.error("====== Create a SQS queue ["+queueName+"] failed ======");
+            LOGGER.error("====== Create a SQS queue [" + queueName + "] failed ======");
             LOGGER.error(e.awsErrorDetails().errorMessage());
             System.exit(1);
         }
@@ -163,62 +168,65 @@ public class SQSUtil {
 
     /**
      * get a queue url by queue name
+     *
      * @param sqsClient
      * @param queueName
      * @return queUrl
      */
-    public static String getQueueUrl(SqsClient sqsClient, String queueName){
+    public static String getQueueUrl(SqsClient sqsClient, String queueName) {
         GetQueueUrlResponse getQueueUrlResponse =
                 sqsClient.getQueueUrl(GetQueueUrlRequest.builder().queueName(queueName).build());
         String queueUrl = getQueueUrlResponse.queueUrl();
         return queueUrl;
     }
 
-    public static JsonObject buildPolicy(JsonObject existedPolicy, String s3Arn, String sqsArn){
-        if(null == existedPolicy){
-            JsonObject quePolicy = new JsonObject(GenericFileUtil.readResource("queue_policy.json"));
-            quePolicy.put("Id",SQS_POLICY);
+    public static JsonObject buildPolicy(JsonObject existedPolicy, String s3Arn, String sqsArn) {
+        if (null==existedPolicy) {
+            JsonObject quePolicy = new JsonObject(FileUtil.readResource("queue_policy.json"));
+            quePolicy.put("Id", SQS_POLICY);
             JsonObject statement = quePolicy.getJsonArray("Statement").getJsonObject(0);
-            buildStatement(statement,s3Arn,sqsArn);
+            buildStatement(statement, s3Arn, sqsArn);
             return quePolicy;
-        }else{
+        } else {
             JsonArray statements = existedPolicy.getJsonArray("Statement");
-            boolean findSameStatement =false;
+            boolean findSameStatement = false;
             for (int i = 0; i < statements.size(); i++) {
-                if(statements.getJsonObject(i).getString("Sid").equals(s3Arn)){
+                if (statements.getJsonObject(i).getString("Sid").equals(s3Arn)) {
                     findSameStatement = true;
                     continue;
                 }
             }
             // if can't find same statement, just create a new one and add it to statements
-            if(!findSameStatement){
+            if (!findSameStatement) {
                 JsonObject statement = new JsonObject();
                 JsonObject condition = new JsonObject();
-                statement.put("Condition",condition);
+                statement.put("Condition", condition);
                 JsonObject arnEquals = new JsonObject();
-                condition.put("ArnEquals",arnEquals);
-                buildStatement(statement,s3Arn,sqsArn);
+                condition.put("ArnEquals", arnEquals);
+                buildStatement(statement, s3Arn, sqsArn);
                 statements.add(statement);
             }
             return existedPolicy;
         }
 
     }
-    private static void buildStatement(JsonObject statement, String s3Arn, String sqsArn){
-        statement.put("Sid",s3Arn);
-        statement.put("Resource",sqsArn);
-        statement.put("Effect" , "Allow");
+
+    private static void buildStatement(JsonObject statement, String s3Arn, String sqsArn) {
+        statement.put("Sid", s3Arn);
+        statement.put("Resource", sqsArn);
+        statement.put("Effect", "Allow");
         JsonObject principal = new JsonObject();
-        principal.put("Service" , "s3.amazonaws.com");
-        statement.put("Principal",principal);
-        statement.put("Action" , "sqs:SendMessage");
+        principal.put("Service", "s3.amazonaws.com");
+        statement.put("Principal", principal);
+        statement.put("Action", "sqs:SendMessage");
         JsonObject condition = statement.getJsonObject("Condition");
         //JsonObject stringEquals = condition.getJsonObject("StringEquals");
         JsonObject arnEquals = condition.getJsonObject("ArnEquals");
         //stringEquals.put("aws:SourceAccount",accountId);
-        arnEquals.put("aws:SourceArn",s3Arn);
+        arnEquals.put("aws:SourceArn", s3Arn);
     }
-    public static void putVancePolicy(){
+
+    public static void putVancePolicy() {
 
     }
 }
