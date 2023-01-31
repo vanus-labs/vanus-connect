@@ -1,9 +1,9 @@
 package com.linkall.source.aws.sqs;
 
-import com.linkall.vance.core.VanceApplication;
+import com.linkall.cdk.Application;
 
 public class Entrance {
     public static void main(String[] args) {
-        VanceApplication.run(SqsSource.class);
+        Application.run(SqsSource.class);
     }
 }
