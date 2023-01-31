@@ -87,7 +87,7 @@ docker run -it --rm --network=host \
 ```
 
 ### Test
-
+**To test the connector, run the Display Sink first before running AWS Billing source.**
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
 
 ```shell
@@ -97,6 +97,13 @@ docker run -it --rm \
 ```
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+
+Now run AWS Cloud Billing source to send CloudEvents
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-aws-billing public.ecr.aws/vanus/connector/source-aws-billing
+```
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink: 
 
@@ -133,6 +140,11 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
     }
   }
 }
+```
+
+To see the CloudEvents on  your Terminal, run:
+```shell
+docker logs sink-display
 ```
 
 ### Clean
