@@ -8,7 +8,9 @@ import com.linkall.source.aws.utils.AwsHelper;
 import com.linkall.source.aws.utils.SNSUtil;
 import io.cloudevents.CloudEvent;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
@@ -58,59 +60,58 @@ public class SnsSource implements Source {
             snsClient.close();
             System.exit(1);
         }
-
-        vertx.createHttpServer()
-                .exceptionHandler(failed -> {
-                    LOGGER.error("unknown error,{}", failed.getMessage(), failed.getCause());
-                })
-                .requestHandler(request -> {
-                    String messageType = request.getHeader("x-amz-sns-message-type");
-                    request.bodyHandler(body -> {
-                        JsonObject jsonObject = body.toJsonObject();
-                        String token = jsonObject.getString("Token");
-                        if (!SNSUtil.verifySignatrue(new ByteArrayInputStream(body.getBytes()), region)) {
-                            request.response().setStatusCode(505);
-                            request.response().end("signature verified failed");
-                        } else {
-                            //confirm sub or unSub
-                            LOGGER.info("verify signature successful");
-                            if (messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")) {
-                                try {
-                                    SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
-                                } catch (SnsException e) {
-                                    LOGGER.error(e.awsErrorDetails().errorMessage());
-                                    snsClient.close();
-                                    System.exit(1);
-                                }
-                            }
-
-                            CloudEvent ce = adapter.adapt(request, body);
-                            Tuple tuple = new Tuple(new Element(ce, jsonObject), () -> {
-                                LOGGER.info("send event success,{}", ce.getId());
-                                eventNum.getAndAdd(1);
-                                LOGGER.info("send " + eventNum + " CloudEvents in total");
-                                request.response().setStatusCode(200);
-                                request.response().end("Receive success, deliver CloudEvents to");
-                            }, (success, failed, msg) -> {
-                                LOGGER.info("send event failed,{},{}", ce.getId(), msg);
-                                request.response().setStatusCode(500);
-                                request.response().end("Receive success, deliver CloudEvents failed " + msg);
-                            });
-                            try {
-                                queue.put(tuple);
-                            } catch (InterruptedException e) {
-                                LOGGER.warn("put event interrupted");
-                            }
+        HttpServer httpServer = vertx.createHttpServer();
+        Router router = Router.router(vertx);
+        router.route("/").handler(request -> {
+            String messageType = request.request().getHeader("x-amz-sns-message-type");
+            request.request().bodyHandler(body -> {
+                JsonObject jsonObject = body.toJsonObject();
+                String token = jsonObject.getString("Token");
+                if (!SNSUtil.verifySignatrue(new ByteArrayInputStream(body.getBytes()), region)) {
+                    request.response().setStatusCode(505);
+                    request.response().end("signature verified failed");
+                } else {
+                    //confirm sub or unSub
+                    LOGGER.info("verify signature successful");
+                    if (messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")) {
+                        try {
+                            SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
+                        } catch (SnsException e) {
+                            LOGGER.error(e.awsErrorDetails().errorMessage());
+                            snsClient.close();
+                            System.exit(1);
                         }
-
-                    });
-                }).listen(port, (server) -> {
-                    if (server.succeeded()) {
-                        LOGGER.info("HttpServer is listening on port: " + (server.result()).actualPort());
-                    } else {
-                        LOGGER.error(server.cause().getMessage());
                     }
-                });
+
+                    CloudEvent ce = adapter.adapt(request, body);
+                    Tuple tuple = new Tuple(new Element(ce, jsonObject), () -> {
+                        LOGGER.info("send event success,{}", ce.getId());
+                        eventNum.getAndAdd(1);
+                        LOGGER.info("send " + eventNum + " CloudEvents in total");
+                        request.response().setStatusCode(200);
+                        request.response().end("Receive success, deliver CloudEvents to");
+                    }, (success, failed, msg) -> {
+                        LOGGER.info("send event failed,{},{}", ce.getId(), msg);
+                        request.response().setStatusCode(500);
+                        request.response().end("Receive success, deliver CloudEvents failed " + msg);
+                    });
+                    try {
+                        queue.put(tuple);
+                    } catch (InterruptedException e) {
+                        LOGGER.warn("put event interrupted");
+                    }
+                }
+
+            });
+        });
+        httpServer.requestHandler(router);
+        httpServer.listen(port, (server) -> {
+            if (server.succeeded()) {
+                LOGGER.info("HttpServer is listening on port: " + (server.result()).actualPort());
+            } else {
+                LOGGER.error(server.cause().getMessage());
+            }
+        });
 
         String finalSubscribeArn = subscribeArn;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
