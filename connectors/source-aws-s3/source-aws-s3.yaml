@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-aws-s3
+  namespace: vanus
+data:
+  config.yml: |-
+    "target": "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    s3_bucket_arn: "arn:aws:s3:::mybucket"
+    s3_events: ["s3:ObjectCreated:*","s3:ObjectRemoved:*"]
+    region: "us-west-2"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-aws-s3
+  namespace: vanus
+  labels:
+    app: source-aws-s3
+spec:
+  selector:
+    matchLabels:
+      app: source-aws-s3
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-aws-s3
+    spec:
+      containers:
+        - name: source-aws-s3
+          image: public.ecr.aws/vanus/connector/source-aws-s3
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-aws-s3

@@ -1,6 +1,0 @@
-{
-  "v_target": "http://localhost:8081",
-  "region": "us-west-2",
-  "s3_bucket_arn": "${s3_bucket_arn}",
-  "s3_events": ["s3:ObjectCreated:*","s3:ObjectRemoved:*"]
-}

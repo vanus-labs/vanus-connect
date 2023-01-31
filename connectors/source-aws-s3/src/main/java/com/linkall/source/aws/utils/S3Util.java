@@ -1,6 +1,5 @@
 package com.linkall.source.aws.utils;
 
-import com.linkall.vance.common.config.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -18,22 +17,20 @@ import java.util.Map;
  */
 public class S3Util {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Util.class);
-    private static Map<String,String> metaData = new HashMap<>();
-    private static final String SQS_NOTIFY_ID = "vance-s3-notification";
+    private static final String SQS_NOTIFY_ID = "vanus-connect-s3-notification";
 
-    public static boolean setNotifyConfig(S3Client s3, String bucketName, QueueConfiguration qConfig){
-        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName+"] Start ======" );
+    public static boolean setNotifyConfig(S3Client s3, String bucketName, QueueConfiguration qConfig) {
+        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName + "] Start ======");
         PutBucketNotificationConfigurationResponse resp = s3.putBucketNotificationConfiguration(PutBucketNotificationConfigurationRequest.builder()
                 .bucket(bucketName)
                 .notificationConfiguration(NotificationConfiguration.builder()
                         .queueConfigurations(qConfig).build())
                 .build());
-        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName+"] End ======" );
+        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName + "] End ======");
         return resp.sdkHttpResponse().isSuccessful();
     }
 
-    public static QueueConfiguration buildQueConfig(String sqsArn){
-        List<String> events = ConfigUtil.getStringArray("s3_events");
+    public static QueueConfiguration buildQueConfig(String sqsArn, List<String> events) {
         QueueConfiguration qConfig = QueueConfiguration.builder().queueArn(sqsArn)
                 .id(SQS_NOTIFY_ID)
                 .eventsWithStrings(events)
@@ -43,12 +40,13 @@ public class S3Util {
 
     /**
      * return the url of an object with specific @param {keyName}
+     *
      * @param s3
      * @param bucketName
      * @param keyName
      * @return
      */
-    public static URL getURL(S3Client s3, String bucketName, String keyName ) {
+    public static URL getURL(S3Client s3, String bucketName, String keyName) {
 
         try {
             GetUrlRequest request = GetUrlRequest.builder()
@@ -66,9 +64,9 @@ public class S3Util {
 
 
     public static String putS3Object(S3Client s3,
-                                    String bucketName,
-                                    String objectKey,
-                                    File f ) {
+                                     String bucketName,
+                                     String objectKey,
+                                     File f) {
         try {
             PutObjectRequest putOb = PutObjectRequest.builder()
                     .bucket(bucketName)
@@ -90,7 +88,7 @@ public class S3Util {
     public static String putS3Object(S3Client s3,
                                      String bucketName,
                                      String objectKey,
-                                     byte[] data ) {
+                                     byte[] data) {
 
         try {
             PutObjectRequest putOb = PutObjectRequest.builder()
