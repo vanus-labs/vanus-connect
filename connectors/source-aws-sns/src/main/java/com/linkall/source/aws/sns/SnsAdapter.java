@@ -1,6 +1,5 @@
 package com.linkall.source.aws.sns;
 
-import com.linkall.vance.core.Adapter2;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.vertx.core.buffer.Buffer;
@@ -11,27 +10,25 @@ import org.apache.commons.lang.StringUtils;
 import java.net.URI;
 import java.time.OffsetDateTime;
 
-public class SnsAdapter implements Adapter2<HttpServerRequest, Buffer> {
+public class SnsAdapter {
 
-    public static final CloudEventBuilder template = CloudEventBuilder.v1();
-
-    @Override
     public CloudEvent adapt(HttpServerRequest httpServerRequest, Buffer buffer) {
+        CloudEventBuilder template = CloudEventBuilder.v1();
         JsonObject jsonObject = buffer.toJsonObject();
         template.withId(httpServerRequest.getHeader("X-Amz-Sns-Message-Id"));
         String subscriptionArn = httpServerRequest.getHeader("X-Amz-Sns-Subscription-Arn");
         URI uri = null;
-        if(StringUtils.isBlank(subscriptionArn)){
+        if (StringUtils.isBlank(subscriptionArn)) {
             uri = URI.create(httpServerRequest.getHeader("X-Amz-Sns-Topic-Arn"));
-        }else{
+        } else {
             uri = URI.create(subscriptionArn);
         }
         template.withSource(uri);
-        String type = "com.amazonaws.sns."+jsonObject.getString("Type");
+        String type = "com.amazonaws.sns." + jsonObject.getString("Type");
         template.withType(type)
                 .withDataContentType("application/json");
         String subject = jsonObject.getString("Subject");
-        if(!StringUtils.isBlank(subject)){
+        if (!StringUtils.isBlank(subject)) {
             template.withSubject(subject);
         }
         String timeStamp = jsonObject.getString("Timestamp");
