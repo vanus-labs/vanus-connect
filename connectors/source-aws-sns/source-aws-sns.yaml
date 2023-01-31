@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-aws-sns
+  namespace: vanus
+spec:
+  selector:
+    app: source-aws-sns
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-aws-sns
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-aws-sns
+  namespace: vanus
+data:
+  config.yml: |-
+    "target": "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    port: 8080
+    sns_arn: "arn:aws:sns:us-west-2:843378899134:myTopic"
+    endpoint: "http://ip10-0-188-4-ce3k58kdjmeg0u4hla2g-8082.direct.play.linkall.com"
+    protocol: "http"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-aws-sns
+  namespace: vanus
+  labels:
+    app: source-aws-sns
+spec:
+  selector:
+    matchLabels:
+      app: source-aws-sns
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-aws-sns
+    spec:
+      containers:
+        - name: source-aws-sns
+          image: public.ecr.aws/vanus/connector/source-aws-sns
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+                name: http
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-aws-sns

@@ -65,6 +65,7 @@ public class SnsSource implements Source {
         router.route("/").handler(request -> {
             String messageType = request.request().getHeader("x-amz-sns-message-type");
             request.request().bodyHandler(body -> {
+                LOGGER.info("receive sns message type:{}", messageType);
                 JsonObject jsonObject = body.toJsonObject();
                 String token = jsonObject.getString("Token");
                 if (!SNSUtil.verifySignatrue(new ByteArrayInputStream(body.getBytes()), region)) {
@@ -72,7 +73,6 @@ public class SnsSource implements Source {
                     request.response().end("signature verified failed");
                 } else {
                     //confirm sub or unSub
-                    LOGGER.info("verify signature successful");
                     if (messageType.equals("SubscriptionConfirmation") || messageType.equals("UnsubscribeConfirmation")) {
                         try {
                             SNSUtil.confirmSubHTTPS(snsClient, token, snsTopicArn);
@@ -101,7 +101,6 @@ public class SnsSource implements Source {
                         LOGGER.warn("put event interrupted");
                     }
                 }
-
             });
         });
         httpServer.requestHandler(router);
@@ -112,18 +111,6 @@ public class SnsSource implements Source {
                 LOGGER.error(server.cause().getMessage());
             }
         });
-
-        String finalSubscribeArn = subscribeArn;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                SNSUtil.unSubHTTPS(snsClient, finalSubscribeArn);
-            } catch (SnsException e) {
-                LOGGER.error(e.awsErrorDetails().errorMessage());
-            }
-            snsClient.close();
-
-            LOGGER.info("shut down!");
-        }));
     }
 
 
