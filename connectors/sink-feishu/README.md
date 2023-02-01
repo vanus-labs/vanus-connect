@@ -40,7 +40,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
 
 ```shell
-cat < EOF > config.yml
+cat << EOF > config.yml
 enable: ["bot"]
 bot:
   webhooks:
