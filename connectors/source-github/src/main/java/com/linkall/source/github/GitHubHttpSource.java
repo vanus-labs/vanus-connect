@@ -1,6 +1,7 @@
 package com.linkall.source.github;
 
 import com.linkall.cdk.config.Config;
+import com.linkall.cdk.connector.Element;
 import com.linkall.cdk.connector.Source;
 import com.linkall.cdk.connector.Tuple;
 import io.cloudevents.CloudEvent;
@@ -70,12 +71,12 @@ public class GitHubHttpSource implements Source {
                         }
                         //transform http payload to CloudEvent
                         CloudEvent ce = adapter.adapt(request, body);
-                        Tuple tuple = new Tuple(ce, () -> {
+                        Tuple tuple = new Tuple(new Element(ce, body), () -> {
                             LOGGER.info("send task success");
                             request.response().setStatusCode(200);
                             request.response().end("Receive success, deliver CloudEvents to"
                                     + config.getTarget() + "success");
-                        }, (msg) -> {
+                        }, (success, failed, msg) -> {
                             LOGGER.warn("send task failed,{}", msg);
                             request.response().setStatusCode(504);
                             request.response().end("Receive success, deliver CloudEvents to"
