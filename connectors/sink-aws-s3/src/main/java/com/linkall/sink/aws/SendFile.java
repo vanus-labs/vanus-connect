@@ -1,15 +1,13 @@
 package com.linkall.sink.aws;
 
-import com.linkall.vance.common.file.GenericFileUtil;
-import com.linkall.vance.core.http.HttpClient;
+import com.linkall.cdk.runtime.sender.HTTPSender;
+import com.linkall.cdk.runtime.sender.Sender;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 
-import java.io.File;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,16 +23,21 @@ public class SendFile {
         CloudEvent event = eventTemplate
                 .withId(UUID.randomUUID().toString())
                 .withExtension("objectkey","abcd.txt")
-                .withData("plain/text", GenericFileUtil.readResource("abcd.txt").getBytes(StandardCharsets.UTF_8))
+                .withData("application/json", "{\"key\": \"value\"}".getBytes(StandardCharsets.UTF_8))
                 .build();
 
+        Sender sender = new HTTPSender("http://localhost:8080");
         ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(100);
         threadPool.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                HttpClient.deliver(event);
+                try {
+                    sender.sendEvents(Arrays.asList(event));
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
             }
-        }, 15000L, 100L, TimeUnit.MILLISECONDS);
+        }, 5L, 1L, TimeUnit.SECONDS);
 
     }
 }

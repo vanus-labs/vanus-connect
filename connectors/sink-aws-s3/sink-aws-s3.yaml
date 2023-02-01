@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+spec:
+  selector:
+    app: sink-aws-s3
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-aws-s3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+data:
+  config.yml: |-
+    port: 8080
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    region: "us-west-2"
+    bucket: "mybucket"
+    scheduled_interval: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+  labels:
+    app: sink-aws-s3
+spec:
+  selector:
+    matchLabels:
+      app: sink-aws-s3
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-aws-s3
+    spec:
+      containers:
+        - name: sink-aws-s3
+          image: public.ecr.aws/vanus/connector/sink-aws-s3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+                name: http
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-aws-s3
