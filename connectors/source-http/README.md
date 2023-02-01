@@ -58,13 +58,14 @@ which is converted to:
 
 ## Quick Start
 
-This section shows how HTTP Source converts an HTTP request(made by cURL) to a CloudEvent
+This section will show you how to use HTTP Source to convert an HTTP request(made by cURL) to a CloudEvent.
 
 ### Create Config file
 
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
+port: 8082
 EOF
 ```
 
@@ -94,12 +95,13 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
-Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send the CloudEvents to the Display Sink.
 
-Open a terminal and use the following command to send http request to HTTP Source
+Open a terminal and use the following command to send an http request to HTTP Source
+
 
 ```shell
-curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def' \
+curl --location --request POST 'localhost:8082/webhook?source=123&id=abc&type=456&subject=def' \
 --header 'Content-Type: text/plain' \
 --data-raw '{
     "test":"demo"
