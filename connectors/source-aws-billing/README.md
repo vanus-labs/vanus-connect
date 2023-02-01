@@ -88,7 +88,7 @@ docker run -it --rm --network=host \
 
 ### Test
 
-Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+Before starting Amazon billing Source use the following command to run a Display sink, which will receive and prints the incoming CloudEvents.
 
 ```shell
 docker run -it --rm \
