@@ -48,13 +48,13 @@ slack:
 EOF
 ```
 
-| Name                     | Required  | Default | Description                                                                                           |
-|:-------------------------|:---------:|:--------|:------------------------------------------------------------------------------------------------------|
-| port                     |    NO     | 8080    | the port which <name> Sink listens on                                                                 |
-| default                  |    YES    |         | the default app name if event attribute doesn't have `xvslackapp`                                     |
-| slack.[].app_name        |    YES    |         | custom slack app name as identifier                                                                   |
-| slack.[].token           |    YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                               |
-| slack.[].default_channel |    NO     |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples   |
+| Name                     | Required  | Default | Description                                                                                         |
+|:-------------------------|:---------:|:--------|:----------------------------------------------------------------------------------------------------|
+| port                     |    NO     | 8080    | the port which Slack Sink listens on                                                                |
+| default                  |    YES    |         | the default app name if event attribute doesn't have `xvslackapp`                                   |
+| slack.[].app_name        |    YES    |         | custom slack app name as identifier                                                                 |
+| slack.[].token           |    YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                             |
+| slack.[].default_channel |    NO     |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples |
 
 The Slack Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
