@@ -40,7 +40,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
 
 ```shell
-cat << EOF > config.yml
+cat < EOF > config.yml
 enable: ["bot"]
 bot:
   webhooks:
@@ -59,7 +59,7 @@ EOF
 | bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
 | bot.webhooks.[].url        | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
-The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Feishu Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 

@@ -50,7 +50,7 @@ EOF
 
 | Name              | Required | Default | Description                                                                                            |
 |:------------------|:--------:|:-------:|--------------------------------------------------------------------------------------------------------|
-| port              |    NO    |  8080   | the port which <name> Sink listens on                                                                  |
+| port              |    NO    |  8080   | the port which Email Sink listens on                                                                   |
 | default           | **YES**  |    -    | Email Sink supports multiple email accounts as sender, you could set the default account by this field |
 | email.[].account  | **YES**  |    -    | email account address you want to use                                                                  |
 | email.[].password | **YES**  |    -    | password for account authentication                                                                    |
