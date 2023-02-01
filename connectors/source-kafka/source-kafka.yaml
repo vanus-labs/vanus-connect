@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-kafka
+  namespace: vanus
+data:
+  config.yaml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    bootstrap_servers: "localhost:9092"
+    group_id: "vanus-source-kafka"
+    topics: [ "mytopic" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-kafka
+  namespace: vanus
+  labels:
+    app: source-kafka
+spec:
+  selector:
+    matchLabels:
+      app: source-kafka
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-kafka
+    spec:
+      containers:
+        - name: source-kafka
+          image: public.ecr.aws/vanus/connector/source-kafka
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-kafka

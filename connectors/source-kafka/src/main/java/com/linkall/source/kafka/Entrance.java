@@ -1,10 +1,10 @@
 package com.linkall.source.kafka;
 
-import com.linkall.vance.core.VanceApplication;
+
+import com.linkall.cdk.Application;
 
 public class Entrance {
     public static void main(String[] args) {
-        VanceApplication.run(KafkaSource.class);
+        Application.run(KafkaSource.class);
     }
-
 }
