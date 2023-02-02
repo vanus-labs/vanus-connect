@@ -8,7 +8,7 @@ data:
     target: "http://localhost:8080",
     store:
       type: "FILE"
-      pathname: "/tmp/vance/source-mongodb/offset.data",
+      pathname: "/tmp/vanus-connect/source-mongodb/offset.data",
     name: "test",
     hosts: "127.0.0.1:27017",
     credential:
@@ -45,7 +45,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
