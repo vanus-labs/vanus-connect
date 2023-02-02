@@ -26,7 +26,7 @@ For example, if an incoming CloudEvent looks like:
 ```
 
 The Slack channel will receive a message like:
-![message](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png?raw=true)
+![message](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ## Quick Start
 
@@ -109,7 +109,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 Now, you should see in your slack channel your message.
-![message.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-slack/message.png?raw=true)
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ### Clean
 

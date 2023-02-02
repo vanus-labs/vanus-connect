@@ -175,7 +175,7 @@ func (l *StreamLoad) loadAndReset() {
 }
 
 func (l *StreamLoad) load() error {
-	label := fmt.Sprintf("vance_sink_%s_%d", l.config.Secret.TableName, time.Now().UnixMilli())
+	label := fmt.Sprintf("vanus_connect_sink_%s_%d", l.config.Secret.TableName, time.Now().UnixMilli())
 	ctx, cancel := context.WithTimeout(l.ctx, l.timeout)
 	defer cancel()
 	req := l.makeRequest(label)
