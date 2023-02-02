@@ -29,7 +29,7 @@ supports **`HOURLY` and `DAILY`** partitioning.
 
 ## Quickstart
 
-The quick start will guide you through the process of running an Amazon S3 Sink connector.
+This quick start will guide you through the process of running an Amazon S3 Sink connector.
 
 ### Prerequisites
 
@@ -38,6 +38,8 @@ The quick start will guide you through the process of running an Amazon S3 Sink 
 - AWS IAM [Access Key][accessKey].
 - AWS permissions for the IAM user:
     - s3:PutObject
+
+### Create the config file
 
 ```shell
 cat << EOF > config.yml
@@ -94,7 +96,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-Open [AWS S3 Console](https://s3.console.aws.amazon.com), select the bucket and check file has uploaded.
+Open [AWS S3 Console](https://s3.console.aws.amazon.com), select the bucket and verify the file has uploaded.
 
 ### Clean resource
 
