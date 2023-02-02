@@ -6,7 +6,7 @@ title: Kafka
 
 ## Overview
 
-The Kafka Source is a [Vanus Connector][vc] which aims to consume Kafka messages from topics and convert to CloudEvents
+The Kafka Source is a [Vanus Connector][vc] which aims to consume Kafka messages from topics and converts to CloudEvents
 then deliver them to the target URL.
 
 For example, if an original message looks like:
@@ -15,7 +15,7 @@ For example, if an original message looks like:
 > { "name": "Jason", "age": "30" }
 ```
 
-A Kafka message convert to CloudEvent looks like:
+It will be converted to CloudEvent this way:
 
 ``` JSON
 {
@@ -33,12 +33,12 @@ A Kafka message convert to CloudEvent looks like:
 
 ## Quick Start
 
-This section shows how Kafka Source convert Kafka message to a CloudEvent.
+This section will show you how to use Kafka Source to convert Kafka messages to CloudEvents.
 
 ### Prerequisites
 
 - Have a container runtime (i.e., docker).
-- Have a Kafka cluster
+- Have a [Kafka cluster](https://kafka.apache.org)
 
 ### Create the config file
 
