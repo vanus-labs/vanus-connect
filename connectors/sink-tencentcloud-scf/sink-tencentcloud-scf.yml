@@ -6,11 +6,9 @@ metadata:
 spec:
   selector:
     app: sink-tencentcloud-scf
-  type: NodePort
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
-      nodePort: 32555
       name: sink-tencentcloud-scf
 ---
 apiVersion: v1
@@ -50,7 +48,7 @@ spec:
     spec:
       containers:
         - name: sink-tencentcloud-scf
-          image: public.ecr.aws/vanus/connector/sink-tencentcloud-scf:dev
+          image: public.ecr.aws/vanus/connector/sink-tencentcloud-scf
           imagePullPolicy: Always
           ports:
             - name: http

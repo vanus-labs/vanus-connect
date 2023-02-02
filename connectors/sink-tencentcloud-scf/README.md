@@ -106,11 +106,9 @@ metadata:
 spec:
   selector:
     app: sink-tencentcloud-scf
-  type: NodePort
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
-      nodePort: 32555
       name: sink-tencentcloud-scf
 ---
 apiVersion: v1
@@ -128,6 +126,8 @@ data:
       name: "xxxxxx"
       region: "ap-beijing"
       namespace: "default"
+    debug: false
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -148,14 +148,14 @@ spec:
     spec:
       containers:
         - name: sink-tencentcloud-scf
-          image: public.ecr.aws/vanus/connector/sink-tencentcloud-scf:dev
+          image: public.ecr.aws/vanus/connector/sink-tencentcloud-scf
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
