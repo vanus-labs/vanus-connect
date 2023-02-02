@@ -1,19 +1,17 @@
 package com.linkall.source.kafka;
 
-import com.linkall.vance.core.Adapter1;
 import io.cloudevents.CloudEvent;
 import io.cloudevents.core.builder.CloudEventBuilder;
 import io.vertx.core.json.JsonObject;
 
 
 import java.net.URI;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
-public class KafkaAdapter implements Adapter1<KafkaData> {
-    private static final CloudEventBuilder template = CloudEventBuilder.v1();
+public class KafkaAdapter {
 
     public CloudEvent adapt(KafkaData kafkaData) {
+        CloudEventBuilder template = CloudEventBuilder.v1();
         template.withId(UUID.randomUUID().toString());
         URI uri = URI.create("kafka." + kafkaData.KAFKA_SERVER_URL() +"."+ kafkaData.topic());
         template.withSource(uri);

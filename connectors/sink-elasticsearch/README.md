@@ -9,7 +9,7 @@ title: Elasticsearch
 The Elasticsearch Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts
 the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster.
 
-For example, the incoming CloudEvent looks like:
+For example, an incoming CloudEvent looks like:
 
 ```json
 {
@@ -27,7 +27,7 @@ For example, the incoming CloudEvent looks like:
 }
 ```
 
-The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cluster index as a document looks like:
+The Elasticsearch Sink will extract the `data` field and write it to the [Elasticsearch][es] cluster index as a document:
 
 ```json
 {
@@ -88,7 +88,7 @@ docker run -it --rm --network=host\
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:8080' \
@@ -108,7 +108,7 @@ curl --location --request POST 'localhost:8080' \
 }'
 ```
 
-use following command get an es document
+Use the following command to get an es document.
 
 ```shell
 curl http://localhost:9200/vanus_test/_search?pretty
