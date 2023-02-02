@@ -6,7 +6,7 @@ title: Amazon SQS
 
 ## Introduction
 
-The Amazon SQS Source is a [Vanus Connector][vc] which designed to retrieve SQS messages transform them into CloudEvents.
+The Amazon SQS Source is a [Vanus Connector][vc] which is designed to retrieve SQS messages transform them into CloudEvents.
 
 For example, if the incoming message looks like:
 ```json
@@ -16,7 +16,7 @@ For example, if the incoming message looks like:
 }
 ```
 
-which is converted to:
+Which is converted to:
 
 ```json
 {
@@ -29,7 +29,7 @@ which is converted to:
   "data" : "Hello World"
 }
 ```
-This section shows how Amazon SQS Source converts SQS message to a CloudEvent.
+This section shows you how to use Amazon SQS Source to convert SQS message to a CloudEvent.
 
 ### Prerequisites
 
