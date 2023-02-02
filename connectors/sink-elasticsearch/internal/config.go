@@ -16,7 +16,6 @@ package internal
 
 import (
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/pkg/errors"
 )
 
 type InsertMode string
@@ -29,11 +28,11 @@ const (
 type esConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 
-	Timeout    int        `json:"timeout" yaml:"timeout"`
-	PrimaryKey string     `json:"primary_key" yaml:"primary_key"`
-	InsertMode InsertMode `json:"insert_mode" yaml:"insert_mode"`
+	Timeout     int        `json:"timeout" yaml:"timeout"`
+	BufferBytes int        `json:"buffer_bytes" yaml:"buffer_bytes"`
+	InsertMode  InsertMode `json:"insert_mode" yaml:"insert_mode"`
 
-	Secret Secret `json:"secret" yaml:"secret"`
+	Secret Secret `json:"es" yaml:"es"`
 }
 
 func Config() cdkgo.SinkConfigAccessor {
@@ -49,11 +48,4 @@ type Secret struct {
 	IndexName string `json:"index_name" yaml:"index_name" validate:"required"`
 	Username  string `json:"username" yaml:"username"`
 	Password  string `json:"password" yaml:"password"`
-}
-
-func (cfg *esConfig) Validate() error {
-	if cfg.InsertMode == Upsert && cfg.PrimaryKey == "" {
-		return errors.New("insert mode is upsert but primary key is empty")
-	}
-	return nil
 }

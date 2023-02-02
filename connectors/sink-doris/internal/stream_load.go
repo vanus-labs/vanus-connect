@@ -142,7 +142,7 @@ func (l *StreamLoad) Stop() {
 func (l *StreamLoad) event2Buffer(event *ce.Event) {
 	l.lock.Lock()
 	defer l.lock.Unlock()
-	l.buffer.Write(event.Data())
+	json.Compact(l.buffer, event.Data())
 	l.buffer.WriteString("\n")
 	if l.buffer.Len() >= l.config.LoadSize {
 		l.loadAndReset()
