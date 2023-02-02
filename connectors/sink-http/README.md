@@ -48,11 +48,9 @@ POST /test?debug=true&type=curl
 
 - Have a container runtime (i.e., docker).
 - Have an HTTP server, you can go https://webhook.site to get a free URL
-  </optional>
 
 ### Create the config file
 
-<optional: explanation>
 
 ```shell
 cat << EOF > config.yml
