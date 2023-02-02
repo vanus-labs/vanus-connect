@@ -128,6 +128,14 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
+After running Display Sink, run the Github Source
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-github public.ecr.aws/vanus/connector/source-github
+```
+
 4. Star your GitHub repository.
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink:
