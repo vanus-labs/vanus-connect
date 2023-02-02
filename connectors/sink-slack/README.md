@@ -42,12 +42,12 @@ In this section we will show you how to use Slack Sink to send a message to a Sl
   2. Select `From scratch`.
   3. Set the bot name and Workspace.
   4. Click on permissions in the central menu.
-![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
   5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
-![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
   6. Install to workspace.
   7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
-![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
   
 ### Create the config file
 
