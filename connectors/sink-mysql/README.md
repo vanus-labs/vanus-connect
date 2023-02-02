@@ -3,47 +3,34 @@ title: MySQL (JDBC)
 ---
 
 # MySQL Sink (JDBC)
-This document provides a brief introduction to the MySQL Sink.
-It is also designed to guide you through the process of running a
-MySQL Sink Connector.
 
 ## Introduction
-The MySQL Sink is a [Vance Connector][vc] that aims to handle incoming CloudEvents
-in a way that extracts the data part of the original event and delivers these
-extracted data to a MySQL database using JDBC. Before using this Sink, you will
+
+The MySQL Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the data part
+of the original event and delivers these extracted data to a MySQL database using JDBC. Before using this Sink, you will
 need to create a database and a table.
 
-## Handling incoming CloudEvent
 For example, if the incoming CloudEvent looks like this:
+
 ```json
 {
-  "id" : "vance.vance_test:binlog.000010:2515",
-  "source" : "vance.debezium.mysql",
-  "specversion" : "1.0",
-  "type" : "debezium.mysql.vance.vance_test",
-  "time" : "2022-07-08T03:17:03.139Z",
-  "datacontenttype" : "application/json",
-  "vancedebeziumop" : "r",
-  "vancedebeziumversion" : "1.9.4.Final",
-  "vancedebeziumconnector" : "mysql",
-  "vancedebeziumname" : "vance",
-  "vancedebeziumtsms" : "1657250223138",
-  "vancedebeziumsnapshot" : "true",
-  "vancedebeziumdb" : "vance",
-  "vancedebeziumtable" : "vance_test",
-  "vancedebeziumpos" : "2515",
-  "vancedebeziumfile": "binlog.000010",
-  "vancedebeziumrow": "0",
-  "data" : {
-    "id":18,
-    "name":"xdl",
-    "description":"Development Manager",
+  "id": "88767821-92c2-477d-9a6f-bfdfbed19c6a",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "quickstart",
+  "time": "2022-07-08T03:17:03.139Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "id": 18,
+    "name": "xdl",
+    "email": "Development Manager",
     "date": "2022-07-06"
   }
 }
 ```
-###
+
 The MySQL Sink will extract the data fields and write to the database table in the following way:
+
 ```text
 +----+---------+---------------------+------------+
 | id | name    | description         | date       |
@@ -51,114 +38,228 @@ The MySQL Sink will extract the data fields and write to the database table in t
 | 18 | xdl     | Development Manager | 2022-07-06 |
 +----+---------+---------------------+------------+
 ```
----
+
 ## Quick Start
+
 This quick start will guide you through the process of running an MySQL Sink Connector.
 
 ### Prerequisites
-- Have container runtime (i.e., docker).
-- Have running [MySQL][mysql] database.
+
+- Have a container runtime (i.e., docker).
+- Have a running [MySQL][mysql] server.
 - Have a database and table created.
 
-### Set MySQL Sink Configurations
-You can specify your configs by either setting environments
-variables or mounting a config.json to `/vance/config/config.json`
-when running the Connector.
+### Prepare for db
 
-Here is an example of a configuration file for the MySQL Sink.
-```json
-{
-  "v_port": "8081",
-  "table_name": "Costumer",
-  "insert_mode": "insert",
-  "commit_interval": "100" 
-}
-```
+Connect MySQL and Create database and table
 
-#### Config Fields of the MySQL Sink
-| name             | requirement | description                                                                |
-|------------------|-------------|----------------------------------------------------------------------------|
-| v_port           | optional    | v_port is used to specify the port MySql Sink is listening on,default 8080 |
-| table_name       | required    | db table name                                                              |
-| insert_mode      | optional    | insert mode: insert or upsert, default insert                              |
-| commit_interval  | optional    | batch data commit to db interval, unit is millisecond default 1000         |
+```sql
+   create
+database vanus_test;
+CREATE TABLE IF NOT EXISTS vanus_test.user
+(
+    `id`
+    int
+    NOT
+    NULL,
+    `name`
+    varchar
+(
+    100
+) NOT NULL,
+    `description` varchar
+(
+    100
+) NOT NULL,
+    `date` date NOT NULL,
+    PRIMARY KEY
+(
+    `id`
+)
+    ) ENGINE=InnoDB;
+ ```
 
-### MySQL Sink Secrets
-Users should set their sensitive data Base64 encoded in a secret file.
-And mount your local secret file to `/vance/secret/secret.json` when you run the Connector.
-
-#### Encode your Sensitive Data
-Replace MY_SECRET with your sensitive data to get the Base64-based string.
-
-```shell
-$ echo -n MY_SECRET | base64
-QUJDREVGRw==
-```
-
-Here is an example of a secret file for the MySQL Sink.
-```json
-{
-  "host": "TVlfU0VDUkVUTVlfU0VDUkVU",
-  "port": "OTA4Mw==",
-  "username": "bG92ZWNob2NvbGF0ZQ==",
-  "password": "MTIzNDU2Nzg5",
-  "dbName": "SW1XYWxraW5PblN1blNoaW5l"
-}
-```
-
-#### Secret Fields of the MySQL Sink
-
-| name               | requirement | description        |
-|--------------------|-------------|--------------------|
-| host               | required    | db host            |
-| port               | required    | db port            |
-| username           | required    | db username        |
-| password           | required    | db password        |
-| dbName             | required    | db database name   |
-
-### Run the MySQL Sink with Docker
-Create your config.json and secret.json, and mount them to
-specific paths to run the MySQL Sink using the following command.
-
-> docker run -v $(pwd)/secret.json:/vance/secret/secret.json -v $(pwd)/config.json:/vance/config/config.json --rm vancehub/sink-mysql
-
-### Verify the MySQL Sink
-You can verify if the MySQL Sink works properly by
-sending a CloudEvent with the POST terminal command, for example.
+### Create the config file
 
 ```shell
-curl -X POST -d 
-"{
-  "id" : "vance.vance_test:binlog.000010:2515",
-  "source" : "vance.debezium.mysql",
+cat << EOF > config.yml
+db:
+  host: "localhost"
+  port: 3306
+  username: "vanus_test"
+  password: "123456"
+  database: "vanus_test"
+  table: "user"
+
+insert_mode: UPSERT
+EOF
+```
+
+| Name            | Required | Default | Description                                                |
+|:----------------|:--------:|:-------:|------------------------------------------------------------|
+| port            |    NO    |  8080   | the port which MySQL Sink listens on                       |
+| db.host         |   YES    |         | IP address or host name of MySQL                           |
+| db.port         |   YES    |         | integer port number of MySQL                               |
+| db.username     |   YES    |         | username of MySQL                                          |
+| db.password     |   YES    |         | password of MySQL                                          |
+| db.database     |   YES    |         | database name of MySQL                                     |
+| db.table_name   |   YES    |         | password of db                                             |
+| insert_mode     |    NO    | INSERT  | MySQL insert data type: INSERT OR UPSERT                   |
+| commit_interval |    NO    |  1000   | MySQL Sink batch data commit interval, unit is millisecond |
+| commit_size     |    NO    |  2000   | MySQL Sink batch data commit event size                    |
+
+The MYSQL Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
+
+```shell
+docker run -it --rm --network=host\
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-mysql public.ecr.aws/vanus/connector/sink-mysql
+```
+
+### Test
+
+### Prepare
+
+Open a terminal and use the following command to send a CloudEvent to the Sink.
+
+```shell
+curl --location --request POST 'localhost:8080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "id" : "88767821-92c2-477d-9a6f-bfdfbed19c6a",
+  "source" : "quickstart",
   "specversion" : "1.0",
-  "type" : "debezium.mysql.vance.vance_test",
+  "type" : "quickstart",
   "time" : "2022-07-08T03:17:03.139Z",
   "datacontenttype" : "application/json",
-  "vancedebeziumop" : "r",
-  "vancedebeziumversion" : "1.9.4.Final",
-  "vancedebeziumconnector" : "mysql",
-  "vancedebeziumname" : "vance",
-  "vancedebeziumtsms" : "1657250223138",
-  "vancedebeziumsnapshot" : "true",
-  "vancedebeziumdb" : "vance",
-  "vancedebeziumtable" : "vance_test",
-  "vancedebeziumpos" : "2515",
-  "vancedebeziumfile": "binlog.000010",
-  "vancedebeziumrow": "0",
   "data" : {
     "id":18,
     "name":"xdl",
     "description":"Development Manager",
     "date": "2022-07-06"
   }
-}"
-http://localhost:8081 
+}'
 ```
-:::tip
-Note that the last line contains the address and port targeted.
-:::
 
+Connect to MySQL and use the following command to make sure MySQL has the data
 
-[vc]: https://docs.linkall.com/concepts/connector
+```sql
+select *
+from vanus_test.user;
+```
+
+### Clean resource
+
+```shell
+docker stop sink-mysql
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f sink-mysqlyaml
+```
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-mysql
+  namespace: vanus
+spec:
+  selector:
+    app: sink-mysql
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-mysql
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-mysql
+  namespace: vanus
+data:
+  config.yml: |-
+    port: 8080
+    db:
+      host: "localhost"
+      port: 3306
+      username: "vanus_test"
+      password: "123456"
+      database: "vanus_test"
+      table_name: "user"
+
+    insert_mode: UPSERT
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-mysql
+  namespace: vanus
+  labels:
+    app: sink-mysql
+spec:
+  selector:
+    matchLabels:
+      app: sink-mysql
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-mysql
+    spec:
+      containers:
+        - name: sink-mysql
+          image: public.ecr.aws/vanus/connector/sink-mysql
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-mysql
+```
+
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-mysql.yaml
+
+```shell
+kubectl apply -f sink-mysql.yaml
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-mysql:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [mysql]: https://www.mysql.com
