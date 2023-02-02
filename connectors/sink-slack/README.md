@@ -39,13 +39,16 @@ In this section we will show you how to use Slack Sink to send a message to a Sl
 ### Create an App in Slack
 
   1. Create an app on slack.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
   2. Select `From scratch`.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
   3. Set the bot name and Workspace.
   4. Click on permissions in the central menu.
 ![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
   5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
 ![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
   6. Install to workspace.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
   7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
 ![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
   
@@ -56,7 +59,7 @@ cat << EOF > config.yml
 default: "test_app"
 slack:
   - app_name: "test_app"
-    token: "<oauth token>"
+    token: "xoxp-422301774731343243235Example"
     default_channel: "#general"
 EOF
 ```
@@ -86,7 +89,7 @@ We have designed for you a sandbox environment, removing the need to use your lo
 You can run Connectors directly and safely on the Playground.
 
   
-9. Open a terminal and use the following command to send a CloudEvent to the Sink.
+ Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
