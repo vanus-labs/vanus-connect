@@ -2,32 +2,32 @@
 title: MongoDB
 ---
 
-#  MongoDB Sink
+# MongoDB Sink
 
 ## Introduction
 
-The Sink MongoDB is a [Vance Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and insert/update/delete this data to mongodb.
+The Sink MongoDB is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data`
+part of the original event and insert/update/delete this data to mongodb.
 
 For examples, If incoming event looks like:
 
 ```json
 {
-    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-    "source": "quick-start",
-    "specversion": "1.0",
-    "type": "sink-mongodb",
-    "datacontenttype": "application/json",
-    "time": "2022-10-26T10:38:29.345Z",
-    "xvdatabasedb": "test",
-    "xvdatabasecoll": "demo",
-    "data": {
-        "inserts": [
-            {
-                "scenario":"quick-start"
-            }
-        ]
-    }
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quick-start",
+  "specversion": "1.0",
+  "type": "sink-mongodb",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "xvdatabasedb": "test",
+  "xvdatabasecoll": "demo",
+  "data": {
+    "inserts": [
+      {
+        "scenario": "quick-start"
+      }
+    ]
+  }
 }
 ```
 
@@ -53,18 +53,31 @@ credential:
 EOF
 ```
 
-### start with docker
+| Name                                  | Required | Default | Description                                                                                       |
+|:--------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------|
+| port                                  |    No    |  8080   | the port which the MongoDB Sink listens on                                                        |
+| connection_uri                        | **YES**  |    -    | the URI to connect MongoDB, view [Connection String URI Format][mongodb connect] for more details |
+| credential.username                   |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                |
+| credential.password                   |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                |
+| credential.auth_source                |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                |
+| credential.auth_mechanism             |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                |
+| credential.auth_mechanism_properties  |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                |
+
+The MongoDB Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-docker run -d --rm \
+docker run -it --rm \
   -p 31080:8080 \
-  -v ${PWD}:/vance/config \
-  --name sink-mongodb public.ecr.aws/vanus/connector/sink-mongodb:latest
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-mongodb public.ecr.aws/vanus/connector/sink-mongodb
 ```
 
-### insert document to mongodb
+### Test
 
-For more details on how to understand, please see [Examples](#examples) section.
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -107,37 +120,13 @@ shard-0 [primary] test>
 docker stop sink-mongodb  
 ```
 
-## How to use
-
-### Configuration
-
-The default path is `/vance/config/config.yml`. if you want to change the default path, you can set env `CONNECTOR_CONFIG` to
-tell Sink MongoDB.
-
-
-| Name                                 | Required | Default | Description                                                                                                                                       |
-|:-------------------------------------|:--------:|:-------:|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| port                                 |    NO    |  8080   | the pot Sink MongoDB receives incoming events                                                                                                     |
-| connection_uri                       | **YES**  |    -    | the URI to connect MongoDB, view[Connection String URI Format](https://www.mongodb.com/docs/manual/reference/connection-string/) for more details |
-| credential.username                  |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
-| credential.password                  |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
-| credential.auth_source               |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
-| credential.auth_mechanism            |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
-| credential.auth_mechanism_properties |    NO    |    -    | https://www.mongodb.com/docs/drivers/go/current/fundamentals/auth/                                                                                |
-
-```yaml
-connection_uri: "mongodb+srv://<host1>,<host2>/?retryWrites=true&w=majority"
-credential:
-  username: "vanus"
-  password: "demo"
-  auth_source: "admin"
-```
+## Sink details
 
 ### Extension Attributes
 
-Sink Source has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+The MongoDB Sink has defined a
+few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 to determine how to process event.
-
 
 | Attribute      | Required | Examples | Description                          |
 |:---------------|:--------:|----------|--------------------------------------|
@@ -145,7 +134,6 @@ to determine how to process event.
 | xvdatabasecoll | **YES**  | demo     | which collection this event write to |
 
 ### Data
-
 
 | Item                  | Required |   Type   | Default | Description                                                   |
 |:----------------------|:--------:|:--------:|:-------:|---------------------------------------------------------------|
@@ -160,7 +148,7 @@ to determine how to process event.
 
 ```json
 {
-  "inserts":[
+  "inserts": [
     {
       "_id": "63a56aed6dcdb253ae4924ee",
       "key1": "value1"
@@ -169,9 +157,9 @@ to determine how to process event.
       "key2": "value2"
     }
   ],
-  "updates":[
+  "updates": [
     {
-      "filter":{
+      "filter": {
         "_id": "63a56aed6dcdb253ae4924ee"
       },
       "update": {
@@ -182,7 +170,7 @@ to determine how to process event.
       "update_many": true
     }
   ],
-  "deletes":[
+  "deletes": [
     {
       "filter": {
         "key2": "value2"
@@ -281,7 +269,12 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-### Run in kubernetes
+## Run in Kubernetes
+
+```shell
+kubectl apply -f sink-mongodb.yaml
+```
+
 ```yaml
 apiVersion: v1
 kind: Service
@@ -328,19 +321,45 @@ spec:
     spec:
       containers:
         - name: sink-mongodb
-          image: public.ecr.aws/vanus/connector/sink-mongodb:latest
+          image: public.ecr.aws/vanus/connector/sink-mongodb
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
-          # env: see README for more about how to set env
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
             name: sink-mongodb
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-mongodb.yaml
+
+```shell
+kubectl apply -f sink-mongodb.yaml
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-mongdob:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[mongodb connect]: https://www.mongodb.com/docs/manual/reference/connection-string/

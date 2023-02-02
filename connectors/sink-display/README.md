@@ -149,4 +149,4 @@ vsctl subscription create \
   --sink 'http://sink-display:8080'
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect

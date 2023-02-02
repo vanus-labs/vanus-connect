@@ -6,15 +6,24 @@ title: Tencent Cloud SCF
 
 ## Introduction
 
-This connector for invoking SCF function with events.
+The Tencent Cloud SCF Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts
+the `data` part of the original event and Tencent Cloud invoke SCF function
 
 ## Quickstart
+
+### Prerequisites
+
+- Have a container runtime (i.e., docker).
+- Have a Tencent Cloud Account and SCF function
 
 ### create config file
 
 ```shell
 cat << EOF > config.yml
 port: 8080
+secret:
+  secret_id: ABID570jkkngFWl7uY3QchbdUXVIuNisywoA
+  secret_key: xxxxxx
 function:
   name: "xxxxxxxxx"
   region: "ap-beijing"
@@ -22,30 +31,32 @@ function:
 EOF
 ```
 
-For full configuration, you can see [config](#config) section.
+| Name               | Required | Default | Description                                          |
+|:-------------------|:--------:|:-------:|------------------------------------------------------|
+| port               |    No    |  8080   | the port which the Tencent Cloud SCF Sink listens on |
+| secret.secret_id   |   YES    |         | the Tencent Cloud cam secretId                       |
+| secret.secret_key  |   YES    |         | the Tencent Cloud SCF cam secretKey                  |
+| function.region    | **YES**  |         | which region the function was created                |
+| function.name      | **YES**  |         | function name will be invoked                        |
+| function.namespace | **YES**  |         | which namespace the function was created             |
 
-### create secret file
+The Tencent Cloud SCF Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can
+specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-cat << EOF > secret.yml
-secret_id: "xxxx"
-secret_key: "xxxxx"
-EOF
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-tencentcloud-scf public.ecr.aws/vanus/connector/sink-tencentcloud-scf
 ```
 
-### start
+### Test
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
 ```shell
-docker run -d --rm \
-  --network host \
-  -v ${PWD}:/vance/config \
-  -v ${PWD}:/vance/secret \
-  --name sink-tencentcloud-scf public.ecr.aws/vanus/connector/sink-tencentcloud-scf:dev
-```
-
-### send an event to sink
-
-```bash
 curl --location --request POST 'localhost:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
@@ -70,73 +81,47 @@ curl --location --request POST 'localhost:8080' \
 
 the `data` will be as payload to invoke function
 
-### see logs in SCF console
+you can see logs in [SCF console](https://console.cloud.tencent.com/scf)
 
-![log.png](https://github.com/linkall-labs/vance/blob/main/connectors/sink-tencentcloud-scf/scf-log.png?raw=true)
+![log.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-tencentcloud-scf/scf-log.png?raw=true)
 
-### clean resource
+### Clean resource
 
 ```shell
 docker stop sink-tencentcloud-scf
 ```
 
-## Configuration
+## Run in Kubernetes
 
-### config
-
-```yml
-port: 8080
-function:
-  name: "vanus-cos-source-function-3513950818025804220"
-  region: "ap-beijing"
-  namespace: "default"
-debug: false  
+```shell
+kubectl apply -f sink-tencentcloud-scf.yaml
 ```
-
-| Name               | Required | Default | Description                              |
-|:-------------------|:--------:|:-------:|------------------------------------------|
-| port               |    No    |  8080   | which port for listening                 |
-| function.region    | **YES**  |    -    | which region the function was created    |
-| function.name      | **YES**  |    -    | function name will be invoked            |
-| function.namespace | **YES**  |    -    | which namespace the function was created |
-| debug              |    NO    |  false  | if print debug log                       |
-
-### secret
-
-
-| Name       | Required | Default | Description                |
-|:-----------|:--------:|:-------:|----------------------------|
-| secret_id  | **YES**  |    -    | SecretID of Tencent Cloud  |
-| secret_key | **YES**  |    -    | SecretKey of Tencent Cloud |
-
-## Deploy
-
-### using k8s(recommended)
 
 ```yml
 apiVersion: v1
 kind: Service
 metadata:
-  name: sink-tencentcloud-function
+  name: sink-tencentcloud-scf
   namespace: vanus
 spec:
   selector:
-    app: sink-tencentcloud-function
-  type: NodePort
+    app: sink-tencentcloud-scf
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
-      nodePort: 32555
-      name: sink-tencentcloud-function
+      name: sink-tencentcloud-scf
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sink-tencentcloud-function
+  name: sink-tencentcloud-scf
   namespace: vanus
 data:
   config.yml: |-
     port: 8080
+    secret:
+      secret_id: ABID570jkkngFWl7uY3QchbdUXVIuNisywoA
+      secret_key: xxxxxx
     function:
       name: "xxxxxx"
       region: "ap-beijing"
@@ -144,56 +129,63 @@ data:
     debug: false
 
 ---
-apiVersion: v1
-kind: Secret
-metadata:
-  name: sink-tencentcloud-function
-  namespace: vanus
-type: Opaque
-data:
-  # cat secret.yml | base64
-  secret.yml: |
-    xxxxx
-immutable: true
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sink-tencentcloud-function
+  name: sink-tencentcloud-scf
   namespace: vanus
   labels:
-    app: sink-tencentcloud-function
+    app: sink-tencentcloud-scf
 spec:
   selector:
     matchLabels:
-      app: sink-tencentcloud-function
+      app: sink-tencentcloud-scf
   replicas: 1
   template:
     metadata:
       labels:
-        app: sink-tencentcloud-function
+        app: sink-tencentcloud-scf
     spec:
       containers:
-        - name: sink-tencentcloud-function
-          image: public.ecr.aws/vanus/connector/sink-tencentcloud-function:dev
+        - name: sink-tencentcloud-scf
+          image: public.ecr.aws/vanus/connector/sink-tencentcloud-scf
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
-            - name: secret
-              mountPath: /vance/secret
+              mountPath: /vanus-connect/config
       volumes:
-        - name: secret
-          secret:
-            secretName: sink-tencentcloud-function
         - name: config
           configMap:
-            name: sink-tencentcloud-function
+            name: sink-tencentcloud-scf
 ```
 
-### using vance Operator
+## Integrate with Vanus
 
-coming soon
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-tencentcloud-scf.yaml
+
+```shell
+kubectl apply -f sink-tencentcloud-scf.yaml
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-tencentcloud-scf:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
