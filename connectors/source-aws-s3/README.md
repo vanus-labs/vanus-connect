@@ -5,7 +5,7 @@ title: Amazon S3
 # Amazon S3 Source 
 
 ## Introduction
-The Amazon S3 Source is a [Vanus Connector][vc] which designed to retrieve S3 events from a specific bucket and 
+The Amazon S3 Source is a [Vanus Connector][vc] which is designed to retrieve S3 events from a specific bucket and 
 transform them into CloudEvents based on [CloudEvents Adapter specification][ceas].
 
 This connector allows users to specify a SQS queue to receive S3 event notification messages. 
@@ -92,7 +92,7 @@ which is converted to:
 
 ## Quick Start
 
-This section shows how Amazon S3 Source converts S3 events to a CloudEvent.
+This section will show you how Amazon S3 Source converts S3 events to a CloudEvent.
 
 ### Prerequisites
 
