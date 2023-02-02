@@ -34,8 +34,21 @@ In this section we will show you how to use Slack Sink to send a message to a Sl
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).
-- Have a [Slack App](https://api.slack.com/apps) with the permissions `chat:write` and `chat:write.public`.
+- Have a [Slack account](https://api.slack.com/apps).
 
+### Create an App in Slack
+
+  1. Create an app on slack.
+  2. Select `From scratch`.
+  3. Set the bot name and Workspace.
+  4. Click on permissions in the central menu.
+![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
+  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
+![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
+  6. Install to workspace.
+  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
+![message.png](https://github.com/Michaelg22/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
+  
 ### Create the config file
 
 ```shell
@@ -72,21 +85,6 @@ docker run -it --rm \
 We have designed for you a sandbox environment, removing the need to use your local machine. 
 You can run Connectors directly and safely on the Playground.
 
-  1. Create an app on slack.
-  2. Select `From scratch`.
-  3. Set the bot name and Workspace.
-  4. Click on permissions in the central menu.
-  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
-  6. Install to workspace.
-  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
-  8. Start Slack Sink with docker.
-  
-  ```shell
-docker run -it --rm \
-  -p 31080:8080 \
-  -v ${PWD}:/vanus-connect/config \
-  --name sink-slack public.ecr.aws/vanus/connector/sink-slack
-```
   
 9. Open a terminal and use the following command to send a CloudEvent to the Sink.
 
