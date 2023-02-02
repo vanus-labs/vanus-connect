@@ -32,7 +32,7 @@ type esConfig struct {
 	BufferBytes int        `json:"buffer_bytes" yaml:"buffer_bytes"`
 	InsertMode  InsertMode `json:"insert_mode" yaml:"insert_mode"`
 
-	Secret Secret `json:"secret" yaml:"secret"`
+	Secret Secret `json:"es" yaml:"es"`
 }
 
 func Config() cdkgo.SinkConfigAccessor {

@@ -22,7 +22,7 @@ import (
 const (
 	attributePrefix = "xv"
 	attributeOp     = attributePrefix + "op"
-	attributeIndex  = attributePrefix + "index"
+	attributeIndex  = attributePrefix + "indexname"
 	attributeId     = attributePrefix + "id"
 )
 
@@ -46,17 +46,21 @@ const (
 	actionDelete action = "delete"
 )
 
-func getAction(mode InsertMode, extensions map[string]interface{}) (action, error) {
-	op, err := getAttr(extensions, attributeOp)
-	if err != nil {
-		return "", err
+func (s *elasticsearchSink) getAction(extensions map[string]interface{}) (action, error) {
+	if len(extensions) == 0 {
+		return s.action, nil
+	}
+	val, exist := extensions[attributeOp]
+	if !exist {
+		return s.action, nil
+	}
+	op, ok := val.(string)
+	if !ok {
+		return "", errors.Errorf("invalid attribute %s=%v", attributeOp, val)
 	}
 	switch op {
 	case "c":
-		if mode == Upsert {
-			return actionUpdate, nil
-		}
-		return actionIndex, nil
+		return s.action, nil
 	case "u":
 		return actionUpdate, nil
 	case "d":
@@ -66,7 +70,7 @@ func getAction(mode InsertMode, extensions map[string]interface{}) (action, erro
 	}
 }
 
-func getDocumentId(extensions map[string]interface{}) (string, error) {
+func (s *elasticsearchSink) getDocumentId(extensions map[string]interface{}) (string, error) {
 	val, exist := extensions[attributeId]
 	if !exist {
 		return "", nil
@@ -80,4 +84,19 @@ func getDocumentId(extensions map[string]interface{}) (string, error) {
 		return strconv.Itoa(int(intV)), nil
 	}
 	return "", errors.Errorf("invalid attribute %s=%v", attributeId, val)
+}
+
+func (s *elasticsearchSink) getIndexName(extensions map[string]interface{}) (string, error) {
+	if len(extensions) == 0 {
+		return s.config.Secret.IndexName, nil
+	}
+	val, exist := extensions[attributeIndex]
+	if !exist {
+		return s.config.Secret.IndexName, nil
+	}
+	str, ok := val.(string)
+	if !ok {
+		return "", errors.Errorf("invalid attribute %s=%v", attributeIndex, val)
+	}
+	return str, nil
 }

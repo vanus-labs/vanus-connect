@@ -19,11 +19,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
@@ -35,11 +35,13 @@ import (
 )
 
 type elasticsearchSink struct {
+	count    int64
 	config   *esConfig
 	esClient *es.Client
 
 	timeout time.Duration
 	buf     *bytes.Buffer
+	action  action
 }
 
 func Sink() cdkgo.Sink {
@@ -56,8 +58,13 @@ func (s *elasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAcc
 		// default 5MB
 		cfg.BufferBytes = 5 * 1024 * 1024
 	}
+	if cfg.InsertMode == Upsert {
+		s.action = actionUpdate
+	} else {
+		s.action = actionIndex
+	}
 	s.timeout = time.Duration(cfg.Timeout) * time.Millisecond
-	s.buf = bytes.NewBuffer(make([]byte, cfg.BufferBytes))
+	s.buf = bytes.NewBuffer(make([]byte, 0, cfg.BufferBytes))
 	// init es client
 	esClient, err := es.NewClient(generateEsConfig(cfg))
 	if err != nil {
@@ -80,6 +87,10 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	if len(events) == 0 {
 		return cdkgo.SuccessResult
 	}
+	atomic.AddInt64(&s.count, int64(len(events)))
+	log.Info("receive event count", map[string]interface{}{
+		"total": s.count,
+	})
 	for _, event := range events {
 		err := s.appendEvent(event)
 		if err != nil {
@@ -90,7 +101,6 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	defer s.cleanBuffer()
 	timeoutCtx, cancel := context.WithTimeout(ctx, s.timeout)
 	defer cancel()
-	fmt.Println(string(s.buf.Bytes()))
 	req := esapi.BulkRequest{
 		Body: s.buf,
 	}
@@ -107,9 +117,8 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	}
 	if res.IsError() {
 		log.Warning("es bulk response error", map[string]interface{}{
-			log.KeyError: err,
-			"total":      len(events),
-			"response":   res.String(),
+			"total":    len(events),
+			"response": res.String(),
 		})
 		return cdkgo.NewResult(http.StatusInternalServerError, "es response error")
 	}
@@ -140,7 +149,7 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 
 func (s *elasticsearchSink) cleanBuffer() {
 	if s.buf.Cap() > s.config.BufferBytes {
-		s.buf = bytes.NewBuffer(make([]byte, s.config.BufferBytes))
+		s.buf = bytes.NewBuffer(make([]byte, 0, s.config.BufferBytes))
 	} else {
 		s.buf.Reset()
 	}
@@ -148,18 +157,15 @@ func (s *elasticsearchSink) cleanBuffer() {
 
 func (s *elasticsearchSink) appendEvent(event *ce.Event) error {
 	extensions := event.Extensions()
-	if len(extensions) == 0 {
-		return errors.Errorf("event %s is invalid", event.ID())
-	}
-	index, err := getAttr(extensions, attributeIndex)
+	index, err := s.getIndexName(extensions)
 	if err != nil {
 		return err
 	}
-	actionName, err := getAction(s.config.InsertMode, extensions)
+	actionName, err := s.getAction(extensions)
 	if err != nil {
 		return err
 	}
-	documentId, err := getDocumentId(extensions)
+	documentId, err := s.getDocumentId(extensions)
 	if err != nil {
 		return err
 	}
@@ -184,15 +190,12 @@ func (s *elasticsearchSink) appendEvent(event *ce.Event) error {
 	buf.WriteRune('}')
 	buf.WriteRune('}')
 	buf.WriteRune('\n')
-	//var m map[string]interface{}
-	//err = json.Unmarshal(buf.Bytes(), &m)
-	//fmt.Println(err)
 	if actionName == actionIndex {
-		buf.Write(event.Data())
+		json.Compact(buf, event.Data())
 	} else if actionName == actionUpdate {
 		buf.WriteRune('{')
 		buf.WriteString(`"doc":`)
-		buf.Write(event.Data())
+		json.Compact(buf, event.Data())
 		buf.WriteRune(',')
 		buf.WriteString(`"doc_as_upsert":true`)
 		buf.WriteRune('}')
