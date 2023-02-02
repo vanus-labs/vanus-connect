@@ -8,19 +8,19 @@ import java.sql.SQLException;
 
 public class PreparedStatementBinder implements StatementBinder<JsonObject> {
 
-  private final PreparedStatement preparedStatement;
-  private final TableMetadata metadata;
+    private final PreparedStatement preparedStatement;
+    private final TableMetadata metadata;
 
-  public PreparedStatementBinder(TableMetadata metadata, PreparedStatement preparedStatement) {
-    this.metadata = metadata;
-    this.preparedStatement = preparedStatement;
-  }
-
-  @Override
-  public void bindData(JsonObject data) throws SQLException {
-    int index = 1;
-    for (String columnName : metadata.getColumnNames()) {
-      preparedStatement.setObject(index++, data.getValue(columnName));
+    public PreparedStatementBinder(TableMetadata metadata, PreparedStatement preparedStatement) {
+        this.metadata = metadata;
+        this.preparedStatement = preparedStatement;
     }
-  }
+
+    @Override
+    public void bindData(JsonObject data) throws SQLException {
+        int index = 1;
+        for (String columnName : metadata.getColumnNames()) {
+            preparedStatement.setObject(index++, data.getValue(columnName));
+        }
+    }
 }

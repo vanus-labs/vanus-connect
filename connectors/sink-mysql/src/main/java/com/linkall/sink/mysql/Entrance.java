@@ -1,9 +1,9 @@
 package com.linkall.sink.mysql;
 
-import com.linkall.vance.core.VanceApplication;
+import com.linkall.cdk.Application;
 
 public class Entrance {
-  public static void main(String[] args) {
-    VanceApplication.run(MySqlSink.class);
-  }
+    public static void main(String[] args) {
+        Application.run(MySQLSink.class);
+    }
 }
