@@ -6,9 +6,10 @@ title: Amazon SNS
 
 ## Introduction
 
-The Amazon SNS(Simple Notification Service) Source is a [Vanus Connector][vc] which designed which subscribe to the SNS topic and receive messages published to the topic, 
+The Amazon SNS(Simple Notification Service) Source is a [Vanus Connector][vc] which is designed to subscribe to the SNS topic and receive messages published to the topic, 
 and then transform them into CloudEvents based on [CloudEvents Adapter specification][ceas].
-Push is adopted by Amazon SNS to deliver messages from SNS topics to the endpoints. Therefore, the Amazon SNS Source should subscribe the SNS topics and start an endpoint to receive messages from the SNS topics. 
+
+Push is adopted by Amazon SNS to deliver messages from SNS topics to the endpoints. Therefore, the Amazon SNS Source should subscribe to the SNS topics and start an endpoint to receive messages from the SNS topics. 
 
 Original SNS message pushed to http/https endpoints looks like:
 ```HTTP
@@ -64,7 +65,7 @@ which is converted to:
 
 ## Quick Start
 
-This section shows how Amazon S3 Source converts S3 events to a CloudEvent.
+This section will show you how to use Amazon S3 Source to converts S3 events to a CloudEvent.
 
 ### Prerequisites
 
@@ -80,6 +81,7 @@ This section shows how Amazon S3 Source converts S3 events to a CloudEvent.
   
   We have designed for you a sandbox environment, removing the need to use your local
   machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
+   
    We've already exposed webhook to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL.
    ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
 
@@ -97,7 +99,6 @@ endpoint: "http://{internet access endpoint}"
 protocol: "http"
 EOF
 ```
-
 
 | Name                  | Required | Default | Description                                               |
 |:----------------------|:--------:|:-------:|:----------------------------------------------------------|
