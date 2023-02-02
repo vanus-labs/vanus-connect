@@ -43,15 +43,14 @@ spec:
     spec:
       containers:
         - name: sink-mongodb
-          image: public.ecr.aws/vanus/connector/sink-mongodb:latest
+          image: public.ecr.aws/vanus/connector/sink-mongodb
           imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vance/config
-          # env: see README for more about how to set env
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:
