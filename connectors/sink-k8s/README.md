@@ -25,27 +25,27 @@ For example, if the incoming CloudEvent looks like:
     "metadata": {
       "annotations": {
         "operation": "create"
-      },              
-      "name": "job-test",    
-      "namespace": "default" 
-    },                
-     "spec": {         
-      "template": {   
+      },
+      "name": "job-test",
+      "namespace": "default"
+    },
+    "spec": {
+      "template": {
         "spec": {
-          "containers": [    
-            {         
-              "command": [   
-                "sleep",     
-                "60s" 
-              ],      
-              "image": "busybox:latest",        
-              "name": "container1"              
-            }         
-          ],          
-          "restartPolicy": "Never"              
-        }             
-      },              
-      "ttlSecondsAfterFinished": 100            
+          "containers": [
+            {
+              "command": [
+                "sleep",
+                "60s"
+              ],
+              "image": "busybox:latest",
+              "name": "container1"
+            }
+          ],
+          "restartPolicy": "Never"
+        }
+      },
+      "ttlSecondsAfterFinished": 100
     }
   }
 }
@@ -57,127 +57,9 @@ The Kubernetes Sink will extract `data` field write to Kubernetes cluster.
 
 ### Prerequisites
 
-- Have a container runtime (i.e., docker).
 - Have a Kubernetes cluster.
 
-### config file
-
-| Name               | Required | Default | Description                                     |
-|:-------------------|:--------:|:-------:|-------------------------------------------------|
-| port               |    No    |  8080   | the port which the Kubernetes Sink listens on   |
-
-The Kubernetes Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can
-specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
-
-### Start with Docker
-
-```shell
-docker run -it --rm \
-  -p 31080:8080 \
-  -v ${PWD}:/vanus-connect/config \
-  --name sink-k8s public.ecr.aws/vanus/connector/sink-k8s
-```
-
-### Test
-
-Open a terminal and use following command to send a CloudEvent to the Sink.
-
-#### Example for create job
-
-```shell
-```shell
-curl --location --request POST 'localhost:8080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-  "source": "quickstart",
-  "specversion": "1.0",
-  "type": "quickstart",
-  "datacontenttype": "application/json",
-  "time": "2022-10-26T10:38:29.345Z",
-  "data": {
-    "kind": "Job",
-    "apiVersion": "batch/v1",
-    "metadata": {
-      "name": "job-test",
-      "namespace": "default",
-      "annotations": {
-        "operation": "create"
-      }
-    },
-    "spec": {
-      "template": {
-        "spec": {
-          "containers": [
-            {
-              "name": "container1",
-              "image": "busybox:latest",
-              "command": [
-                "sleep",
-                "60s"
-              ]
-            }
-          ],
-          "restartPolicy": "Never"
-        }
-      },
-      "ttlSecondsAfterFinished": 100
-    }
-  }
-}'
-```
-
-### Example for delete job
-
-```shell
-curl --location --request POST 'localhost:8080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-  "source": "quickstart",
-  "specversion": "1.0",
-  "type": "quickstart",
-  "datacontenttype": "application/json",
-  "time": "2022-10-26T10:38:29.345Z",
-  "data": {
-    "kind": "Job",
-    "apiVersion": "batch/v1",
-    "metadata": {
-      "name": "job-test",
-      "namespace": "default",
-      "annotations": {
-        "operation": "delete"
-      }
-    },
-    "spec": {
-      "template": {
-        "spec": {
-          "containers": [
-            {
-              "name": "container1",
-              "image": "busybox:latest",
-              "command": [
-                "sleep",
-                "60s"
-              ]
-            }
-          ],
-          "restartPolicy": "Never"
-        }
-      },
-      "ttlSecondsAfterFinished": 100
-    }
-  }
-}'
-```
-
-### Clean resource
-
-```shell
-docker stop sink-k8s
-```
-
-## Run in Kubernetes
+### Start with Kubernetes
 
 ```shell
 kubectl apply -f sink-k8s.yaml
@@ -248,9 +130,11 @@ metadata:
 spec:
   selector:
     app: sink-k8s
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 8080
+      nodePort: 31080
+      name: http
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -276,7 +160,112 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-      serviceAccount: sink-k8s-sa
+      serviceAccountName: sink-k8s-sa
+```
+
+### Test
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
+
+Obtain your k8s cluster node INTERNAL-IP by following command and replace the following `<k8s node ip>`
+
+```shell
+kubectl get node -o wide
+```
+
+
+#### Example for create job
+
+```shell
+curl --location --request POST '<k8s node ip>:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "kind": "Job",
+    "apiVersion": "batch/v1",
+    "metadata": {
+      "name": "job-test",
+      "namespace": "default",
+      "annotations": {
+        "operation": "create"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "container1",
+              "image": "busybox:latest",
+              "command": [
+                "sleep",
+                "60s"
+              ]
+            }
+          ],
+          "restartPolicy": "Never"
+        }
+      },
+      "ttlSecondsAfterFinished": 100
+    }
+  }
+}'
+```
+
+### Example for delete job
+
+```shell
+curl --location --request POST '<k8s node ip>:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "kind": "Job",
+    "apiVersion": "batch/v1",
+    "metadata": {
+      "name": "job-test",
+      "namespace": "default",
+      "annotations": {
+        "operation": "delete"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "container1",
+              "image": "busybox:latest",
+              "command": [
+                "sleep",
+                "60s"
+              ]
+            }
+          ],
+          "restartPolicy": "Never"
+        }
+      },
+      "ttlSecondsAfterFinished": 100
+    }
+  }
+}'
+```
+
+### Clean resource
+
+```shell
+kubectl delete -f sink-k8s.yaml
 ```
 
 ## Integrate with Vanus
