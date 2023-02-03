@@ -108,6 +108,14 @@ docker run -it --rm --network=host \
   --name source-http public.ecr.aws/vanus/connector/source-http
 ```
 
+After running Display Sink, run the HTTP Source
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-http public.ecr.aws/vanus/connector/source-http
+```
+
 Open a terminal and use the following command to send http request to HTTP Source
 >>>>>>> e68dd51 (docs: Update GitHub Source)
 

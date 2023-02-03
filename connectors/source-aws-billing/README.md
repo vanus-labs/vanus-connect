@@ -88,9 +88,12 @@ docker run -it --rm --network=host \
 
 ### Test
 <<<<<<< HEAD
+=======
+<<<<<<< HEAD
 
 Before starting Amazon billing Source use the following command to run a Display sink, which will receive and prints the incoming CloudEvents.
 =======
+>>>>>>> main
 **To test the connector, run the Display Sink first before running AWS Billing source.**
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
 >>>>>>> 0a265c5 (docs: Update AWS Billing Source)

@@ -17,7 +17,7 @@ For example, if an original message looks like:
 
 It will be converted to CloudEvent this way:
 
-``` JSON
+```JSON
 {
   "id" : "4ad0b59fc-3e1f-484d-8925-bd78aab15123",
   "source" : "kafka_bootstrap_servers.mytopic",
@@ -51,13 +51,12 @@ topics: [ "mytopic" ]
 EOF
 ```
 
-| Name              | Required | Default  | Description                                                |
-|:------------------|:---------|:--------:|:-----------------------------------------------------------|
-| target            | YES      |          | the target URL which Kafka Source will send CloudEvents to |
-| bootstrap_servers | YES      |          | the kafka cluster bootstrap servers                        |
-| group_id          | YES      |          | the kafka cluster consumer group id                        |
-| topics            | YES      |          | the kafka topics listened by kafka source                  |
-
+| Name              | Required | Default | Description                                                |
+| :---------------- | :------- | :-----: | :--------------------------------------------------------- |
+| target            | YES      |         | the target URL which Kafka Source will send CloudEvents to |
+| bootstrap_servers | YES      |         | the kafka cluster bootstrap servers                        |
+| group_id          | YES      |         | the kafka cluster consumer group id                        |
+| topics            | YES      |         | the kafka topics listened by kafka source                  |
 
 The Kafka Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -80,8 +79,15 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
-Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to
-our Display Sink.
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+
+After running Display Sink, run the Github Source
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-kafka public.ecr.aws/vanus/connector/source-kafka
+```
 
 Send kafka message use the following command:
 
