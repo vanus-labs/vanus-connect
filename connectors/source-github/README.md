@@ -112,6 +112,7 @@ We have designed for you a sandbox environment, removing the need to use your lo
 machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
 
 1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL. ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
+
 2. Create a GitHub webhook for your repository.
 
    1. Create a webhook under the Settings tab inside your GitHub repository.
