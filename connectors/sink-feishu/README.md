@@ -59,7 +59,7 @@ EOF
 | bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
 | bot.webhooks.[].url        | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
-The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Feishu Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 

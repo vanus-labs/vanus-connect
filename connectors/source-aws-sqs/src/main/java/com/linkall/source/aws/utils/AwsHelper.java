@@ -1,6 +1,5 @@
 package com.linkall.source.aws.utils;
 
-import com.linkall.vance.common.config.SecretUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,10 +9,10 @@ public class AwsHelper {
     /**
      * Check or Create aws credential file
      */
-    public static void checkCredentials(){
+    public static void checkCredentials(String ak,String sk){
         LOGGER.info("====== Check aws Credential start ======");
-        System.setProperty("aws.accessKeyId", SecretUtil.getString("awsAccessKeyID"));
-        System.setProperty("aws.secretAccessKey", SecretUtil.getString("awsSecretAccessKey"));
+        System.setProperty("aws.accessKeyId", ak);
+        System.setProperty("aws.secretAccessKey", sk);
         LOGGER.info("====== Check aws Credential end ======");
     }
 

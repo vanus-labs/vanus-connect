@@ -3,137 +3,201 @@ title: Amazon S3
 ---
 
 # Amazon S3 Sink
-This document provides a brief introduction
-to the Amazon S3 Sink. It's also designed to guide you through the
-process of running an Amazon S3 Sink Connector.
 
 ## Introduction
-The Amazon S3 (Simple Storage Service) Sink Connector help you **convert received CloudEvents into JSON format and upload**
-them to AWS S3. To enable the Amazon S3 service, you should configure your **AWS region and bucket name**. When CloudEvents
-arrive, S3 Sink will **cache** them in local files. Then S3 Sink will upload local files according to the **configured upload
-strategy**. Files uploaded to AWS S3 will be **partitioned by time**. S3 Sink supports **`HOURLY` and `DAILY`** partitioning.
 
-## Features
-- **Upload scheduled interval**: S3 Sink supports **scheduled periodic check** for closing and uploading files to S3. When
-  the **time interval** reaches the threshold, the file will be directly closed and uploaded, regardless of whether the file
-  is full. The interval defaults to **60 seconds**.
-- **Flush size**: When file reaches **flush size**, it will be uploaded automatically. The flush size defaults to **1000**.
-- **Partition**: CloudEvents uploaded by S3 Sink are stored in S3 **partitioned**. S3 Sink create storage path in S3 according
-  to current time. Time-based partitioning options are daily or hourly.
+The Amazon S3 (Simple Storage Service) Sink is a [Vanus Connector][vc] that aims to cache incoming CloudEvents in local
+files and upload them to AWS S3. The files uploaded to AWS S3 will be **partitioned by time**. S3 Sink
+supports **`HOURLY` and `DAILY`** partitioning.
 
-## Limitations
+### Features
+
+- **Upload scheduled interval**: S3 Sink supports **scheduled periodic check** for closing and uploading files to S3.
+  When the **time interval** reaches the threshold, the file will be directly closed and uploaded, regardless of whether
+  the file is full. The interval defaults to **60 seconds**.
+- **Flush size**: When file reaches **flush size**, it will be uploaded automatically. The flush size defaults to **
+  1000**.
+- **Partition**: CloudEvents uploaded by S3 Sink are stored in S3 **partitioned**. S3 Sink create storage path in S3
+  according to current time. Time-based partitioning options are daily or hourly.
+
+### Limitations
+
 - **valid schema**: Data S3 Sink received must conform **[CloudEvents Schema Registry][ce-schema]**.
-- **Limitation of rate for receiving CloudEvents**: S3 Sink Connector will check the flush size and upload scheduled interval
-  one per second. Therefore, the number of CloudEvents sent to S3 Sink per second should be less than flush size.
+- **Limitation of rate for receiving CloudEvents**: S3 Sink Connector will check the flush size and upload scheduled
+  interval one per second. Therefore, the number of CloudEvents sent to S3 Sink per second should be less than flush
+  size.
 
-## IAM policy for Amazon S3 Sink
-- s3:List:ListAllMyBuckets
-- s3:List:ListBucket
-- s3:List:ListMultipartUploadParts
-- s3:List:ListBucketMultipartUploads
-- s3:Read:GetBucketLocation
-- s3:Read:GetObject
-- s3:Write:AbortMultipartUpload
-- s3:Write:CreateBucket
-- s3:Write:DeleteObject
-- s3:Write:PutBucketOwnershipControls
-- s3:Write:PutObject
- ---
-## Quick Start
+## Quickstart
+
 This quick start will guide you through the process of running an Amazon S3 Sink connector.
 
 ### Prerequisites
-- A container runtime (i.e., docker).
-- An Amazon [S3 bucket][s3-bucket].
-- A Properly settled [IAM] policy for your AWS user account.
-- An AWS account configured with [Access Keys][access-keys].
 
-### Set S3 Sink Configurations
-You can specify your configs by either setting environments
-variables or mounting a config.json to `/vance/config/config.json`
-when running the connector.
+- Have a container runtime (i.e., docker).
+- An Amazon S3 bucket.
+- AWS IAM [Access Key][accessKey].
+- AWS permissions for the IAM user:
+    - s3:PutObject
 
-Here is an example of a configuration file for the Amazon S3 Sink.\
-  ```json 
-  $ vim config.json
-  {
-    "v_port": "8080",
-    "region": "us-west-2",
-    "bucketName": "${bucketName}",
-    "flushSize": "1000",
-    "scheduledInterval": "60",
-    "timeInterval": "HOURLY"
-  }
-  ```
+### Create the config file
 
-|  Configs    |                                                                                                                                                     Description    																                                                                                                                                                     |  Example    			  |  Required    |
-  |  :----:     |:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|  :----:     			  |  :----:      |
-|  v_port   |                                                                                                                                           `v_port` Specifies the port S3 Sink will listen to                                                                                                                                            |  "8080"  |  YES  		 |
-|  region     |                                                                                                                                    `region` Describes in which aws region S3 bucket is created. 				                                                                                                                                    |  "us-west-2"	                  |  YES         |
-|  bucketName     |                                                                                                                                                     Unique name of S3 bucket.					                                                                                                                                                      |  "aws-s3-notify"	                  |  YES         |
-|  flushSize     |                                                                                                              `flushSize` Refers to the number of CloudEvents cached to the local file before S3 Sink committing the file.                                                                                                               |  "1000"	     |  NO, defaults to 1000         |
-|  scheduledInterval     |                                                                                                        `scheduledInterval` Refers to the maximum time interval between S3 Sink closing and uploading files which unit is second.                                                                                                        |  "60"	     |  NO, defaults to 60         |
-|  timeInterval     | `timeInterval` Refers to the partitioning interval of files have been uploaded to the S3. S3 Sink supports `HOURLY` and `DAILY` time interval. For example, when `timeInterval` is `HOURLY`, files uploaded between 3 pm and 4 pm will be partitioned to one path, while files uploaded after 4 pm will be partitioned to another path. |  "HOURLY"	     |  YES        |
+```shell
+cat << EOF > config.yml
+port: 8080
+aws:
+  access_key_id: AKIAIOSFODNN7EXAMPLE
+  secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+region: "us-west-2"
+bucket: "mybucket"
+scheduled_interval: 10
+EOF
+```
 
-### Set S3 Sink Secrets
-Users should set their sensitive data Base64 encoded in a secret file.
-And mount your local secret file to `/vance/secret/secret.json` when you run the connector.
+| Name                  | Required | Default | Description                                                                                                                                                                                                                                                                                                    |
+|:----------------------|:--------:|:--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| port                  |    NO    | 8080    | the port which S3 Sink listens on                                                                                                                                                                                                                                                                              |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                                                                                                                                                                                                                                                                            |                                                                                         |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                                                                                                                                                                                                                                                                            |                                                                                        |
+| region                |   YES    |         | the S3 bucket region                                                                                                                                                                                                                                                                                           |
+| bucket                |   YES    |         | the S3 bucket name                                                                                                                                                                                                                                                                                             |
+| flush_size            |    NO    | 1000    | the number of CloudEvents cached to the local file before S3 Sink upload the file                                                                                                                                                                                                                              |
+| scheduled_interval    |    NO    | 60      | the maximum time interval between S3 Sink closing and uploading files which unit is second.                                                                                                                                                                                                                    |
+| time_interval         |    NO    | HOURLY  | the partitioning interval of files have been uploaded to the S3. S3 Sink supports `HOURLY` and `DAILY` time interval. For example, when `timeInterval` is `HOURLY`, files uploaded between 3 pm and 4 pm will be partitioned to one path, while files uploaded after 4 pm will be partitioned to another path  |
 
-#### Encode your Sensitive Data
-Replace `MY_SECRET` with your sensitive data to get the Base64-based string.
+The Amazon S3 Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
-  ```shell
-  $ echo -n MY_SECRET | base64
-  TVlfU0VDUkVU
-  ```
+### Start with Docker
 
-Create a local secret file with the Base64-based string you just got from your secrets.
-  ```json
-  $ vim secret.json
-  {
-    "awsAccessKeyID": "TVlfU0VDUkVU",
-    "awsSecretAccessKey": "U2VjcmV0QWNjZXNzS2V5"
-  }
-  ```
-| Secrets            | Description                                                          | Example                       |Required|
-  |:-------------------|:---------------------------------------------------------------------|:------------------------------|:-------|
-| awsAccessKeyID     | `awsAccessKeyID` is the Access key ID of your aws credential.        | "BASE64VALUEOFYOURACCESSKEY=" |**YES** |
-| awsSecretAccessKey | `awsSecretAccessKey` is the Secret access key of youraws credential. | "BASE64VALUEOFYOURSECRETKEY=" |**YES** |
+```shell
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-aws-s3 public.ecr.aws/vanus/connector/sink-aws-s3
+```
 
-### Run the Amazon S3 Sink with Docker
-Create your config.json and secret.json, and mount them to
-specific paths to run the MySQL Sink using the following command.
+### Test
 
->  docker run -v $(pwd)/secret.json:/vance/secret/secret.json -v $(pwd)/config.json:/vance/config/config.json -p 8080:8080 --rm vancehub/sink-aws-s3
+Open a terminal and use following command to send a CloudEvent to the Sink.
 
+```shell
+curl --location --request POST 'localhost:31080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+    "source": "quickstart",
+    "specversion": "1.0",
+    "type": "quickstart",
+    "datacontenttype": "application/json",
+    "time": "2022-10-26T10:38:29.345Z",
+    "data": {
+        "myData": "simulation event data"
+    }
+}'
+```
 
-### Verify the Amazon S3 Sink
+Open [AWS S3 Console](https://s3.console.aws.amazon.com), select the bucket and verify the file has uploaded.
 
-To verify the S3 Sink, you should send CloudEvents to the address of S3 Sink. Try to use the  following `curl` command.
+### Clean resource
 
-  ```shell 
-  > curl -X POST 
-  > -d '{"specversion":"0.3","id":"b25e2717-a470-45a0-8231-985a99aa9416","type":"com.github.pull.create","source":"https://github.com/cloudevents/spec/pull/123","time":"2019-07-04T17:31:00.000Z","datacontenttype":"application/json","data":{"much":"wow"}}' 
-  > -H'Content-Type:application/cloudevents+json' 
-  > http://localhost:8081 
-  ``` 
+```shell
+docker stop sink-aws-s3
+```
 
-:::tip
-Note that the last line contains the address and port to send the event.
-:::
+## Run in Kubernetes
 
+```shell
+kubectl apply -f sink-aws-s3.yaml
+```
 
-After S3 Sink Connector, you can see following logs:
-  ```shell 
-  [root@iZ8vbhcwtixrzhsn023sghZ s3sink]# docker run -v $(pwd)/secret.json:/vance/secret/secret.json -v $(pwd)/config.json:/vance/config/config.json -p 8080:8080 --rm sink-aws-s3
-  [09:02:19:001] [INFO] - com.linkall.vance.common.config.ConfigPrinter.printVanceConf(ConfigPrinter.java:10) - vance configs-v_target: v_target
-  [09:02:19:010] [INFO] - com.linkall.vance.common.config.ConfigPrinter.printVanceConf(ConfigPrinter.java:11) - vance configs-v_port: 8080
-  [09:02:19:010] [INFO] - com.linkall.vance.common.config.ConfigPrinter.printVanceConf(ConfigPrinter.java:12) - vance configs-v_config_path: /vance/config/config.json
-  [09:02:19:011] [INFO] - com.linkall.sink.aws.AwsHelper.checkCredentials(AwsHelper.java:14) - ====== Check aws Credential start ======
-  [09:02:19:018] [INFO] - com.linkall.sink.aws.AwsHelper.checkCredentials(AwsHelper.java:17) - ====== Check aws Credential end ======
-  [09:02:20:583] [INFO] - com.linkall.vance.core.http.HttpServerImpl.lambda$listen$5(HttpServerImpl.java:127) - HttpServer is listening on port: 8080
-  [02:39:20:943] [INFO] - com.linkall.sink.aws.S3Sink.lambda$start$0(S3Sink.java:96) - receive a new event, in total: 1
-  [02:40:14:141] [INFO] - com.linkall.sink.aws.S3Sink.uploadFile(S3Sink.java:162) - [upload file <eventing-0000001> completed
-  ```
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+spec:
+  selector:
+    app: sink-aws-s3
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-aws-s3
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+data:
+  config.yml: |-
+    port: 8080
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    region: "us-west-2"
+    bucket: "mybucket"
+    scheduled_interval: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-aws-s3
+  namespace: vanus
+  labels:
+    app: sink-aws-s3
+spec:
+  selector:
+    matchLabels:
+      app: sink-aws-s3
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-aws-s3
+    spec:
+      containers:
+        - name: sink-aws-s3
+          image: public.ecr.aws/vanus/connector/sink-aws-s3
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+                name: http
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-aws-s3
+```
 
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-aws-s3.yaml
+
+```shell
+kubectl apply -f sink-aws-s3.yaml
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-aws-s3:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
 [ce-schema]: https://github.com/cloudevents/spec/blob/main/schemaregistry/spec.md

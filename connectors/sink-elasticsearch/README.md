@@ -9,7 +9,7 @@ title: Elasticsearch
 The Elasticsearch Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts
 the `data` part of the original event and deliver these extracted `data` to [Elasticsearch][es] cluster.
 
-For example, the incoming CloudEvent looks like:
+For example, an incoming CloudEvent looks like:
 
 ```json
 {
@@ -27,7 +27,8 @@ For example, the incoming CloudEvent looks like:
 }
 ```
 
-The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cluster index as a document looks like:
+The Elasticsearch Sink will extract the `data` field and write it to the [Elasticsearch][es] cluster index as a
+document:
 
 ```json
 {
@@ -43,10 +44,10 @@ The Elasticsearch Sink will extract `data` field write to [Elasticsearch][es] cl
 }
 ```
 
-
 ## Quickstart
 
 ### Prerequisites
+
 - Have a container runtime (i.e., docker).
 - Have an Elasticsearch cluster.
 
@@ -57,7 +58,7 @@ cat << EOF > config.yml
 port: 8080
 insert_mode: "upsert"
 primary_key: "data.id"
-secret:
+es:
   address: "http://localhost:9200"
   index_name: "vanus_test"
   username: "elastic"
@@ -65,18 +66,19 @@ secret:
 EOF
 ```
 
-| name        | requirement |  default  | description                                                                                                           |
-|:------------|:-----------:|:---------:|:----------------------------------------------------------------------------------------------------------------------|
-| port        |     NO      |   8080    | the port which Elasticsearch Sink listens on                                                                          |
-| address     |     YES     |           | elasticsearch cluster address, multi split by ","                                                                     |
-| index_name  |     YES     |           | elasticsearch index name                                                                                              |
-| username    |     YES     |           | elasticsearch cluster username                                                                                        |
-| password    |     YES     |           | elasticsearch cluster password                                                                                        |
-| timeout     |     NO      |   10000   | elasticsearch index document timeout, unit millisecond                                                                |
-| insert_mode |     NO      |  insert   | elasticsearch index document type: insert or upsert                                                                   |
-| primary_key |     NO      |           | elasticsearch index document primary key in event, it can't be empty if insert_mode is upsert. example: data.id or id |
+| name         | requirement |     default     | description                                                   |
+|:-------------|:-----------:|:---------------:|:--------------------------------------------------------------|
+| port         |     NO      |      8080       | the port which Elasticsearch Sink listens on                  |
+| address      |     YES     |                 | elasticsearch cluster address, multi split by ","             |
+| index_name   |     YES     |                 | elasticsearch index name                                      |
+| username     |     YES     |                 | elasticsearch cluster username                                |
+| password     |     YES     |                 | elasticsearch cluster password                                |
+| timeout      |     NO      |      10000      | elasticsearch index document timeout, unit millisecond        |
+| insert_mode  |     NO      |     insert      | elasticsearch index document type: insert or upsert           |
+| buffer_bytes |     NO      | 5 * 1024 * 1024 | elasticsearch each [bulk api][bulk api] request max body size |
 
-The Elasticsearch Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Elasticsearch Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify
+the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -88,7 +90,7 @@ docker run -it --rm --network=host\
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:8080' \
@@ -101,14 +103,14 @@ curl --location --request POST 'localhost:8080' \
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:05:55.777689Z",
   "data": {
-    "id": 123,
-    "date": "2022-06-13",
-    "service": "test data"
+      "id": 123,
+      "date": "2022-06-13",
+      "service": "test data"
   }
 }'
 ```
 
-use following command get an es document
+Use the following command to get an es document.
 
 ```shell
 curl http://localhost:9200/vanus_test/_search?pretty
@@ -132,6 +134,67 @@ curl http://localhost:9200/vanus_test/_search?pretty
 
 ```shell
 docker stop sink-elasticsearch
+```
+
+## Source details
+
+### Extension Attributes
+
+The Elasticsearch Sink have additional reactions if the incoming CloudEvent contains
+following [Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+.
+
+| Attribute   | Required | Examples  | Description                                                                                                                                                                                |
+|:------------|:--------:|:---------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| xvindexname |    NO    | "myindex" | the event want write to index name, if empty it will use config index_name                                                                                                                 |
+| xvop        |    NO    |    "c"    | the event to document action:c, u, d; c convert to es index, u convert to es update with upsert, d convert to es delete, if config insert_mode is upsert the action c will be changed to u |
+| xvid        |    NO    |   "123"   | the document id , it needs if action is delete, update                                                                                                                                     |
+
+### Examples
+
+#### Write to es with index
+
+```shell
+curl --location --request POST 'localhost:8080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "specversion": "1.0",
+  "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
+  "source": "vanus.source.test",
+  "type": "vanus.type.test",
+  "datacontenttype": "application/json",
+  "time": "2022-06-14T07:05:55.777689Z",
+  "xvindexname": "myindex",
+  "xvop": "c",
+  "data": {
+      "id": 123,
+      "date": "2022-06-13",
+      "service": "test data"
+  }
+}'
+```
+
+#### Write to es with document id
+
+```shell
+curl --location --request POST 'localhost:8080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "specversion": "1.0",
+  "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
+  "source": "vanus.source.test",
+  "type": "vanus.type.test",
+  "datacontenttype": "application/json",
+  "time": "2022-06-14T07:05:55.777689Z",
+  "xvindexname": "myindex",
+  "xvop": "c",
+  "xvid": "123",
+  "data": {
+      "id": 123,
+      "date": "2022-06-13",
+      "service": "test data"
+  }
+}'
 ```
 
 ## Run in Kubernetes
@@ -162,7 +225,7 @@ metadata:
 data:
   config.yml: |-
     port: 8080
-    secret:
+    es:
       address: "http://localhost:9200"
       index_name: "vanus_test"
       username: "elastic"
@@ -189,6 +252,9 @@ spec:
         - name: sink-es
           image: public.ecr.aws/vanus/connector/sink-elasticsearch
           imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
           volumeMounts:
             - name: config
               mountPath: /vanus-connect/config
@@ -200,19 +266,23 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 1. Run the sink-es.yaml
+
 ```shell
 kubectl apply -f sink-es.yaml
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
 ```shell
 vsctl subscription create \
   --name quick-start \
@@ -221,4 +291,7 @@ vsctl subscription create \
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+
 [es]: https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html
+
+[bulk api]: https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-bulk.html

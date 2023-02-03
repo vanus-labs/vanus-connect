@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-aws-sqs
+  namespace: vanus
+data:
+  config.yml: |-
+    "target": "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    sqs_arn: "arn:aws:sqs:us-west-2:843378899134:myQueue"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-aws-sqs
+  namespace: vanus
+  labels:
+    app: source-aws-sqs
+spec:
+  selector:
+    matchLabels:
+      app: source-aws-sqs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-aws-sqs
+    spec:
+      containers:
+        - name: source-aws-sqs
+          image: public.ecr.aws/vanus/connector/source-aws-sqs
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-aws-sqs

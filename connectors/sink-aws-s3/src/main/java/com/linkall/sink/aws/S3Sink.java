@@ -1,10 +1,10 @@
 package com.linkall.sink.aws;
 
-import com.linkall.vance.common.config.ConfigUtil;
-import com.linkall.vance.common.json.JsonMapper;
-import com.linkall.vance.core.Sink;
-import com.linkall.vance.core.http.HttpServer;
-import io.vertx.core.json.JsonObject;
+import com.linkall.cdk.config.Config;
+import com.linkall.cdk.connector.Result;
+import com.linkall.cdk.connector.Sink;
+import com.linkall.cdk.util.EventUtil;
+import io.cloudevents.CloudEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
@@ -32,111 +32,88 @@ public class S3Sink implements Sink {
     private static final AtomicInteger fileIdx = new AtomicInteger(1);
     private static final AtomicInteger fileSize = new AtomicInteger(0);
     private String pathName;
-    private String timeIntervalUnit;
+    private S3Config.TimeInterval timeInterval;
     private int flushSize;
     private long scheduledInterval;
     private S3Client s3;
 
-    @Override
-    public void start(){
-        AwsHelper.checkCredentials();
+    private S3Config config;
+    private ScheduledExecutorService executorService;
+
+
+    public S3Sink() {
+        executorService = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    public void start() {
+        AwsHelper.checkCredentials(config.getSecretConfig().getAccessKeyID(), config.getSecretConfig().getSecretAccessKey());
 
         //read config
-        String strRegion = ConfigUtil.getString("region");
-        String bucketName = ConfigUtil.getString("bucketName");
+        String strRegion = config.getRegion();
+        String bucketName = config.getBucket();
 
-        if(ConfigUtil.getString("flushSize")!=null){
-            flushSize = Integer.parseInt(ConfigUtil.getString("flushSize"));
-        }else{
+        if (config.getFlushSize()!=null && config.getFlushSize() > 0) {
+            flushSize = config.getFlushSize();
+        } else {
             flushSize = 1000;
         }
-        if(ConfigUtil.getString("scheduledInterval")!=null){
-            scheduledInterval = Long.parseLong(ConfigUtil.getString("scheduledInterval"));
-        }else{
+        if (config.getScheduledInterval()!=null && config.getScheduledInterval() > 0) {
+            scheduledInterval = config.getScheduledInterval();
+        } else {
             scheduledInterval = 60;
         }
 
         //crate path for file to be upload
         pathCreateTime = getZeroTime(LocalDateTime.now());
-        timeIntervalUnit = ConfigUtil.getString("timeInterval");
-        if(timeIntervalUnit.equals("HOURLY")){
-            pathName = pathCreateTime.getYear()+"/"+dateFormat.format(pathCreateTime.getMonthValue())+"/"
-                    +dateFormat.format(pathCreateTime.getDayOfMonth())+"/"+dateFormat.format(pathCreateTime.getHour())+"/";
-        }else if(timeIntervalUnit.equals("DAILY")){
-            pathName = pathCreateTime.getYear()+"/"+dateFormat.format(pathCreateTime.getMonthValue())+"/"
-                    +dateFormat.format(pathCreateTime.getDayOfMonth())+"/";
+        timeInterval = config.getTimeInterval();
+        if (timeInterval==null) {
+            timeInterval = S3Config.TimeInterval.HOURLY;
+        }
+        if (timeInterval==S3Config.TimeInterval.HOURLY) {
+            pathName = pathCreateTime.getYear() + "/" + dateFormat.format(pathCreateTime.getMonthValue()) + "/"
+                    + dateFormat.format(pathCreateTime.getDayOfMonth()) + "/" + dateFormat.format(pathCreateTime.getHour()) + "/";
+        } else if (timeInterval==S3Config.TimeInterval.DAILY) {
+            pathName = pathCreateTime.getYear() + "/" + dateFormat.format(pathCreateTime.getMonthValue()) + "/"
+                    + dateFormat.format(pathCreateTime.getDayOfMonth()) + "/";
         }
 
         Region region = Region.of(strRegion);
         // get S3Client
-        s3 = Objects.requireNonNull(
-                S3Client.builder().region(region).build());
-
-        HttpServer server = HttpServer.createHttpServer();
+        s3 = Objects.requireNonNull(S3Client.builder().region(region).build());
 
         fileCreateTime = LocalDateTime.now();
 
 
         //scheduled thread check upload condition
-        ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(10);
-        threadPool.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                pathName = checkAndGetPathName();
-                long duration = Duration.between(fileCreateTime, LocalDateTime.now()).getSeconds();
-                if((fileSize.get() >= flushSize || duration >= scheduledInterval)){
-                    uploadFile(bucketName);
-                }
+        executorService.scheduleAtFixedRate(() -> {
+            pathName = checkAndGetPathName();
+            long duration = Duration.between(fileCreateTime, LocalDateTime.now()).getSeconds();
+            if ((fileSize.get() >= flushSize || duration >= scheduledInterval)) {
+                uploadFile(bucketName);
             }
         }, 0L, 1L, TimeUnit.SECONDS);
-
-        //write ce into file
-        server.ceHandler(event -> {
-            int num = eventNum.addAndGet(1);
-            LOGGER.info("receive a new event, in total: "+num);
-
-            JsonObject js = JsonMapper.wrapCloudEvent(event);
-
-            File jsonFile = new File("eventing-"+decimalFormat.format(fileIdx.get()));
-
-            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonFile, true)))){
-                bw.write(js.toString());
-                bw.write("\r\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            fileSize.getAndAdd(1);
-        });
-        server.listen();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            pathName = checkAndGetPathName();
-            uploadFile(bucketName);
-            s3.close();
-            System.out.println("shut down");
-        }));
     }
 
-    private OffsetDateTime getZeroTime(LocalDateTime time){
+    private OffsetDateTime getZeroTime(LocalDateTime time) {
         LocalDateTime dt = LocalDateTime.now(ZoneId.of("Z"));
         Duration duration = Duration.between(time, dt);
         OffsetDateTime time2 = OffsetDateTime.of(time, ZoneOffset.UTC).plus(duration);
         return time2;
     }
 
-    private String checkAndGetPathName(){
+    private String checkAndGetPathName() {
         String pathName = this.pathName;
         pathCreateTime = getZeroTime(LocalDateTime.now());
-        String newPathNameDaily = pathCreateTime.getYear()+"/"+dateFormat.format(pathCreateTime.getMonthValue())+"/"
-                +dateFormat.format(pathCreateTime.getDayOfMonth())+"/";
-        if(timeIntervalUnit.equals("HOURLY")){
-            if(!pathName.equals(newPathNameDaily+dateFormat.format(pathCreateTime.getHour())+"/")){
+        String newPathNameDaily = pathCreateTime.getYear() + "/" + dateFormat.format(pathCreateTime.getMonthValue()) + "/"
+                + dateFormat.format(pathCreateTime.getDayOfMonth()) + "/";
+        if (timeInterval==S3Config.TimeInterval.HOURLY) {
+            if (!pathName.equals(newPathNameDaily + dateFormat.format(pathCreateTime.getHour()) + "/")) {
                 fileIdx.getAndSet(1);
                 fileSize.getAndSet(0);
             }
             pathName = newPathNameDaily + dateFormat.format(pathCreateTime.getHour()) + "/";
-        }else if(timeIntervalUnit.equals("DAILY")){
-            if(!pathName.equals(newPathNameDaily)){
+        } else if (timeInterval==S3Config.TimeInterval.DAILY) {
+            if (!pathName.equals(newPathNameDaily)) {
                 fileIdx.getAndSet(1);
                 fileSize.getAndSet(0);
             }
@@ -145,28 +122,69 @@ public class S3Sink implements Sink {
         return pathName;
     }
 
-    private void uploadFile(String bucketName){
-        File uploadFile = new File("eventing-"+decimalFormat.format(fileIdx.get()));
-        if(null != uploadFile && uploadFile.length() != 0){
+    private void uploadFile(String bucketName) {
+        File uploadFile = new File("eventing-" + decimalFormat.format(fileIdx.get()));
+        if (uploadFile.exists() && uploadFile.length()!=0) {
             int uploadFileIdx = fileIdx.get();
             fileSize.getAndSet(0);
             fileIdx.getAndAdd(1);
-            boolean putOk = S3Util.putS3Object(s3,bucketName,
-                    pathName+"eventing-"+decimalFormat.format(uploadFileIdx), uploadFile);
+            boolean putOk = S3Util.putS3Object(s3, bucketName,
+                    pathName + "eventing-" + decimalFormat.format(uploadFileIdx), uploadFile);
             try {
-                Files.deleteIfExists(Paths.get("eventing-"+decimalFormat.format(uploadFileIdx) ));
+                Files.deleteIfExists(Paths.get("eventing-" + decimalFormat.format(uploadFileIdx)));
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if(putOk){
-                LOGGER.info("[upload file <" + "eventing-"+decimalFormat.format(uploadFileIdx) + "> completed");
-            }else{
-                LOGGER.info("[upload file <" + "eventing-"+decimalFormat.format(uploadFileIdx) + "> failed");
+            if (putOk) {
+                LOGGER.info("[upload file <" + "eventing-" + decimalFormat.format(uploadFileIdx) + "> completed");
+            } else {
+                LOGGER.info("[upload file <" + "eventing-" + decimalFormat.format(uploadFileIdx) + "> failed");
             }
-        }else{
-            LOGGER.info("invalid data format, upload failed");
+        } else {
+            LOGGER.info("no event ignore upload file,{}", uploadFile.getName());
         }
         fileCreateTime = LocalDateTime.now();
     }
 
+    @Override
+    public Result Arrived(CloudEvent... events) {
+        for (CloudEvent event : events) {
+            int num = eventNum.addAndGet(1);
+            LOGGER.info("receive a new event, in total: " + num);
+            File jsonFile = new File("eventing-" + decimalFormat.format(fileIdx.get()));
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(jsonFile, true)))) {
+                bw.write(EventUtil.eventToJson(event));
+                bw.write("\r\n");
+            } catch (IOException e) {
+                LOGGER.error("write event to file error,{},{}", jsonFile.getAbsolutePath(), event.getId(), e);
+                throw new RuntimeException(e);
+            }
+            fileSize.getAndAdd(1);
+        }
+        return Result.SUCCESS;
+    }
+
+    @Override
+    public Class<? extends Config> configClass() {
+        return S3Config.class;
+    }
+
+    @Override
+    public void initialize(Config config) throws Exception {
+        this.config = (S3Config) config;
+        start();
+    }
+
+    @Override
+    public String name() {
+        return "AmazonS3Sink";
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        executorService.shutdown();
+        pathName = checkAndGetPathName();
+        uploadFile(config.getBucket());
+        s3.close();
+    }
 }

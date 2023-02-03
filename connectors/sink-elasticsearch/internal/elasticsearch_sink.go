@@ -19,9 +19,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-
+	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
@@ -33,11 +35,13 @@ import (
 )
 
 type elasticsearchSink struct {
+	count    int64
 	config   *esConfig
 	esClient *es.Client
 
-	timeout    time.Duration
-	primaryKey PrimaryKey
+	timeout time.Duration
+	buf     *bytes.Buffer
+	action  action
 }
 
 func Sink() cdkgo.Sink {
@@ -47,11 +51,20 @@ func Sink() cdkgo.Sink {
 func (s *elasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAccessor) error {
 	cfg := config.(*esConfig)
 	s.config = cfg
-	s.primaryKey = GetPrimaryKey(cfg.PrimaryKey)
 	if cfg.Timeout == 0 {
 		cfg.Timeout = 10 * 1000
 	}
+	if cfg.BufferBytes == 0 {
+		// default 5MB
+		cfg.BufferBytes = 5 * 1024 * 1024
+	}
+	if cfg.InsertMode == Upsert {
+		s.action = actionUpdate
+	} else {
+		s.action = actionIndex
+	}
 	s.timeout = time.Duration(cfg.Timeout) * time.Millisecond
+	s.buf = bytes.NewBuffer(make([]byte, 0, cfg.BufferBytes))
 	// init es client
 	esClient, err := es.NewClient(generateEsConfig(cfg))
 	if err != nil {
@@ -71,13 +84,124 @@ func (s *elasticsearchSink) Initialize(_ context.Context, config cdkgo.ConfigAcc
 }
 
 func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
+	if len(events) == 0 {
+		return cdkgo.SuccessResult
+	}
+	atomic.AddInt64(&s.count, int64(len(events)))
+	log.Info("receive event count", map[string]interface{}{
+		"total": s.count,
+	})
 	for _, event := range events {
-		result := s.writeEvent(ctx, event)
-		if result == cdkgo.SuccessResult {
-			return result
+		err := s.appendEvent(event)
+		if err != nil {
+			s.cleanBuffer()
+			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
+		}
+	}
+	defer s.cleanBuffer()
+	timeoutCtx, cancel := context.WithTimeout(ctx, s.timeout)
+	defer cancel()
+	req := esapi.BulkRequest{
+		Body: s.buf,
+	}
+	res, err := req.Do(timeoutCtx, s.esClient)
+	if err != nil {
+		log.Warning("es bulk do error", map[string]interface{}{
+			log.KeyError: err,
+			"total":      len(events),
+		})
+		return cdkgo.NewResult(http.StatusInternalServerError, "write to es error")
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+	if res.IsError() {
+		log.Warning("es bulk response error", map[string]interface{}{
+			"total":    len(events),
+			"response": res.String(),
+		})
+		return cdkgo.NewResult(http.StatusInternalServerError, "es response error")
+	}
+	var blk esutil.BulkIndexerResponse
+	if err = json.NewDecoder(res.Body).Decode(&blk); err != nil {
+		log.Warning("parse response error", map[string]interface{}{
+			log.KeyError: err,
+		})
+		return cdkgo.NewResult(http.StatusInternalServerError, "parse response error")
+	}
+	if !blk.HasErrors {
+		for i, blkItem := range blk.Items {
+			for k, v := range blkItem {
+				if v.Error.Type != "" || v.Status > 201 {
+					log.Warning("event write to es failed", map[string]interface{}{
+						"index":       i + 1,
+						"id":          events[i].ID(),
+						"action":      k,
+						"errorType":   v.Error.Type,
+						"errorReason": v.Error.Reason,
+					})
+				}
+			}
 		}
 	}
 	return cdkgo.SuccessResult
+}
+
+func (s *elasticsearchSink) cleanBuffer() {
+	if s.buf.Cap() > s.config.BufferBytes {
+		s.buf = bytes.NewBuffer(make([]byte, 0, s.config.BufferBytes))
+	} else {
+		s.buf.Reset()
+	}
+}
+
+func (s *elasticsearchSink) appendEvent(event *ce.Event) error {
+	extensions := event.Extensions()
+	index, err := s.getIndexName(extensions)
+	if err != nil {
+		return err
+	}
+	actionName, err := s.getAction(extensions)
+	if err != nil {
+		return err
+	}
+	documentId, err := s.getDocumentId(extensions)
+	if err != nil {
+		return err
+	}
+	if documentId == "" {
+		if actionName == actionUpdate || actionName == actionDelete {
+			return errors.Errorf("action is %s but documentId is empty", actionName)
+		}
+	}
+	// https://www.elastic.co/guide/en/elasticsearch/reference/master/docs-bulk.html
+	buf := s.buf
+	buf.WriteRune('{')
+	buf.WriteString(strconv.Quote(string(actionName)))
+	buf.WriteRune(':')
+	buf.WriteRune('{')
+	buf.WriteString(`"_index":`)
+	buf.WriteString(strconv.Quote(index))
+	if documentId != "" {
+		buf.WriteRune(',')
+		buf.WriteString(`"_id":`)
+		buf.WriteString(strconv.Quote(documentId))
+	}
+	buf.WriteRune('}')
+	buf.WriteRune('}')
+	buf.WriteRune('\n')
+	if actionName == actionIndex {
+		json.Compact(buf, event.Data())
+	} else if actionName == actionUpdate {
+		buf.WriteRune('{')
+		buf.WriteString(`"doc":`)
+		json.Compact(buf, event.Data())
+		buf.WriteRune(',')
+		buf.WriteString(`"doc_as_upsert":true`)
+		buf.WriteRune('}')
+	}
+	buf.WriteRune('\n')
+	return nil
 }
 
 func (s *elasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdkgo.Result {
@@ -88,24 +212,13 @@ func (s *elasticsearchSink) writeEvent(ctx context.Context, event *ce.Event) cdk
 		documentID   string
 		documentType string
 	)
-	if s.primaryKey.Type() != None {
-		documentID = s.primaryKey.Value(event)
-	}
 	if s.config.InsertMode == Upsert {
-		if documentID == "" {
-			log.Warning("documentID is empty", map[string]interface{}{
-				"event":      event,
-				"primaryKey": s.config.PrimaryKey,
-			})
-			return cdkgo.NewResult(http.StatusBadRequest, "documentID is empty")
-		}
 		var body bytes.Buffer
 		body.WriteByte('{')
 		body.WriteString(`"doc":`)
 		body.Write(event.Data())
 		body.WriteByte(',')
-		body.WriteString(`"upsert":`)
-		body.Write(event.Data())
+		body.WriteString(`"doc_as_upsert": true`)
 		body.WriteByte('}')
 		// https://www.elastic.co/guide/en/elasticsearch/reference/7.17/docs-update.html
 		req = esapi.UpdateRequest{

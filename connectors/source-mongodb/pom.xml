@@ -16,7 +16,7 @@
         <fastjson.version>1.2.83</fastjson.version>
         <grpc.version>1.49.0</grpc.version>
         <google.proto.version>3.21.5</google.proto.version>
-        <apache.commons.version>1.9</apache.commons.version>
+        <apache.commons.version>1.10.0</apache.commons.version>
     </properties>
     <dependencies>
         <dependency>

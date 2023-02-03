@@ -34,8 +34,24 @@ In this section we will show you how to use Slack Sink to send a message to a Sl
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).
-- Have a [Slack App](https://api.slack.com/apps) with the permissions `chat:write` and `chat:write.public`.
+- Have a [Slack account](https://api.slack.com/apps).
 
+### Create an App in Slack
+
+  1. Create an app on slack.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
+  2. Select `From scratch`.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
+  3. Set the bot name and Workspace.
+  4. Click on permissions in the central menu.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
+  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
+  6. Install to workspace.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
+  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
+![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
+  
 ### Create the config file
 
 ```shell
@@ -43,18 +59,18 @@ cat << EOF > config.yml
 default: "test_app"
 slack:
   - app_name: "test_app"
-    token: "<oauth token>"
+    token: "xoxp-422301774731343243235Example"
     default_channel: "#general"
 EOF
 ```
 
-| Name                     | Required  | Default | Description                                                                                           |
-|:-------------------------|:---------:|:--------|:------------------------------------------------------------------------------------------------------|
-| port                     |    NO     | 8080    | the port which <name> Sink listens on                                                                 |
-| default                  |    YES    |         | the default app name if event attribute doesn't have `xvslackapp`                                     |
-| slack.[].app_name        |    YES    |         | custom slack app name as identifier                                                                   |
-| slack.[].token           |    YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                               |
-| slack.[].default_channel |    NO     |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples   |
+| Name                     | Required  | Default | Description                                                                                         |
+|:-------------------------|:---------:|:--------|:----------------------------------------------------------------------------------------------------|
+| port                     |    NO     | 8080    | the port which Slack Sink listens on                                                                |
+| default                  |    YES    |         | the default app name if event attribute doesn't have `xvslackapp`                                   |
+| slack.[].app_name        |    YES    |         | custom slack app name as identifier                                                                 |
+| slack.[].token           |    YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                             |
+| slack.[].default_channel |    NO     |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples |
 
 The Slack Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -72,23 +88,8 @@ docker run -it --rm \
 We have designed for you a sandbox environment, removing the need to use your local machine. 
 You can run Connectors directly and safely on the Playground.
 
-  1. Create an app on slack.
-  2. Select `From scratch`.
-  3. Set the bot name and Workspace.
-  4. Click on permissions in the central menu.
-  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
-  6. Install to workspace.
-  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
-  8. Start Slack Sink with docker.
   
-  ```shell
-docker run -it --rm \
-  -p 31080:8080 \
-  -v ${PWD}:/vanus-connect/config \
-  --name sink-slack public.ecr.aws/vanus/connector/sink-slack
-```
-  
-9. Open a terminal and use the following command to send a CloudEvent to the Sink.
+ Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \

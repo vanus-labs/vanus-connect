@@ -5,8 +5,17 @@ title: Amazon S3
 # Amazon S3 Source
 
 ## Introduction
+<<<<<<< HEAD
 
 The Amazon S3 Source is a [Vanus Connector][vc] which designed to retrieve S3 events from a specific bucket and
+=======
+<<<<<<< HEAD
+The Amazon S3 Source is a [Vanus Connector][vc] which is designed to retrieve S3 events from a specific bucket and 
+=======
+
+The Amazon S3 Source is a [Vanus Connector][vc] which designed to retrieve S3 events from a specific bucket and
+>>>>>>> e68dd51 (docs: Update GitHub Source)
+>>>>>>> main
 transform them into CloudEvents based on [CloudEvents Adapter specification][ceas].
 
 This connector allows users to specify a SQS queue to receive S3 event notification messages.
@@ -92,7 +101,7 @@ which is converted to:
 
 ## Quick Start
 
-This section shows how Amazon S3 Source converts S3 events to a CloudEvent.
+This section will show you how Amazon S3 Source converts S3 events to a CloudEvent.
 
 ### Prerequisites
 
@@ -124,10 +133,20 @@ EOF
 ```
 
 | Name                  | Required | Default | Description                                                                                                                  |
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+|:----------------------|:--------:|:-------:|:-----------------------------------------------------------------------------------------------------------------------------|
+| target                |   YES    |         | the target URL to send CloudEvents                                                                                           |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                                                                                          |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                                                                                          |
+=======
+>>>>>>> main
 | :-------------------- | :------: | :-----: | :--------------------------------------------------------------------------------------------------------------------------- |
 | aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accesskey]                                                                                          |
 | aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accesskey]                                                                                          |
 | target                |   YES    |         | the target URL to send CloudEvents                                                                                           |
+>>>>>>> e68dd51 (docs: Update GitHub Source)
 | s3_bucket_arn         |   YES    |         | your S3 bucket arn, example: "arn:aws:s3:::mybucket"                                                                         |
 | s3_events             |   YES    |         | it is an array consisting of [s3 events][s3event] you're interested in. example: ["s3:ObjectCreated:*","s3:ObjectRemoved:*"] |
 | region                |    NO    |         | it describes where the SQS queue will be created at. This field is only required when you didn't specify your sqsArn.        |
@@ -286,3 +305,10 @@ kubectl apply -f source-aws-s3.yaml
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [ceas]: https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md
 [s3event]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+=======
+>>>>>>> e68dd51 (docs: Update GitHub Source)
+>>>>>>> main

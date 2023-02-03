@@ -3,15 +3,10 @@ title: Amazon SQS
 ---
 
 # Amazon SQS Source
-This document provides a brief introduction of the SQS Source.
-It is also designed to guide you through the process of running an
-SQS Source Connector.
 
 ## Introduction
-A [Vance Connector][vc] which retrieves SQS messages, transform them into CloudEvents
-and deliver CloudEvents to the target URL.
 
-## SQS Event Structure
+The Amazon SQS Source is a [Vanus Connector][vc] which is designed to retrieve SQS messages transform them into CloudEvents.
 
 For example, if the incoming message looks like:
 ```json
@@ -20,79 +15,174 @@ For example, if the incoming message looks like:
   "Body": "Hello World"
 }
 ```
-###
-The Amazon SQS Source will transform the SQS message above into a CloudEvent
-with the following structure:
-``` json
+
+Which is converted to:
+
+```json
 {
-  "id" : "035e183b-275a-44de-95df-f212be1ed4ea",
-  "source" : "cloud.aws.sqs.us-west-2.my-test-queue",
-  "specversion" : "V1",
-  "type" : "com.amazonaws.sqs.message",
-  "datacontenttype" : "text/plain",
+  "specversion": "1.0",
+  "id": "035e183b-275a-44de-95df-f212be1ed4ea",
+  "source": "cloud.aws.sqs.us-west-2.my-test-queue",
+  "type": "com.amazonaws.sqs.message",
+  "datacontenttype": "text/plain",
+  "time" : "2022-08-02T11:01:13.828+08:00",
+  "data" : "Hello World"
+}
+```
+This section shows you how to use Amazon SQS Source to convert SQS message to a CloudEvent.
+
+### Prerequisites
+
+- Have a container runtime (i.e., docker).
+- Have an AWS SQS queue.
+- AWS IAM [Access Key][accessKey].
+- AWS permissions for the IAM user:
+    - sqs:GetQueueUrl
+    - sqs:ReceiveMessage
+    - sqs:DeleteMessage
+
+### Create the config file
+
+```shell
+cat << EOF > config.yml
+target: http://localhost:31081
+aws:
+  access_key_id: AKIAIOSFODNN7EXAMPLE
+  secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+sqs_arn: "arn:aws:sqs:us-west-2:843378899134:myQueue"
+EOF
+```
+
+
+| Name                  | Required | Default | Description                         |
+|:----------------------|:--------:|:-------:|:------------------------------------|
+| target                |   YES    |         | the target URL to send CloudEvents  |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey] |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey] |
+| sqs_arn               |   YES    |         | your SQS ARN                        |
+
+
+The Amazon SQS Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-aws-sqs public.ecr.aws/vanus/connector/source-aws-sqs
+```
+
+### Test
+
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
+```shell
+docker run -it --rm \
+  -p 31081:8080 \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display
+```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+
+Open [AWS SQS Console](https://us-west-2.console.aws.amazon.com/sqs/v2/home?region=us-west-2#/queues), select the queue and send a message.
+
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+```json
+{
+  "specversion": "1.0",
+  "id": "035e183b-275a-44de-95df-f212be1ed4ea",
+  "source": "cloud.aws.sqs.us-west-2.my-test-queue",
+  "type": "com.amazonaws.sqs.message",
+  "datacontenttype": "text/plain",
   "time" : "2022-08-02T11:01:13.828+08:00",
   "data" : "Hello World"
 }
 ```
 
+### Clean
+
+```shell
+docker stop source-aws-sqs sink-display
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f source-aws-sqs.yaml
+```
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-aws-sqs
+  namespace: vanus
+data:
+  config.yml: |-
+    "target": "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    aws:
+      access_key_id: AKIAIOSFODNN7EXAMPLE
+      secret_access_Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    sqs_arn: "arn:aws:sqs:us-west-2:843378899134:myQueue"
 ---
-## Quick Start
-This quick start will guide you through the process of running an SQS Source Connector.
-
-### Set SQS Source Configurations
-You can specify your configs by either setting environments
-variables or mounting a config.json to `/vance/config/config.json`
-when running the Connector.
-
-Here is an example of a configuration file for the SQS Source.
-```json
-config.json
-{
-  "v_target": "http://localhost:8081",
-  "sqs_arn": "arn:aws:sqs:us-west-2:12345678910:myqueue"
-}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-aws-sqs
+  namespace: vanus
+  labels:
+    app: source-aws-sqs
+spec:
+  selector:
+    matchLabels:
+      app: source-aws-sqs
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-aws-sqs
+    spec:
+      containers:
+        - name: source-aws-sqs
+          image: public.ecr.aws/vanus/connector/source-aws-sqs
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connector/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-aws-sqs
 ```
 
-| Configs   | Description                                                                     | Example                 | Required                 |
-|:----------|:--------------------------------------------------------------------------------|:------------------------|:------------------------|
-| v_target  | `v_target` is used to specify the target URL HTTP Source will send CloudEvents to. | "http://localhost:8081" |**YES** |
-| sqs_arn    | `sqs_arn` is the arn of your SQS queue.  | "arn:aws:sqs:us-west-2:12345678910:myqueue"                   |**YES** |
+## Integrate with Vanus
 
-### AWS-SQS Source Secrets
-Users should set their sensitive data Base64 encoded in a secret file.
-And mount your local secret file to `/vance/secret/secret.json` when you run the Connector.
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
-#### Encode your sensitive data
-Replace MY_SECRET with your sensitive data to get the Base64-based string.
+### Prerequisites
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
 
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
 ```shell
-$ echo -n MY_SECRET | base64
-QUJDREVGRw==
+export VANUS_GATEWAY=192.168.49.2:30001
 ```
-Here is an example of a Secret file for the SQS Source.
+
+2. Create an eventbus
 ```shell
-$ cat secret.json
-{
-  "awsAccessKeyID": "TVlfU0VDUkVUTVlfU0VDUkVU",
-  "awsSecretAccessKey": "TVlfU0VDUkVUTVlfU0VDUkVU"
-}
+vsctl eventbus create --name quick-start
 ```
-#### Secret Fields of the SQS Source
 
-| Secrets   | Description                                                                     | Example                 | Required                 |
-|:----------|:--------------------------------------------------------------------------------|:------------------------|:------------------------|
-| awsAccessKeyID  | `awsAccessKeyID` is the Access key ID of your aws credential. | "BASE64VALUEOFYOURACCESSKEY=" |**YES** |
-| awsSecretAccessKey    | `awsSecretAccessKey` is the Secret access key of your aws credential. | "BASE64VALUEOFYOURSECRETKEY="                  |**YES** |
+3. Update the target config of the Amazon SQS Source
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
 
-### Run the SQS Source with Docker
-Create your config.json and secret.json, and mount them to
-specific paths to run the SQS Source using the following command.
+4. Run the Amazon SQS Source
+```shell
+kubectl apply -f source-aws-sqs.yaml
+```
 
-> docker run -v $(pwd)/secret.json:/vance/secret/secret.json -v $(pwd)/config.json:/vance/config/config.json --rm vancehub/soure-aws-sqs
-docker pull
-
-
-
-
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.mdub.com/linkall-labs/vance-docs/blob/main/docs/connector.md
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html

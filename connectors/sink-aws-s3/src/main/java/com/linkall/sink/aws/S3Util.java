@@ -1,6 +1,5 @@
 package com.linkall.sink.aws;
 
-import com.linkall.vance.common.config.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -10,7 +9,6 @@ import software.amazon.awssdk.services.s3.model.*;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,27 +17,6 @@ import java.util.Map;
 public class S3Util {
     private static final Logger LOGGER = LoggerFactory.getLogger(S3Util.class);
     private static Map<String,String> metaData = new HashMap<>();
-    private static final String SQS_NOTIFY_ID = "vance-s3-notification";
-
-    public static boolean setNotifyConfig(S3Client s3, String bucketName, QueueConfiguration qConfig){
-        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName+"] Start ======" );
-        PutBucketNotificationConfigurationResponse resp = s3.putBucketNotificationConfiguration(PutBucketNotificationConfigurationRequest.builder()
-                .bucket(bucketName)
-                .notificationConfiguration(NotificationConfiguration.builder()
-                        .queueConfigurations(qConfig).build())
-                .build());
-        LOGGER.info("====== Set the Notification Configuration of the bucket [" + bucketName+"] End ======" );
-        return resp.sdkHttpResponse().isSuccessful();
-    }
-
-    public static QueueConfiguration buildQueConfig(String sqsArn){
-        List<String> events = ConfigUtil.getStringArray("s3_events");
-        QueueConfiguration qConfig = QueueConfiguration.builder().queueArn(sqsArn)
-                .id(SQS_NOTIFY_ID)
-                .eventsWithStrings(events)
-                .build();
-        return qConfig;
-    }
 
     /**
      * return the url of an object with specific @param {keyName}

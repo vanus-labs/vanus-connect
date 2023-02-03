@@ -2,83 +2,198 @@
 title: Kafka
 ---
 
-# Kafka Source 
+# Kafka Source
 
 ## Overview
 
-A [Vance Connector][vc] which transforms Kafka messages from topics to CloudEvents and deliver them to the target URL.
-
-## User Guidelines
-
-### Connector Introduction
-
-The Kafka Source is a [Vance Connector][vc] which aims to generate CloudEvents in a way that wraps the body of the 
-original message into the `data` field of a new CloudEvent.
-## The ideal message
-The ideal type of event for the Kafka source is a String in a JSON format. But it can handle any other type of data provided by Kafka. 
-> JSON Formatted String
-> String = "{ "name": "Jason", "age": "30"}"
->
+The Kafka Source is a [Vanus Connector][vc] which aims to consume Kafka messages from topics and converts to CloudEvents
+then deliver them to the target URL.
 
 For example, if an original message looks like:
-... json
+
+```text
 > { "name": "Jason", "age": "30" }
 ```
 
-A Kafka message transformed into a CloudEvent looks like:
+It will be converted to CloudEvent this way:
 
 ``` JSON
 {
   "id" : "4ad0b59fc-3e1f-484d-8925-bd78aab15123",
-  "source" : "kafka.localhost.topic2",
+  "source" : "kafka_bootstrap_servers.mytopic",
   "type" : "kafka.message",
-  "datacontenttype" : "application/json or Plain/text",
+  "datacontenttype" : "application/json",
   "time" : "2022-09-07T10:21:49.668Z",
   "data" : {
 	 "name": "Jason",
 	 "age": "30"
-	 }
+  }
 }
 ```
 
-## Kafka Source Configs
+## Quick Start
 
-Users can specify their configs by either setting environments variables or mounting a config.json to
-`/vance/config/config.json` when they run the connector. Find examples of setting configs [here][config].
+This section will show you how to use Kafka Source to convert Kafka messages to CloudEvents.
 
-### Config Fields of the kafka Source
+### Prerequisites
 
-| Configs   | Description                                                                     | Example                 |
-|:----------|:--------------------------------------------------------------------------------|:------------------------|
-| v_target  | v_target is used to specify the target URL HTTP Source will send CloudEvents to | "http://localhost:8081" |
-| KAFKA_SERVER_URL    | The URL of the Kafka Cluster the Kafka Source is listening on                  | "8080"                  |
-| KAFKA_SERVER_PORT    | v_port is used to specify the port Kafka Source is listening on                  | "8080"                  |
-| CLIENT_ID    |  An optional identifier for multiple Kafka Sources that is passed to a Kafka broker with every request.                  | "kafkaSource"                  |
-| TOPIC_LIST    | The source will listen to the topic or topics specified.                   | "topic1"  or "topic1, topic2, topic3"                 |
+- Have a container runtime (i.e., docker).
+- Have a [Kafka cluster](https://kafka.apache.org)
 
-## Kafka Source Image
-
-> vancehub/source-kafka
-
-## Local Development
-
-You can run the source codes of the Kafka Source locally as well.
-
-### Building via Maven
+### Create the config file
 
 ```shell
-$ cd connectors/source-Kafka
-$ mvn clean package
+cat << EOF > config.yml
+target: http://localhost:31081
+bootstrap_servers: "localhost:9092"
+group_id: "vanus-source-kafka"
+topics: [ "mytopic" ]
+EOF
 ```
 
-### Running via Maven
+| Name              | Required | Default  | Description                                                |
+|:------------------|:---------|:--------:|:-----------------------------------------------------------|
+| target            | YES      |          | the target URL which Kafka Source will send CloudEvents to |
+| bootstrap_servers | YES      |          | the kafka cluster bootstrap servers                        |
+| group_id          | YES      |          | the kafka cluster consumer group id                        |
+| topics            | YES      |          | the kafka topics listened by kafka source                  |
+
+
+The Kafka Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+
+### Start with Docker
 
 ```shell
-$ mvn exec:java -Dexec.mainClass="com.linkall.source.Kafka.Entrance"
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-kafka public.ecr.aws/vanus/connector/source-kafka
 ```
 
-⚠️ NOTE: For better local development and test, the connector can also read configs from `main/resources/config.json`. So, you don't need to 
-declare any environment variables or mount a config file to `/vance/config/config.json`.
+### Test
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
-[config]: https://github.com/linkall-labs/vance-docs/blob/main/docs/connector.md
+Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
+
+```shell
+docker run -it --rm \
+  -p 31081:8080 \
+  --name sink-display public.ecr.aws/vanus/connector/sink-display
+```
+
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to
+our Display Sink.
+
+Send kafka message use the following command:
+
+```shell
+bin/kafka-console-producer.sh --topic mytopic --bootstrap-server localhost:9092
+```
+
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+
+```json
+{
+  "id": "4ad0b59fc-3e1f-484d-8925-bd78aab15123",
+  "source": "kafka_bootstrap_servers.mytopic",
+  "type": "kafka.message",
+  "datacontenttype": "application/json",
+  "time": "2022-09-07T10:21:49.668Z",
+  "data": {
+    "name": "Jason",
+    "age": "30"
+  }
+}
+```
+
+### Clean
+
+```shell
+docker stop source-kafka sink-display
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f source-kafka.yaml
+```
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-kafka
+  namespace: vanus
+data:
+  config.yaml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    bootstrap_servers: "localhost:9092"
+    group_id: "vanus-source-kafka"
+    topics: [ "mytopic" ]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-kafka
+  namespace: vanus
+  labels:
+    app: source-kafka
+spec:
+  selector:
+    matchLabels:
+      app: source-kafka
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-kafka
+    spec:
+      containers:
+        - name: source-kafka
+          image: public.ecr.aws/vanus/connector/source-kafka
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-kafka
+```
+
+## Integrate with Vanus
+
+This section shows how a source connector can send CloudEvents to a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+### Prerequisites
+
+- Have a running K8s cluster
+- Have a running Vanus cluster
+- Vsctl Installed
+
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway
+   service)
+
+```shell
+export VANUS_GATEWAY=192.168.49.2:30001
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Update the target config of the Kafka Source
+
+```yaml
+target: http://192.168.49.2:30001/gateway/quick-start
+```
+
+4. Run the Kafka Source
+
+```shell
+kubectl apply -f source-kafka.yaml
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
