@@ -96,28 +96,13 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send the CloudEvents to the Display Sink.
 
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-http public.ecr.aws/vanus/connector/source-http
+```
+
 Open a terminal and use the following command to send an http request to HTTP Source
-
-<<<<<<< HEAD
-=======
-After running Display Sink, run the HTTP Source
-
-```shell
-docker run -it --rm --network=host \
-  -v ${PWD}:/vanus-connect/config \
-  --name source-http public.ecr.aws/vanus/connector/source-http
-```
-
-After running Display Sink, run the HTTP Source
-
-```shell
-docker run -it --rm --network=host \
-  -v ${PWD}:/vanus-connect/config \
-  --name source-http public.ecr.aws/vanus/connector/source-http
-```
-
-Open a terminal and use the following command to send http request to HTTP Source
->>>>>>> e68dd51 (docs: Update GitHub Source)
 
 ```shell
 curl --location --request POST 'localhost:8082/webhook?source=123&id=abc&type=456&subject=def' \

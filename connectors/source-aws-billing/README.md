@@ -7,7 +7,7 @@ title: Amazon Billing
 ## Introduction
 
 The Amazon Billing Source is a [Vanus Connector][vc] which aims to convert billing data
-to a CloudEvent. The Amazon Billing Source uses [AWS Cost Explorer][awsbill] api and pulls 
+to a CloudEvent. The Amazon Billing Source uses [AWS Cost Explorer][awsbill] api and pulls
 billing data from the previous day at a fixed time.
 
 The billing data is converted to:
@@ -54,7 +54,7 @@ This section shows how Amazon Billing Source converts billing data to a CloudEve
 ### Prerequisites
 
 - Have a container runtime (i.e., docker).
-- AWS IAM [Access Key][accessKey].
+- AWS IAM [Access Key][accesskey].
 - AWS permissions `ce:GetCostAndUsage` for the IAM user.
 
 ### Create the config file
@@ -69,12 +69,12 @@ EOF
 ```
 
 | Name              | Required | Default                            | Description                                               |
-|:------------------|:---------|:-----------------------------------|:----------------------------------------------------------|
+| :---------------- | :------- | :--------------------------------- | :-------------------------------------------------------- |
 | target            | YES      |                                    | the target URL to send CloudEvents                        |
 | endpoint          | NO       | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
 | pull_hour         | NO       | 2                                  | specify the hour at which the billing data will be pulled |
-| access_key_id     | YES      |                                    | the AWS IAM [Access Key][accessKey]                       |
-| secret_access_key | YES      |                                    | the AWS IAM [Secret Key][accessKey]                       |
+| access_key_id     | YES      |                                    | the AWS IAM [Access Key][accesskey]                       |
+| secret_access_key | YES      |                                    | the AWS IAM [Secret Key][accesskey]                       |
 
 The Amazon Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -87,16 +87,11 @@ docker run -it --rm --network=host \
 ```
 
 ### Test
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 
 Before starting Amazon billing Source use the following command to run a Display sink, which will receive and prints the incoming CloudEvents.
-=======
->>>>>>> main
+
 **To test the connector, run the Display Sink first before running AWS Billing source.**
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
->>>>>>> 0a265c5 (docs: Update AWS Billing Source)
 
 ```shell
 docker run -it --rm \
@@ -107,13 +102,14 @@ docker run -it --rm \
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
 Now run AWS Cloud Billing source to send CloudEvents
+
 ```shell
 docker run -it --rm --network=host \
   -v ${PWD}:/vanus-connect/config \
   --name source-aws-billing public.ecr.aws/vanus/connector/source-aws-billing
 ```
 
-Here is the sort of CloudEvent you should expect to receive in the Display Sink: 
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
 ```json
 {
@@ -150,7 +146,8 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 }
 ```
 
-To see the CloudEvents on  your Terminal, run:
+To see the CloudEvents on your Terminal, run:
+
 ```shell
 docker logs sink-display
 ```
@@ -215,30 +212,35 @@ spec:
 This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 ### Prerequisites
+
 - Have a running K8s cluster
 - Have a running Vanus cluster
 - Vsctl Installed
 
 1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Update the target config of the Amazon Billing Source
+
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
 4. Run the Amazon Billing Source
+
 ```shell
 kubectl apply -f source-aws-billing.yaml
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
 [awsbill]: https://docs.aws.amazon.com/aws-cost-management/latest/APIReference/API_GetCostAndUsage.html
-[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+[accesskey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
