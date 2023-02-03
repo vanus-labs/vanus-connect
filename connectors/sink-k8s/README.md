@@ -6,8 +6,8 @@ title: Kubernetes
 
 ## Introduction
 
-The Kubernetes Sink is a [Vance Connector](https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md), 
-which now supports create/delete operations for kubernetes resource.
+The Kubernetes Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts
+the `data` part of the original event and operation kubernetes resource.
 
 For example, if the incoming CloudEvent looks like:
 
@@ -15,8 +15,8 @@ For example, if the incoming CloudEvent looks like:
 {
   "specversion": "1.0",
   "id": "4395ffa3-f6de-443c-bf0e-bb9798d26a1d",
-  "source": "vance.source.test",
-  "type": "vance.type.test",
+  "source": "vanus.source.test",
+  "type": "vanus.type.test",
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:05:55.777689Z",
   "data": {
@@ -53,49 +53,256 @@ For example, if the incoming CloudEvent looks like:
 
 The Kubernetes Sink will extract `data` field write to Kubernetes cluster.
 
-## Kubernetes Sink Configs
+## Quickstart
 
-Users can specify their configs by either setting environments variables or mount a config.yml to
-`/vance/config/config.yml` when they run the connector.
+### Prerequisites
 
-### Config Fields of Kubernetes Sink
+- Have a container runtime (i.e., docker).
+- Have a Kubernetes cluster.
 
-| name | requirement | description                                                                    |
-|------|-------------|--------------------------------------------------------------------------------|
-| port | required    | port is used to specify the port Kubernetes Sink is listening on, default 8080 |
+### config file
 
-## Elasticsearch Sink Image
+| Name               | Required | Default | Description                                     |
+|:-------------------|:--------:|:-------:|-------------------------------------------------|
+| port               |    No    |  8080   | the port which the Kubernetes Sink listens on   |
 
-> public.ecr.aws/vanus/connector/sink-k8s
+The Kubernetes Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can
+specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
-## Deploy
-
-### using k8s(recommended)
-
-```shell
-kubectl apply -f https://github.com/linkall-labs/vance/blob/main/connectors/sink-k8s/sink-k8s.yml
-```
-
-## Examples
-
-### create job
+### Start with Docker
 
 ```shell
-vsctl event put quick-start \
-  --data-format json \
-  --data "{\"kind\":\"Job\",\"apiVersion\":\"batch/v1\",\"metadata\":{\"name\":\"job-test\",\"namespace\":\"default\",\"annotations\":{\"operation\":\"create\"}},\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"container1\",\"image\":\"busybox:latest\",\"command\":[\"sleep\",\"60s\"]}],\"restartPolicy\":\"Never\"}},\"ttlSecondsAfterFinished\":100}}" \
-  --id "1" \
-  --source "quick-start" \
-  --type "examples"
+docker run -it --rm \
+  -p 31080:8080 \
+  -v ${PWD}:/vanus-connect/config \
+  --name sink-k8s public.ecr.aws/vanus/connector/sink-k8s
 ```
 
-### delete job
+### Test
+
+Open a terminal and use following command to send a CloudEvent to the Sink.
+
+#### Example for create job
 
 ```shell
-vsctl event put quick-start \
-  --data-format json \
-  --data "{\"kind\":\"Job\",\"apiVersion\":\"batch/v1\",\"metadata\":{\"name\":\"job-test\",\"namespace\":\"default\",\"annotations\":{\"operation\":\"delete\"}},\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"container1\",\"image\":\"busybox:latest\",\"command\":[\"sleep\",\"60s\"]}],\"restartPolicy\":\"Never\"}},\"ttlSecondsAfterFinished\":100}}" \
-  --id "1" \
-  --source "quick-start" \
-  --type "examples"
+```shell
+curl --location --request POST 'localhost:8080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "kind": "Job",
+    "apiVersion": "batch/v1",
+    "metadata": {
+      "name": "job-test",
+      "namespace": "default",
+      "annotations": {
+        "operation": "create"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "container1",
+              "image": "busybox:latest",
+              "command": [
+                "sleep",
+                "60s"
+              ]
+            }
+          ],
+          "restartPolicy": "Never"
+        }
+      },
+      "ttlSecondsAfterFinished": 100
+    }
+  }
+}'
 ```
+
+### Example for delete job
+
+```shell
+curl --location --request POST 'localhost:8080' \
+--header 'Content-Type: application/cloudevents+json' \
+--data-raw '{
+  "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "quickstart",
+  "datacontenttype": "application/json",
+  "time": "2022-10-26T10:38:29.345Z",
+  "data": {
+    "kind": "Job",
+    "apiVersion": "batch/v1",
+    "metadata": {
+      "name": "job-test",
+      "namespace": "default",
+      "annotations": {
+        "operation": "delete"
+      }
+    },
+    "spec": {
+      "template": {
+        "spec": {
+          "containers": [
+            {
+              "name": "container1",
+              "image": "busybox:latest",
+              "command": [
+                "sleep",
+                "60s"
+              ]
+            }
+          ],
+          "restartPolicy": "Never"
+        }
+      },
+      "ttlSecondsAfterFinished": 100
+    }
+  }
+}'
+```
+
+### Clean resource
+
+```shell
+docker stop sink-k8s
+```
+
+## Run in Kubernetes
+
+```shell
+kubectl apply -f sink-k8s.yaml
+```
+
+```yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sink-k8s-sa
+  namespace: vanus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sink-k8s-cluster-role
+rules:
+  - apiGroups:
+      - ""
+      - "apps"
+      - "batch"
+    resources:
+      - pods
+      - jobs
+      - cronjobs
+      - daemonsets
+      - deployments
+      - statefulsets
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sink-k8s-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sink-k8s-cluster-role
+subjects:
+  - kind: ServiceAccount
+    name: sink-k8s-sa
+    namespace: vanus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-k8s
+  namespace: vanus
+spec:
+  selector:
+    app: sink-k8s
+  type: ClusterIP
+  ports:
+    - port: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-k8s
+  namespace: vanus
+  labels:
+    app: sink-k8s
+spec:
+  selector:
+    matchLabels:
+      app: sink-k8s
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-k8s
+    spec:
+      containers:
+        - name: sink-k8s
+          image: public.ecr.aws/vanus/connector/sink-k8s
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+      serviceAccount: sink-k8s-sa
+```
+
+## Integrate with Vanus
+
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
+
+1. Run the sink-k8s.yaml
+
+```shell
+kubectl apply -f sink-k8s.yaml
+```
+
+2. Create an eventbus
+
+```shell
+vsctl eventbus create --name quick-start
+```
+
+3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
+```shell
+vsctl subscription create \
+  --name quick-start \
+  --eventbus quick-start \
+  --sink 'http://sink-k8s:8080'
+```
+
+[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect

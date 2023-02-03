@@ -1,6 +1,6 @@
 {
   "v_target": "http://localhost:8080/gateway/test",
-  "v_store_file": "/tmp/vance/source-mongodb/offset.data",
+  "v_store_file": "/tmp/vanus-connect/source-mongodb/offset.data",
   "name": "ml-etl",
   "db_hosts": "localhost:27017",
   "db_name": "away",

@@ -9,37 +9,37 @@ kind: ClusterRole
 metadata:
   name: sink-k8s-cluster-role
 rules:
-- apiGroups:
-  - ""
-  - "apps"
-  - "batch"
-  resources:
-  - pods
-  - jobs
-  - cronjobs
-  - daemonsets
-  - deployments
-  - statefulsets
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - statefulsets
-  verbs:
-  - get
-  - list
-  - create
-  - update
-  - patch
-  - delete
+  - apiGroups:
+      - ""
+      - "apps"
+      - "batch"
+    resources:
+      - pods
+      - jobs
+      - cronjobs
+      - daemonsets
+      - deployments
+      - statefulsets
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -50,9 +50,9 @@ roleRef:
   kind: ClusterRole
   name: sink-k8s-cluster-role
 subjects:
-- kind: ServiceAccount
-  name: sink-k8s-sa
-  namespace: vanus
+  - kind: ServiceAccount
+    name: sink-k8s-sa
+    namespace: vanus
 ---
 apiVersion: v1
 kind: Service
@@ -62,20 +62,9 @@ metadata:
 spec:
   selector:
     app: sink-k8s
-  type: NodePort
+  type: ClusterIP
   ports:
     - port: 8080
-      targetPort: 8080
-      name: sink-k8s
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sink-k8s
-  namespace: vanus
-data:
-  config.yml: |-
-    port: 8080
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -96,22 +85,9 @@ spec:
     spec:
       containers:
         - name: sink-k8s
-          image: public.ecr.aws/vanus/connector/sink-k8s:latest
-          imagePullPolicy: IfNotPresent
+          image: public.ecr.aws/vanus/connector/sink-k8s
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8080
-          volumeMounts:
-            - name: config
-              mountPath: /vance/config
-          env:
-          - name: CONNECTOR_CONFIG
-            value: "/vance/config/config.yml"
-          - name: CONNECTOR_TARGET
-            value: "localhost"
-          # env: see README for more about how to set env
       serviceAccount: sink-k8s-sa
-      volumes:
-        - name: config
-          configMap:
-            name: sink-k8s
