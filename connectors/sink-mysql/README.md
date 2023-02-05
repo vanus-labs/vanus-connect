@@ -54,29 +54,15 @@ This quick start will guide you through the process of running an MySQL Sink Con
 Connect MySQL and Create database and table
 
 ```sql
-   create
-database vanus_test;
+create database vanus_test;
 CREATE TABLE IF NOT EXISTS vanus_test.user
 (
-    `id`
-    int
-    NOT
-    NULL,
-    `name`
-    varchar
-(
-    100
-) NOT NULL,
-    `description` varchar
-(
-    100
-) NOT NULL,
-    `date` date NOT NULL,
-    PRIMARY KEY
-(
-    `id`
-)
-    ) ENGINE=InnoDB;
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(100) NOT NULL,
+  `date` date NOT NULL,
+  PRIMARY KEY (`id`)
+);
  ```
 
 ### Create the config file
@@ -121,8 +107,6 @@ docker run -it --rm --network=host\
 
 ### Test
 
-### Prepare
-
 Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
@@ -147,8 +131,7 @@ curl --location --request POST 'localhost:8080' \
 Connect to MySQL and use the following command to make sure MySQL has the data
 
 ```sql
-select *
-from vanus_test.user;
+select * from vanus_test.user;
 ```
 
 ### Clean resource
@@ -262,4 +245,5 @@ vsctl subscription create \
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+
 [mysql]: https://www.mysql.com
