@@ -75,7 +75,7 @@ db:
   username: "vanus_test"
   password: "123456"
   database: "vanus_test"
-  table: "user"
+  table_name: "user"
 
 insert_mode: UPSERT
 EOF
@@ -89,7 +89,7 @@ EOF
 | db.username     |   YES    |         | username of MySQL                                          |
 | db.password     |   YES    |         | password of MySQL                                          |
 | db.database     |   YES    |         | database name of MySQL                                     |
-| db.table_name   |   YES    |         | password of db                                             |
+| db.table_name   |   YES    |         | table name of MySQL                                        |
 | insert_mode     |    NO    | INSERT  | MySQL insert data type: INSERT OR UPSERT                   |
 | commit_interval |    NO    |  1000   | MySQL Sink batch data commit interval, unit is millisecond |
 | commit_size     |    NO    |  2000   | MySQL Sink batch data commit event size                    |
