@@ -143,7 +143,7 @@ docker stop sink-mysql
 ## Run in Kubernetes
 
 ```shell
-kubectl apply -f sink-mysqlyaml
+kubectl apply -f sink-mysql.yaml
 ```
 
 ```yaml
