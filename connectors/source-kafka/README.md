@@ -6,8 +6,7 @@ title: Kafka
 
 ## Overview
 
-The Kafka Source is a [Vanus Connector][vc] which aims to consume Kafka messages from topics and converts to CloudEvents
-then deliver them to the target URL.
+The Kafka Source is a [Vanus Connector][vc] which aims to consume Kafka messages from topics, converts them into CloudEvents, and then deliver them to the target URL.
 
 For example, if an original message looks like:
 
@@ -81,7 +80,7 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
-After running Display Sink, run the Github Source
+After running Display Sink, run the Kafka Source
 
 ```shell
 docker run -it --rm --network=host \
