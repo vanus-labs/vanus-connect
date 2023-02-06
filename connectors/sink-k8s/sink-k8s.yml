@@ -62,9 +62,11 @@ metadata:
 spec:
   selector:
     app: sink-k8s
-  type: ClusterIP
+  type: NodePort
   ports:
     - port: 8080
+      nodePort: 31080
+      name: http
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -90,4 +92,4 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-      serviceAccount: sink-k8s-sa
+      serviceAccountName: sink-k8s-sa

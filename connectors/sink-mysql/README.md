@@ -54,29 +54,15 @@ This quick start will guide you through the process of running an MySQL Sink Con
 Connect MySQL and Create database and table
 
 ```sql
-   create
-database vanus_test;
+create database vanus_test;
 CREATE TABLE IF NOT EXISTS vanus_test.user
 (
-    `id`
-    int
-    NOT
-    NULL,
-    `name`
-    varchar
-(
-    100
-) NOT NULL,
-    `description` varchar
-(
-    100
-) NOT NULL,
-    `date` date NOT NULL,
-    PRIMARY KEY
-(
-    `id`
-)
-    ) ENGINE=InnoDB;
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(100) NOT NULL,
+  `date` date NOT NULL,
+  PRIMARY KEY (`id`)
+);
  ```
 
 ### Create the config file
@@ -89,7 +75,7 @@ db:
   username: "vanus_test"
   password: "123456"
   database: "vanus_test"
-  table: "user"
+  table_name: "user"
 
 insert_mode: UPSERT
 EOF
@@ -103,7 +89,7 @@ EOF
 | db.username     |   YES    |         | username of MySQL                                          |
 | db.password     |   YES    |         | password of MySQL                                          |
 | db.database     |   YES    |         | database name of MySQL                                     |
-| db.table_name   |   YES    |         | password of db                                             |
+| db.table_name   |   YES    |         | table name of MySQL                                        |
 | insert_mode     |    NO    | INSERT  | MySQL insert data type: INSERT OR UPSERT                   |
 | commit_interval |    NO    |  1000   | MySQL Sink batch data commit interval, unit is millisecond |
 | commit_size     |    NO    |  2000   | MySQL Sink batch data commit event size                    |
@@ -120,8 +106,6 @@ docker run -it --rm --network=host\
 ```
 
 ### Test
-
-### Prepare
 
 Open a terminal and use the following command to send a CloudEvent to the Sink.
 
@@ -147,8 +131,7 @@ curl --location --request POST 'localhost:8080' \
 Connect to MySQL and use the following command to make sure MySQL has the data
 
 ```sql
-select *
-from vanus_test.user;
+select * from vanus_test.user;
 ```
 
 ### Clean resource
@@ -160,7 +143,7 @@ docker stop sink-mysql
 ## Run in Kubernetes
 
 ```shell
-kubectl apply -f sink-mysqlyaml
+kubectl apply -f sink-mysql.yaml
 ```
 
 ```yaml
@@ -262,4 +245,5 @@ vsctl subscription create \
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+
 [mysql]: https://www.mysql.com
