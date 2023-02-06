@@ -50,9 +50,9 @@ which is converted to:
       "type": "456"
     }
   },
-  "xvhttpremoteip":"::1",
-  "xvhttpremoteaddr":"[::1]:57822",
-  "xvhttpbodyisjson":true
+  "xvhttpremoteip": "::1",
+  "xvhttpremoteaddr": "[::1]:57822",
+  "xvhttpbodyisjson": true
 }
 ```
 
@@ -69,11 +69,10 @@ port: 8082
 EOF
 ```
 
-
-| Name   | Required  | Default | Description                        |
-|:-------|:---------:|:-------:|:-----------------------------------|
-| target |    YES    |         | the target URL to send CloudEvents |
-| port   |    NO     |  8080   | the port to receive HTTP request   |
+| Name   | Required | Default | Description                        |
+| :----- | :------: | :-----: | :--------------------------------- |
+| target |   YES    |         | the target URL to send CloudEvents |
+| port   |    NO    |  8080   | the port to receive HTTP request   |
 
 The HTTP Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -97,8 +96,13 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send the CloudEvents to the Display Sink.
 
-Open a terminal and use the following command to send an http request to HTTP Source
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-http public.ecr.aws/vanus/connector/source-http
+```
 
+Open a terminal and use the following command to send an http request to HTTP Source
 
 ```shell
 curl --location --request POST 'localhost:8082/webhook?source=123&id=abc&type=456&subject=def' \
@@ -139,9 +143,9 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
       "type": "456"
     }
   },
-  "xvhttpremoteip":"::1",
-  "xvhttpremoteaddr":"[::1]:57822",
-  "xvhttpbodyisjson":true
+  "xvhttpremoteip": "::1",
+  "xvhttpremoteaddr": "[::1]:57822",
+  "xvhttpbodyisjson": true
 }
 ```
 
@@ -156,10 +160,11 @@ docker stop source-http sink-display
 ### Attributes
 
 #### Changing Default Required Attributes
+
 If you want to change the default attributes of `id`, `source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes)) to your own, you could use the `Query Parameter` to set them.
 
 | Attribute  |      Default       | Query Parameter | Example                                 |
-|:----------:|:------------------:|:----------------|:----------------------------------------|
+| :--------: | :----------------: | :-------------- | :-------------------------------------- |
 |     id     |        UUID        | ?id=xxx         | http://url:port/webhook?id=xxxx         |
 |   source   | vanus-http-source  | ?source=xxx     | http://url:port/webhook?source=xxxx     |
 |    type    | naive-http-request | ?type=xxx       | http://url:port/webhook?type=xxxx       |
@@ -173,11 +178,10 @@ If you want to change the default attributes of `id`, `source`, `type`, and `sub
 The HTTP Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 
 |    Attribute     |  Type   | Description                                                                                                                      |
-|:----------------:|:-------:|:---------------------------------------------------------------------------------------------------------------------------------|
+| :--------------: | :-----: | :------------------------------------------------------------------------------------------------------------------------------- |
 | xvhttpbodyisjson | boolean | HTTP Sink will validate if request body is JSON format data, if it is, this attribute is `true`, otherwise `false`               |
 |  xvhttpremoteip  | string  | The IP of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP      |
 | xvhttpremoteaddr | string  | The address of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP |
-
 
 ## Run in Kubernetes
 
@@ -251,26 +255,31 @@ spec:
 This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 ### Prerequisites
+
 - Have a running K8s cluster
 - Have a running Vanus cluster
 - Vsctl Installed
 
 1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Update the target config of the HTTP Source
+
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
 4. Run the HTTP Source
+
 ```shell
 kubectl apply -f source-http.yaml
 ```

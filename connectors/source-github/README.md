@@ -6,10 +6,11 @@ title: GitHub
 
 ## Introduction
 
-The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md) 
+The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
 by wrapping the body of the original request into the data field.
 
 An original GitHub webhook event looks like:
+
 ```JSON
 {
   "action": "created",
@@ -56,17 +57,16 @@ An original GitHub webhook event looks like:
 
 which is converted to
 
-```JSON
+```json
 {
-	id:"4ef226c0-08c7-11ed-998d-93772adf8abb", 
-	source:"https://api.github.com/repos/XXXX/test-repo", 
-	type:"com.github.watch.started", 
-	datacontenttype:"application/json", 
-	time:"2022-07-21T07:32:44.190Z", 
-	data: {
-       "action": "created", 
-       ...
-	}
+  "id": "4ef226c0-08c7-11ed-998d-93772adf8abb",
+  "source": "https://api.github.com/repos/XXXX/test-repo",
+  "type": "com.github.watch.started",
+  "datacontenttype": "application/json",
+  "time": "2022-07-21T07:32:44.190Z",
+  "data": {
+    "action": "created"
+  }
 }
 ```
 
@@ -90,11 +90,11 @@ secret:
 EOF
 ```
 
-| Name                     | Required | Default | Description                              |
-|:-------------------------|:---------|:--------|:-----------------------------------------|
-| target                   | YES      |         | the target URL to send CloudEvents       |
-| port                     | YES      | 8080    | the port to receive GitHub webhook event |
-| github_webhook_secret    | NO       |         | the GitHub webhook secret                |
+| Name                  | Required | Default | Description                              |
+| :-------------------- | :------- | :------ | :--------------------------------------- |
+| target                | YES      |         | the target URL to send CloudEvents       |
+| port                  | YES      | 8080    | the port to receive GitHub webhook event |
+| github_webhook_secret | NO       |         | the GitHub webhook secret                |
 
 The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
@@ -107,12 +107,14 @@ docker run -it --rm --network=host \
 ```
 
 ### Test
+
 We have designed for you a sandbox environment, removing the need to use your local
 machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
 
-1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL.
-![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
-2. Create a GitHub webhook for you repository.
+1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL. ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
+
+2. Create a GitHub webhook for your repository.
+
    1. Create a webhook under the Settings tab inside your GitHub repository.
    2. Set the configuration for your webhook.
 
@@ -126,19 +128,27 @@ docker run -it --rm \
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
 
-4. Star your GitHub repository. 
+After running Display Sink, run the Github Source
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-github public.ecr.aws/vanus/connector/source-github
+```
+
+4. Star your GitHub repository.
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+
 ```json
 {
-  id:"4ef226c0-08c7-11ed-998d-93772adf8abb",
-  source:"https://api.github.com/repos/XXXX/test-repo",
-  type:"com.github.star.started",
-  datacontenttype:"application/json",
-  time:"2022-07-21T07:32:44.190Z",
-  data: {
-     "action": "created", 
-     ...
+  "id": "4ef226c0-08c7-11ed-998d-93772adf8abb",
+  "source": "https://api.github.com/repos/XXXX/test-repo",
+  "type": "com.github.star.started",
+  "datacontenttype": "application/json",
+  "time": "2022-07-21T07:32:44.190Z",
+  "data": {
+    "action": "created"
   }
 }
 ```
@@ -219,29 +229,34 @@ spec:
 This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 ### Prerequisites
+
 - Have a running K8s cluster
 - Have a running Vanus cluster
 - Vsctl Installed
 
 1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Update the target config of the GitHub Source
+
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
 4. Run the GitHub Source
+
 ```shell
 docker run --network=host \
   --rm \
   -v ${PWD}:/vanus-connect/config \
   --name source-github public.ecr.aws/vanus/connector/source-github
-  ```
+```
