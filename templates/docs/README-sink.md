@@ -6,8 +6,8 @@ title: <name>
 
 ## Introduction
 
-The <name> Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and <must: description...>
+The <name> Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the `data`
+part of the original event and <must: description...>
 
 For example, the incoming CloudEvent looks like this:
 
@@ -39,9 +39,11 @@ EOF
 | Name | Required  | Default | Description                           |
 |:-----|:---------:|:--------|---------------------------------------|
 | port |    NO     | 8080    | the port which <name> Sink listens on |
+
 ...
 
-The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The <name> Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -53,6 +55,7 @@ docker run -it --rm \
 ```
 
 ### Test
+
 <option: explanation>.
 
 Open a terminal and use following command to send a CloudEvent to the Sink.
@@ -78,21 +81,24 @@ docker stop sink-<name>
 <optional>
 ### Extension Attributes
 
-The <name> Sink have additional reactions if the incoming CloudEvent contains following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
-
+The <name> Sink have additional reactions if the incoming CloudEvent contains
+following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+.
 
 | Attribute      | Required | Examples  | Description                           |
 |:---------------|:--------:|:----------|:--------------------------------------|
+
 ...
 </optional>
 
 ### Data format
 
-The <name> Sink requires following data format in CloudEvent's `data` field. 
+The <name> Sink requires following data format in CloudEvent's `data` field.
 
 ```json
 {
-  <full example>
+  <full
+  example>
 }
 ```
 
@@ -149,19 +155,23 @@ kubectl apply -f sink-<name>.yaml
 
 ## Integrate with Vanus
 
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a sink connector can receive CloudEvents from a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 1. Run the sink-<name>.yaml
+
 ```shell
 kubectl apply -f sink-<name>.yaml
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
+
 ```shell
 vsctl subscription create \
   --name quick-start \
