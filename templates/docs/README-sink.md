@@ -97,8 +97,7 @@ The <name> Sink requires following data format in CloudEvent's `data` field.
 
 ```json
 {
-  <full
-  example>
+  <full example>
 }
 ```
 

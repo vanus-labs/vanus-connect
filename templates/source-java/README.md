@@ -16,12 +16,7 @@ which is converted to
 
 ```json
 {
-  <example
-  event
-  converted
-  by
-  this
-  source>
+  <example event converted by this source>
 }
 ```
 
