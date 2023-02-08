@@ -29,7 +29,7 @@ For example, if the incoming CloudEvent looks like:
 }
 ```
 
-The HTTP Sink will send an HTTP request looks like:
+The HTTP Sink will send an HTTP in the following way:
 
 ```text
 POST /test?debug=true&type=curl
@@ -47,7 +47,7 @@ POST /test?debug=true&type=curl
 ### Prerequisites
 
 - Have a container runtime (i.e., docker).
-- Have an HTTP server, you can go https://webhook.site to get a free URL
+- Have an HTTP server, you can go [webhook](https://webhook.site) to get a free URL
 
 ### Create the config file
 
@@ -81,7 +81,7 @@ docker run -it --rm \
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -115,7 +115,7 @@ docker stop sink-http
 
 ### Data format
 
-The HTTP Sink requires following data format in CloudEvent's `data` field.
+The HTTP Sink requires the following data format in CloudEvent's `data` field.
 
 ```json
 {
