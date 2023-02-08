@@ -77,7 +77,7 @@ func (s *alicloudBillingSource) Initialize(ctx context.Context, config cdkgo.Con
 }
 
 func (s *alicloudBillingSource) Name() string {
-	return "AwsBillingSource"
+	return "AliCloudBillingSource"
 }
 
 func (s *alicloudBillingSource) Destroy() error {
