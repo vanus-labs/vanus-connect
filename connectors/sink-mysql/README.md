@@ -7,8 +7,7 @@ title: MySQL (JDBC)
 ## Introduction
 
 The MySQL Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the data part
-of the original event and delivers these extracted data to a MySQL database using JDBC. Before using this Sink, you will
-need to create a database and a table.
+of the original event and delivers these extracted data to a MySQL database using JDBC. 
 
 For example, if the incoming CloudEvent looks like this:
 
@@ -49,7 +48,7 @@ This quick start will guide you through the process of running an MySQL Sink Con
 - Have a running [MySQL][mysql] server.
 - Have a database and table created.
 
-### Prepare for db
+### Prepare for db (Optional)
 
 Connect MySQL and Create database and table
 
@@ -72,7 +71,7 @@ cat << EOF > config.yml
 db:
   host: "localhost"
   port: 3306
-  username: "vanus_test"
+  username: "vanus_test" 
   password: "123456"
   database: "vanus_test"
   table_name: "user"
@@ -108,6 +107,7 @@ docker run -it --rm --network=host\
 ### Test
 
 Open a terminal and use the following command to send a CloudEvent to the Sink.
+The data field must be according to your database structure.
 
 ```shell
 curl --location --request POST 'localhost:8080' \
