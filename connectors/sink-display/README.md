@@ -6,9 +6,9 @@ title: Display
 
 ## Introduction
 
-The Display Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to print incoming CloudEvents in JSON format.
+The Display Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to print incoming CloudEvents in a JSON format.
 
-For example, it will print the incoming CloudEvent looks like:
+For example, an incoming event will be print in the following way:
 
 ```json
 {
@@ -36,7 +36,7 @@ docker run -it --rm \
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to your Display Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \

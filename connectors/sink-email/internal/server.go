@@ -60,7 +60,8 @@ type EmailConfig struct {
 	Account  string `json:"account" yaml:"account" validate:"required,email"`
 	Password string `json:"password" yaml:"password" validate:"required"`
 	Host     string `json:"host" yaml:"host" validate:"required"`
-	Format   string `json:"format" yaml:"format" validate:"oneof=text html"`
+	Port     int    `json:"port" yaml:"port"`
+	Format   string `json:"format" yaml:"format"`
 	Identity string `json:"identity" yaml:"identity"`
 }
 
@@ -220,7 +221,11 @@ func (e *emailSink) send(ctx context.Context, cfg EmailConfig,
 	subject string, message []byte, f mail.BodyType, to ...string) error {
 	_ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	m := mail.New(cfg.Account, fmt.Sprintf("%s:%d", cfg.Host, 25))
+	port := cfg.Port
+	if port == 0 {
+		port = 25
+	}
+	m := mail.New(cfg.Account, fmt.Sprintf("%s:%d", cfg.Host, port))
 	m.AuthenticateSMTP(cfg.Identity, cfg.Account, cfg.Password, cfg.Host)
 	m.AddReceivers(to...)
 	m.BodyFormat(f)
