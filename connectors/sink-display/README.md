@@ -36,7 +36,7 @@ docker run -it --rm \
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to your Display Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
