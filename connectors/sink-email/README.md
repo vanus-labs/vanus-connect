@@ -44,7 +44,6 @@ email:
   - account: "<from_email_address>"
     password: "<password>"
     host: "<smtp server address>"
-    format: text
 EOF
 ```
 
@@ -55,7 +54,8 @@ EOF
 | email.[].account  | **YES**  |    -    | email account address you want to use                                                                  |
 | email.[].password | **YES**  |    -    | password for account authentication                                                                    |
 | email.[].host     | **YES**  |    -    | SMTP server address                                                                                    |
-| email.[].format   | **YES**  |    -    | `text` or `html`                                                                                       |
+| email.[].port     | **YES**  |   25    | SMTP server port                                                                                       |
+| email.[].format   |  **NO**  |  text   | `text` or `html`                                                                                       |
 
 The Email Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
