@@ -35,9 +35,9 @@ This quick start will guide you through the process of running an Amazon S3 Sink
 
 - Have a container runtime (i.e., docker).
 - An Amazon S3 bucket.
-- AWS IAM [Access Key][accessKey].
+- AWS IAM [Access Key][accesskey].
 - AWS permissions for the IAM user:
-    - s3:PutObject
+  - s3:PutObject
 
 ### Create the config file
 
@@ -53,16 +53,16 @@ scheduled_interval: 10
 EOF
 ```
 
-| Name                  | Required | Default | Description                                                                                                                                                                                                                                                                                                    |
-|:----------------------|:--------:|:--------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| port                  |    NO    | 8080    | the port which S3 Sink listens on                                                                                                                                                                                                                                                                              |
-| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accessKey]                                                                                                                                                                                                                                                                            |                                                                                         |
-| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accessKey]                                                                                                                                                                                                                                                                            |                                                                                        |
-| region                |   YES    |         | the S3 bucket region                                                                                                                                                                                                                                                                                           |
-| bucket                |   YES    |         | the S3 bucket name                                                                                                                                                                                                                                                                                             |
-| flush_size            |    NO    | 1000    | the number of CloudEvents cached to the local file before S3 Sink upload the file                                                                                                                                                                                                                              |
-| scheduled_interval    |    NO    | 60      | the maximum time interval between S3 Sink closing and uploading files which unit is second.                                                                                                                                                                                                                    |
-| time_interval         |    NO    | HOURLY  | the partitioning interval of files have been uploaded to the S3. S3 Sink supports `HOURLY` and `DAILY` time interval. For example, when `timeInterval` is `HOURLY`, files uploaded between 3 pm and 4 pm will be partitioned to one path, while files uploaded after 4 pm will be partitioned to another path  |
+| Name                  | Required | Default | Description                                                                                                                                                                                                                                                                                                   |
+| :-------------------- | :------: | :------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| port                  |    NO    | 8080    | the port which S3 Sink listens on                                                                                                                                                                                                                                                                             |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accesskey]                                                                                                                                                                                                                                                                           |     |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accesskey]                                                                                                                                                                                                                                                                           |     |
+| region                |   YES    |         | the S3 bucket region                                                                                                                                                                                                                                                                                          |
+| bucket                |   YES    |         | the S3 bucket name                                                                                                                                                                                                                                                                                            |
+| flush_size            |    NO    | 1000    | the number of CloudEvents cached to the local file before S3 Sink upload the file                                                                                                                                                                                                                             |
+| scheduled_interval    |    NO    | 60      | the maximum time interval between S3 Sink closing and uploading files which unit is second.                                                                                                                                                                                                                   |
+| time_interval         |    NO    | HOURLY  | the partitioning interval of files have been uploaded to the S3. S3 Sink supports `HOURLY` and `DAILY` time interval. For example, when `timeInterval` is `HOURLY`, files uploaded between 3 pm and 4 pm will be partitioned to one path, while files uploaded after 4 pm will be partitioned to another path |
 
 The Amazon S3 Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -199,5 +199,5 @@ vsctl subscription create \
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
-[accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+[accesskey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
 [ce-schema]: https://github.com/cloudevents/spec/blob/main/schemaregistry/spec.md
