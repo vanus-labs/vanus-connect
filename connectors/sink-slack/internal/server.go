@@ -59,6 +59,22 @@ type slackConfig struct {
 	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"required,gt=0,dive"`
 }
 
+func (c *slackConfig) Validate() error {
+	if c.DefaultAppID != "" {
+		var exist bool
+		for _, email := range c.Slacks {
+			if email.AppName == c.DefaultAppID {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			return errors.New("slack: the default slack config isn't exist")
+		}
+	}
+	return c.SinkConfig.Validate()
+}
+
 func NewConfig() cdkgo.SinkConfigAccessor {
 	return &slackConfig{}
 }
@@ -72,28 +88,28 @@ func NewSlackSink() cdkgo.Sink {
 var _ cdkgo.Sink = &slackSink{}
 
 type slackSink struct {
-	cfg   *slackConfig
-	count int64
-	apps  map[string]SlackConfig
+	count          int64
+	apps           map[string]SlackConfig
+	defaultAppName string
 }
 
 func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
 	for idx := range events {
 		event := events[idx]
 
-		var appID string
+		var appName string
 		v, exist := event.Extensions()[xvSlackApp]
 		if exist {
 			str, ok := v.(string)
 			if !ok {
 				return errInvalidAppName
 			}
-			appID = str
-		} else if e.cfg.DefaultAppID != "" {
-			appID = e.cfg.DefaultAppID
+			appName = str
+		} else {
+			appName = e.defaultAppName
 		}
 
-		c, ok := e.apps[appID]
+		c, ok := e.apps[appName]
 		if !ok {
 			return errInvalidAppName
 		}
@@ -145,20 +161,15 @@ func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 }
 
 func (e *slackSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
-	_cfg, ok := cfg.(*slackConfig)
+	config, ok := cfg.(*slackConfig)
 	if !ok {
 		return errors.New("slack: invalid configuration type")
 	}
 
-	e.cfg = _cfg
-	for _, m := range _cfg.Slacks {
+	for _, m := range config.Slacks {
 		e.apps[m.AppName] = m
 	}
-	if e.cfg.DefaultAppID != "" {
-		if _, exist := e.apps[e.cfg.DefaultAppID]; !exist {
-			return errors.New("slack: the default slack config isn't exist")
-		}
-	}
+	e.defaultAppName = config.DefaultAppID
 	return nil
 }
 
