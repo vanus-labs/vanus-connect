@@ -53,9 +53,6 @@ var (
 )
 var _ cdkgo.SinkConfigAccessor = &emailConfig{}
 
-type Secret struct {
-}
-
 type EmailConfig struct {
 	Account  string `json:"account" yaml:"account" validate:"required,email"`
 	Password string `json:"password" yaml:"password" validate:"required"`
@@ -67,7 +64,7 @@ type EmailConfig struct {
 
 type emailConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAddress   string        ` json:"default" yaml:"default"`
+	DefaultAddress   string        `json:"default" yaml:"default"`
 	Emails           []EmailConfig `json:"email" yaml:"email" validate:"dive,gt=0"`
 }
 
