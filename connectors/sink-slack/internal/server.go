@@ -55,7 +55,7 @@ type SlackConfig struct {
 
 type slackConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAppID     string        ` json:"default" yaml:"default"`
+	DefaultAppID     string        `json:"default" yaml:"default"`
 	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"required,gt=0,dive"`
 }
 
