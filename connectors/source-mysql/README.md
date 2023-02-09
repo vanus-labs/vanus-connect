@@ -6,10 +6,9 @@ title: MySQL CDC（Debezium)
 
 ## Introduction
 
-The MySQL Source is a [Vanus Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data in a
-MySql database and then monitor and record all subsequent row-level changes to that data.
+The MySQL Source is a [Vanus Connector][vc] which uses [Debezium][debezium]to obtain a snapshot of the existing data in a MySQL database and then monitors and records all subsequent row-level changes to that data.
 
-For example, MySQL database vanus_test has table user Look:
+For example, this MySQL database has the following columns:
 
 ```text
 +----------+-----------+-----------------+
@@ -19,7 +18,7 @@ For example, MySQL database vanus_test has table user Look:
 +----------+-----------+-----------------+
 ```
 
-The row record will be transformed into a CloudEvent looks like:
+The row recorded will be transformed into a CloudEvent in this way:
 
 ```json
 {
@@ -44,7 +43,7 @@ The row record will be transformed into a CloudEvent looks like:
 
 ## Quick Start
 
-This section shows how MySQL Source convert db record to a CloudEvent.
+This section will teach you how to use MySQL Source to convert a database record to a CloudEvent.
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).
@@ -54,8 +53,7 @@ This section shows how MySQL Source convert db record to a CloudEvent.
 
 1. Enable binary logging.
          
-   You must enable binary logging for MySQL replication. The binary logs record transaction updates for replication tools to propagate changes.
-You can configure your MySQL server configuration file with the following properties, which are described in below:
+  MySQL Binlog is enabled by default, and it must be enabled for MySQL replication. You can configure your MySQL server configuration file with the   following properties, which are described below:
 
     ```text
     server-id         = 223344
@@ -79,7 +77,7 @@ You can configure your MySQL server configuration file with the following proper
        mysql> enforce_gtid_consistency=ON;
       ```
 
-#### Prepare data
+3. #### Setup database (Optional)
 
 1. Create database and table 
    ```sql
@@ -96,10 +94,14 @@ You can configure your MySQL server configuration file with the following proper
    ```sql
    insert into vanus_test.`user` values(100,"vanus","dev@example.com");
    ```
-3. Create user and grant role
+   
+ 4. #### Create a new user (recommended)
+ User Root can be used but not recommended
+ 
+ Create user and grant role
    ```sql
-   CREATE USER 'vanus_test'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
-   GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'vanus_test'@'%';
+   CREATE USER 'vanus'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+   GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'vanus'@'%';
    ```
 
 ### Create the config file
@@ -111,11 +113,11 @@ name: "quick_start"
 db:
   host: "localhost"
   port: 3306
-  username: "vanus_test"
+  username: "vanus"
   password: "123456"
 database_include: [ "vanus_test" ]
-# format is vanus_test.tableName
-table_include: [ "vanus_test.user" ]
+# format should be database_name.table_name
+table_include: [ "vanus_test.user" ] 
 
 store:
   type: FILE

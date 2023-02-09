@@ -237,7 +237,7 @@ spec:
               containerPort: 8080
           volumeMounts:
             - name: config
-              mountPath: /vanus-connnect/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:

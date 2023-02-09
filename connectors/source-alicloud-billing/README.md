@@ -7,7 +7,7 @@ title: Alibaba Cloud Billing
 ## Introduction
 
 The Alibaba Cloud Billing Source is a [Vanus Connector][vc] which aims to convert billing data
-to a CloudEvent. The Alibaba Cloud Billing Source use [Alibaba Cloud Billing][alibill] api and pulls
+to CloudEvents. The Alibaba Cloud Billing Source use [Alibaba Cloud Billing][alibill] api and pulls
 billing data from the previous day at a fixed time.
 
 The billing data is converted to:
