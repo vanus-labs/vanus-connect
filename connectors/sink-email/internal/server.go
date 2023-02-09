@@ -65,7 +65,7 @@ type EmailConfig struct {
 type emailConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 	DefaultAddress   string        `json:"default" yaml:"default"`
-	Emails           []EmailConfig `json:"email" yaml:"email" validate:"dive,gt=0"`
+	Emails           []EmailConfig `json:"email" yaml:"email" validate:"required,gt=0,dive"`
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
