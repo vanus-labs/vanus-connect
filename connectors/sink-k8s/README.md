@@ -7,7 +7,7 @@ title: Kubernetes
 ## Introduction
 
 The Kubernetes Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts
-the `data` part of the original event and operation kubernetes resource.
+the `data` part of the original event to create or delete kubernetes jobs.
 
 For example, if the incoming CloudEvent looks like:
 
@@ -51,7 +51,7 @@ For example, if the incoming CloudEvent looks like:
 }
 ```
 
-The Kubernetes Sink will extract `data` field write to Kubernetes cluster.
+The Kubernetes Sink will extract `data` field and write it to a Kubernetes cluster.
 
 ## Quickstart
 
@@ -165,16 +165,14 @@ spec:
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
-
-Obtain your k8s cluster node INTERNAL-IP by following command and replace the following `<k8s node ip>`
+Obtain your k8s cluster node INTERNAL-IP by following the following command and by replacing `<k8s node ip>` by the INTERNAL-IP.
 
 ```shell
 kubectl get node -o wide
 ```
 
 
-#### Example for create job
+#### Example to create a job
 
 ```shell
 curl --location --request POST '<k8s node ip>:31080' \
@@ -218,7 +216,19 @@ curl --location --request POST '<k8s node ip>:31080' \
 }'
 ```
 
-### Example for delete job
+**Run the following command to check if the job was created successfully**
+
+```shell
+kubectl get jobs
+```
+
+Results:
+```shell
+NAME       COMPLETIONS   DURATION   AGE
+job-test   0/1           40s        40s
+```
+
+### Example to delete a job
 
 ```shell
 curl --location --request POST '<k8s node ip>:31080' \
@@ -261,6 +271,7 @@ curl --location --request POST '<k8s node ip>:31080' \
   }
 }'
 ```
+
 
 ### Clean resource
 
