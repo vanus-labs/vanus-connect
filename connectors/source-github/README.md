@@ -9,7 +9,7 @@ title: GitHub
 The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
 by wrapping the body of the original request into the data field.
 
-An original GitHub webhook event looks like:
+An original GitHub webhook event looks like this:
 
 ```JSON
 {
@@ -234,7 +234,7 @@ This section shows how a source connector can send CloudEvents to a running [Van
 - Have a running Vanus cluster
 - Vsctl Installed
 
-1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+1. Export the VANUS_GATEWAY environment variable (the IP should be a host-accessible address of the vanus-gateway service)
 
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
