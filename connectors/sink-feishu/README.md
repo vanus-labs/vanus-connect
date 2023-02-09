@@ -7,11 +7,11 @@ title: Feishu
 ## Introduction
 
 The Feishu Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEvents in a way that extracts the `data` part of the
-original event and deliver these extracted `data` to  Feishu APIs. Now the Sink support Feishu Bot: pushing a message to Group Chat with message of text, post, share_chat, image, and interactive.
+original event and deliver these extracted `data` to  the Feishu APIs. Now the Sink support Feishu Bot: pushing a message to Group Chat with message of text, post, share_chat, image, and interactive.
 
 ## Quick Start
 
-in this section, we show how to use Feishu Sink push a text message to your group chat.
+In this section, we show how to use Feishu Sink push a text message to your group chat.
 
 ### Prerequisites
 
@@ -37,7 +37,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 
 ### Create the config file
 
-replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
+Replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be fill in any value as you want.
 
 ```shell
 cat << EOF > config.yml
@@ -72,7 +72,7 @@ docker run -it --rm \
 
 ### Test
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use THE following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -91,7 +91,7 @@ curl --location --request POST 'localhost:31080' \
 }'
 ```
 
-now, you cloud see a notice in your chat group.
+now, you can see a notification from your bot in your group chat.
 ![received-notification](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-feishu/received-message.png?raw=true)
 
 ### Clean
@@ -119,7 +119,7 @@ to determine how to process event.
 
 ### Chat Bot Dynamic Webhook
 
-In some cases, users can't make sure how many bots there have or wanner send one message to multiple groups, which means they need to dynamically send message to
+In some cases, users can't make sure how many bots there have or send one message to multiple groups, which means they need to dynamically send message to
 Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
 
 in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xvfeishuboturls` and `xvfeishubotsigns` will be ignored.
