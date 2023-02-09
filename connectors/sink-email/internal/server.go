@@ -53,9 +53,6 @@ var (
 )
 var _ cdkgo.SinkConfigAccessor = &emailConfig{}
 
-type Secret struct {
-}
-
 type EmailConfig struct {
 	Account  string `json:"account" yaml:"account" validate:"required,email"`
 	Password string `json:"password" yaml:"password" validate:"required"`
@@ -67,8 +64,24 @@ type EmailConfig struct {
 
 type emailConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAddress   string        ` json:"default" yaml:"default"`
-	Emails           []EmailConfig `json:"email" yaml:"email" validate:"dive,gt=0"`
+	DefaultAccount   string        `json:"default" yaml:"default"`
+	Emails           []EmailConfig `json:"email" yaml:"email" validate:"required,gt=0,dive"`
+}
+
+func (c *emailConfig) Validate() error {
+	if c.DefaultAccount != "" {
+		var exist bool
+		for _, email := range c.Emails {
+			if email.Account == c.DefaultAccount {
+				exist = true
+				break
+			}
+		}
+		if !exist {
+			return errors.New("email: the default email config isn't exist")
+		}
+	}
+	return c.SinkConfig.Validate()
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
@@ -84,9 +97,9 @@ func NewEmailSink() cdkgo.Sink {
 var _ cdkgo.Sink = &emailSink{}
 
 type emailSink struct {
-	cfg   *emailConfig
-	count int64
-	mails map[string]EmailConfig
+	count          int64
+	mails          map[string]EmailConfig
+	defaultAccount string
 }
 
 func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
@@ -100,8 +113,8 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 				return errInvalidFromAddress
 			}
 			address = _address
-		} else if e.cfg.DefaultAddress != "" {
-			address = e.cfg.DefaultAddress
+		} else {
+			address = e.defaultAccount
 		}
 		if address == "" {
 			return errInvalidFromAddress
@@ -191,20 +204,15 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 }
 
 func (e *emailSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
-	_cfg, ok := cfg.(*emailConfig)
+	config, ok := cfg.(*emailConfig)
 	if !ok {
 		return errors.New("email: invalid configuration type")
 	}
 
-	e.cfg = _cfg
-	for _, m := range _cfg.Emails {
+	for _, m := range config.Emails {
 		e.mails[m.Account] = m
 	}
-	if e.cfg.DefaultAddress != "" {
-		if _, exist := e.mails[e.cfg.DefaultAddress]; !exist {
-			return errors.New("email: the default email config isn't exist")
-		}
-	}
+	e.defaultAccount = config.DefaultAccount
 	return nil
 }
 
