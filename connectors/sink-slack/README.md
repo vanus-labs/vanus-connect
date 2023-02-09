@@ -294,7 +294,7 @@ vsctl eventbus create --name quick-start
 vsctl subscription create \
   --name quick-start \
   --eventbus quick-start \
-  --sink 'http://sink-name:8080'
+  --sink 'http://sink-slack:8080'
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
