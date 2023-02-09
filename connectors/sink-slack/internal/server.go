@@ -55,15 +55,15 @@ type SlackConfig struct {
 
 type slackConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAppID     string        `json:"default" yaml:"default"`
+	DefaultAppName   string        `json:"default" yaml:"default"`
 	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"required,gt=0,dive"`
 }
 
 func (c *slackConfig) Validate() error {
-	if c.DefaultAppID != "" {
+	if c.DefaultAppName != "" {
 		var exist bool
 		for _, email := range c.Slacks {
-			if email.AppName == c.DefaultAppID {
+			if email.AppName == c.DefaultAppName {
 				exist = true
 				break
 			}
@@ -169,7 +169,7 @@ func (e *slackSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) erro
 	for _, m := range config.Slacks {
 		e.apps[m.AppName] = m
 	}
-	e.defaultAppName = config.DefaultAppID
+	e.defaultAppName = config.DefaultAppName
 	return nil
 }
 
