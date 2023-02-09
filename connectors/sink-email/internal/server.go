@@ -99,7 +99,7 @@ var _ cdkgo.Sink = &emailSink{}
 type emailSink struct {
 	count          int64
 	mails          map[string]EmailConfig
-	defaultAddress string
+	defaultAccount string
 }
 
 func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
@@ -114,7 +114,7 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 			}
 			address = _address
 		} else {
-			address = e.defaultAddress
+			address = e.defaultAccount
 		}
 		if address == "" {
 			return errInvalidFromAddress
@@ -212,7 +212,7 @@ func (e *emailSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) erro
 	for _, m := range config.Emails {
 		e.mails[m.Account] = m
 	}
-	e.defaultAddress = config.DefaultAddress
+	e.defaultAccount = config.DefaultAddress
 	return nil
 }
 
