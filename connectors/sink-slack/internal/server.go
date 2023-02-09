@@ -48,15 +48,15 @@ var (
 var _ cdkgo.SinkConfigAccessor = &slackConfig{}
 
 type SlackConfig struct {
-	AppName        string `yaml:"app_name" json:"app_name"`
-	Token          string `yaml:"token" json:"token"`
+	AppName        string `yaml:"app_name" json:"app_name" validate:"required"`
+	Token          string `yaml:"token" json:"token" validate:"required"`
 	DefaultChannel string `yaml:"default_channel" json:"default_channel"`
 }
 
 type slackConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 	DefaultAppID     string        ` json:"default" yaml:"default"`
-	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"dive,gt=0"`
+	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"required,gt=0,dive"`
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
