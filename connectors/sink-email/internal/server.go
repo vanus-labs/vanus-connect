@@ -64,15 +64,15 @@ type EmailConfig struct {
 
 type emailConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAddress   string        `json:"default" yaml:"default"`
+	DefaultAccount   string        `json:"default" yaml:"default"`
 	Emails           []EmailConfig `json:"email" yaml:"email" validate:"required,gt=0,dive"`
 }
 
 func (c *emailConfig) Validate() error {
-	if c.DefaultAddress != "" {
+	if c.DefaultAccount != "" {
 		var exist bool
 		for _, email := range c.Emails {
-			if email.Account == c.DefaultAddress {
+			if email.Account == c.DefaultAccount {
 				exist = true
 				break
 			}
@@ -212,7 +212,7 @@ func (e *emailSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) erro
 	for _, m := range config.Emails {
 		e.mails[m.Account] = m
 	}
-	e.defaultAccount = config.DefaultAddress
+	e.defaultAccount = config.DefaultAccount
 	return nil
 }
 
