@@ -242,7 +242,7 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - name: config
-              mountPath: /vanus-connector/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: config
           configMap:

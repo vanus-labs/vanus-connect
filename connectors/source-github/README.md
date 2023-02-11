@@ -217,7 +217,7 @@ spec:
                       name: github
               volumeMounts:
                  - name: source-github-config
-                   mountPath: /vanus-connector/config
+                   mountPath: /vanus-connect/config
          volumes:
             - name: source-github-config
               configMap:
