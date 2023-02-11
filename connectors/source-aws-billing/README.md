@@ -200,7 +200,7 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - name: source-aws-billing-config
-              mountPath: /vanus-connector/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: source-aws-billing-config
           configMap:

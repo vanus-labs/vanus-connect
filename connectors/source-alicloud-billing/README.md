@@ -183,7 +183,7 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - name: source-alicloud-billing-config
-              mountPath: /vanus-connector/config
+              mountPath: /vanus-connect/config
       volumes:
         - name: source-alicloud-billing-config
           configMap:
