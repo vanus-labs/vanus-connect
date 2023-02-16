@@ -7,7 +7,7 @@ title: Snowflake
 ## Introduction
 
 The Snowflake Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the data
-part of the original event and delivers these extracted data to a Snowflake database using [bulk loading](loadfile).
+part of the original event and delivers these extracted data to a Snowflake database using [bulk loading][loadfile].
 
 For example, if the incoming CloudEvent looks like this:
 
@@ -73,9 +73,9 @@ EOF
 | snowflake.role       |   YES    |               | [role] of snowflake                                                                  |
 | snowflake.warehouse  |   YES    |               | [warehouse] of snowflake                                                             |
 | snowflake.database   |   YES    |               | [database] of snowflake                                                              |
-| snowflake.schema     |   YES    |               | [schema](database) of snowflake                                                      |
+| snowflake.schema     |   YES    |               | [schema][database] of snowflake                                                      |
 | snowflake.table      |   YES    |               | table name of snowflake, the table no need exist                                     |
-| snowflake.properties |    NO    |               | the other properties for jdbc [jdbc parameters](jdbc-parameter) of snowflake         |
+| snowflake.properties |    NO    |               | the other properties for jdbc [jdbc parameters][jdbc-parameter] of snowflake         |
 | flush_time           |    NO    |      10       | the time of second for make a file and flush to snowflake                            |
 | flush_size_bytes     |    NO    | 100*1024*1024 | the size of bytes for make a file and flush to snowflake                             |
 
