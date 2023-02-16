@@ -33,7 +33,7 @@ public class SnowflakeDatabase {
     }
 
     public boolean execute(String sql) throws SQLException {
-        LOGGER.info("execute sql:{}", sql);
+        LOGGER.debug("execute sql:{}", sql);
         return dataSource.getConnection().createStatement().execute(sql);
     }
 

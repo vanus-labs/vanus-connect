@@ -22,8 +22,8 @@ public class SnowflakeService {
     private static final String PUT_FILE = "PUT file://%s @%s/%s AUTO_COMPRESS=TRUE;";
     private static final String COPY_INTO = "COPY INTO %s.%s FROM '@%s/%s' "
             + "FILE_FORMAT = (TYPE = JSON) MATCH_BY_COLUMN_NAME = CASE_INSENSITIVE FILES= (%s)";
-    private static final String DROP_STAGE_QUERY = "DROP STAGE IF EXISTS %s;";
-    private static final String REMOVE_QUERY = "REMOVE @%s;";
+    private static final String DROP_STAGE = "DROP STAGE IF EXISTS %s;";
+    private static final String REMOVE = "REMOVE @%s;";
 
     private static final long BUFFER_SIZE_BYTES = 100 * 1024 * 1024;
     private static final long BUFFER_FLUSH_TIME_SEC = 10;
@@ -63,7 +63,7 @@ public class SnowflakeService {
 
         previousFlush = Instant.now().getEpochSecond();
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        executorService = Executors.newCachedThreadPool();
+        executorService = Executors.newFixedThreadPool(2);
         writeLock = new ReentrantLock();
         loadLock = new ReentrantLock();
         if (config.getFlushTime() > 0) {
@@ -87,10 +87,11 @@ public class SnowflakeService {
         LOGGER.info("stop start");
         scheduledExecutorService.shutdown();
         flushWriter(true);
-        if (writer.size()==0) {
+        if (writer!=null && writer.size()==0) {
             writer.close();
         }
         loadData();
+        dropStage();
         LOGGER.info("stop success");
     }
 
@@ -207,6 +208,7 @@ public class SnowflakeService {
                     needLoadFiles.remove(writer);
                 }
             }
+            cleanStage();
         } finally {
             loadLock.unlock();
         }
@@ -233,6 +235,28 @@ public class SnowflakeService {
             return false;
         }
         LOGGER.info("copy into files {} success", joiner);
+        return true;
+    }
+
+    private boolean cleanStage() {
+        try {
+            database.execute(String.format(REMOVE, stageName));
+        } catch (SQLException e) {
+            LOGGER.error("remove stage {} file error", stageName, e);
+            return false;
+        }
+        LOGGER.info("remove stage {} file success", stageName);
+        return true;
+    }
+
+    private boolean dropStage() {
+        try {
+            database.execute(String.format(DROP_STAGE, stageName));
+        } catch (SQLException e) {
+            LOGGER.error("drop stage error", stageName, e);
+            return false;
+        }
+        LOGGER.info("drop stage {} success", stageName);
         return true;
     }
 }
