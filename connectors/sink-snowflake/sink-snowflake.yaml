@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-snowflake
+  namespace: vanus
+spec:
+  selector:
+    app: sink-snowflake
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-snowflake
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-snowflake
+  namespace: vanus
+data:
+  config.yml: |-
+    port: 8080
+    snowflake:
+      host: "myaccount.ap-northeast-1.aws.snowflakecomputing.com"
+      username: "vanus_user" 
+      password: "snowflake"
+      role: "ACCOUNTADMIN"
+      warehouse: "xxxxxx"
+      database: "VANUS_DB"
+      schema: "public"
+      table: "vanus_test"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-snowflake
+  namespace: vanus
+  labels:
+    app: sink-snowflake
+spec:
+  selector:
+    matchLabels:
+      app: sink-snowflake
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-snowflake
+    spec:
+      containers:
+        - name: sink-snowflake
+          image: public.ecr.aws/vanus/connector/sink-snowflake
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-snowflake
