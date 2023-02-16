@@ -231,7 +231,7 @@ vsctl subscription create \
   --sink 'http://sink-snowflake:8080'
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
 [snowflake]: https://www.snowflake.com
 [account]: https://docs.snowflake.com/en/user-guide/admin-account-identifier
 [role]: https://docs.snowflake.com/en/user-guide/security-access-control-overview#roles

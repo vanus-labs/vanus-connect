@@ -307,6 +307,6 @@ target: http://192.168.49.2:30001/gateway/quick-start
   kubectl apply -f source-postgres.yaml
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
 [debezium]: https://debezium.io/documentation/reference/2.1/connectors/postgresql.html
 [logical decoding plug-in]: https://debezium.io/documentation/reference/2.1/connectors/postgresql.html#postgresql-output-plugin

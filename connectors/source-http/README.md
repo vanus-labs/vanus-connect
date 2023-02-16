@@ -6,7 +6,7 @@ title: HTTP
 
 ## Introduction
 
-The HTTP Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to convert an incoming HTTP Request to a CloudEvent.
+The HTTP Source is a [Vanus Connector][vc] which aims to convert an incoming HTTP Request to a CloudEvent.
 
 For example, the incoming HTTP Request looks like:
 
@@ -284,4 +284,4 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-http.yaml
 ```
 
-[vc]: https://github.com/linkall-labs/vance-docs/blob/main/docs/concept.md
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect

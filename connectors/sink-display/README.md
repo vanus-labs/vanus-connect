@@ -6,7 +6,7 @@ title: Display
 
 ## Introduction
 
-The Display Sink is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to print incoming CloudEvents in a JSON format.
+The Display Sink is a [Vanus Connector][vc] which aims to print incoming CloudEvents in a JSON format.
 
 For example, an incoming event will be print in the following way:
 
@@ -149,4 +149,4 @@ vsctl subscription create \
   --sink 'http://sink-display:8080'
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect

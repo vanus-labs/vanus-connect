@@ -266,6 +266,6 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-aws-sns.yaml
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
 [ceas]: https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-sns.md
 [accessKey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
