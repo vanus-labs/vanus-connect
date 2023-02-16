@@ -283,7 +283,7 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-aws-s3.yaml
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
 [ceas]: https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/aws-s3.md
 [s3event]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-how-to-event-types-and-destinations.html
 [accesskey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html

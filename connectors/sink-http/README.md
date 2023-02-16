@@ -225,4 +225,4 @@ vsctl subscription create \
   --sink 'http://sink-http:8080'
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
