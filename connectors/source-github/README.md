@@ -261,4 +261,4 @@ docker run --network=host \
   --name source-github public.ecr.aws/vanus/connector/source-github
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect

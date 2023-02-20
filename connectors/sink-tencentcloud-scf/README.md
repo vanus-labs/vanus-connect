@@ -188,4 +188,4 @@ vsctl subscription create \
   --sink 'http://sink-tencentcloud-scf:8080'
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect

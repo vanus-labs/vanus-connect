@@ -361,5 +361,5 @@ vsctl subscription create \
   --sink 'http://sink-mongdob:8080'
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [mongodb connect]: https://www.mongodb.com/docs/manual/reference/connection-string/

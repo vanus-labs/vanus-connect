@@ -284,4 +284,4 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-http.yaml
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
