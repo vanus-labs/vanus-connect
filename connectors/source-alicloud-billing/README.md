@@ -219,6 +219,6 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-alicloud-billing.yaml
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [alibill]: https://help.aliyun.com/document_detail/142608.html
 [accessKey]: https://help.aliyun.com/document_detail/38738.html

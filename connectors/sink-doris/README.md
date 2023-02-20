@@ -228,6 +228,6 @@ vsctl subscription create \
   --sink 'http://sink-doris:8080'
 ```
 
-[vc]: https://www.vanus.ai/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [doris]: https://doris.apache.org/docs/summary/basic-summary
 [stream load]: https://doris.apache.org/docs/dev/data-operate/import/import-way/stream-load-manual/
