@@ -6,7 +6,7 @@ title: MongoDB
 
 ## Introduction
 
-The MongoDB Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to
+The MongoDB Source is a [Vanus Connector][vc] which aims to
 capturing mongodb [ChangeEvent](https://www.mongodb.com/docs/manual/reference/change-events/) use [Debezium][debezium]
 and convert to a CloudEvent.
 
@@ -218,5 +218,5 @@ vsctl subscription create \
   --sink 'http://sink-mongodb:8080'
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [debezium]: https://debezium.io/documentation/reference/2.1/connectors/mongodb.html

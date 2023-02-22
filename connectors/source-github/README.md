@@ -6,7 +6,7 @@ title: GitHub
 
 ## Introduction
 
-The GitHub Source is a [Vanus Connector](https://www.vanus.dev/introduction/concepts#vanus-connect) which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
+The GitHub Source is a [Vanus Connector][vc] which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
 by wrapping the body of the original request into the data field.
 
 An original GitHub webhook event looks like:
@@ -260,3 +260,5 @@ docker run --network=host \
   -v ${PWD}:/vanus-connect/config \
   --name source-github public.ecr.aws/vanus/connector/source-github
 ```
+
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect

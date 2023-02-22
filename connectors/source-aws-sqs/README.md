@@ -198,5 +198,5 @@ target: http://192.168.49.2:30001/gateway/quick-start
 kubectl apply -f source-aws-sqs.yaml
 ```
 
-[vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
+[vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [accesskey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
