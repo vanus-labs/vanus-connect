@@ -17,17 +17,13 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"os"
 	"log"
 	"strconv"
+	ce "github.com/cloudevents/sdk-go/v2"
+	cdkgo "github.com/linkall-labs/cdk-go"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
-	b64 "encoding/base64"
-	ce "github.com/cloudevents/sdk-go/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
-	
 )
 
 var _ cdkgo.Sink = &GoogleSheetSink{}
@@ -43,10 +39,6 @@ type GoogleSheetSink struct {
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	// TODO
 	s.config = cfg.(*GoogleSheetConfig)
-
-	fmt.Scanf("%v", &s.config.Credentials)
-
-	fmt.Scanf("%v", &s.config.Sheet_url)
 	
 	return nil
 }
@@ -64,38 +56,21 @@ func (s *GoogleSheetSink) Destroy() error {
 func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
 	// TODO
 	for _, event := range events {
-		b, _ := json.Marshal(event)
-		fmt.Println(string(b))
+
+		s.saveDataToSpreadsheet(event)
 	}
 	return cdkgo.SuccessResult
 }
 
-func storeEnvData() {
-	
-    data, err := os.ReadFile("credentials.json")
-    if err!= nil {
-        log.Fatalf("Failed to read file %v", err)
-    }
-    
-    credentials := b64.StdEncoding.EncodeToString([]byte(data))
-    os.Setenv("KEY_JSON_BASE64", credentials)
-    
-}
 
-func saveDataToSpreadsheet() {
+
+func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 
 		//Create API Context
 	ctx := context.Background()
 
-
-	//Decode Auth Key
-	credBytes, err := b64.StdEncoding.DecodeString(os.Getenv("KEY_JSON_BASE64"))
-	if err != nil {
-		log.Fatalf("Failed to decode google service accounts key %v", err)
-	}
-
 	// authenticate and get configuration
-	config, err := google.JWTConfigFromJSON(credBytes, "https://www.googleapis.com/auth/spreadsheets")
+	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
 		if err != nil {
 			log.Fatalf("Failed to authenticate google service accounts key %v", err)
 			return
@@ -112,11 +87,9 @@ func saveDataToSpreadsheet() {
 	}
 
 	//Initialize Sheet ID & Spreadsheet ID
-	//spreadSheetUrl := "https://docs.google.com/spreadsheets/d/1tZJPUCOiiR0liRsNtLKhCoQR-Cb8_oPVGMU0kvnRCQw/edit#gid=0"
-	fmt.Println("Insert Your Spreadsheet URL")
-	var spreadSheetUrl string
-	fmt.Scanf("%v \n", &spreadSheetUrl)
-
+	
+	spreadSheetUrl := s.config.Sheet_url
+	
 	sheetId, err := strconv.Atoi(spreadSheetUrl[93:94])
 	if err != nil {
         log.Fatalf("Failed to Convert String %v",err)
@@ -141,31 +114,31 @@ func saveDataToSpreadsheet() {
 		}
 	}
 
-	//Append value to Spreadsheet
 
-	fmt.Println("Insert ID")
-	var row_id string
-    fmt.Scanf("%v \n", &row_id)
+	sheetRow := make(map[string]string)
+	sheetRow["id"] = "ID"
+	sheetRow["name"] = "Name"
+	sheetRow["email"] = "Email"
+	sheetRow["description"] = "Description"
+	sheetRow["date"] = "Date"
 	
-	fmt.Println("Insert Name")
-	var name string
-    fmt.Scanf("%v \n", &name)
+	extractData := json.Unmarshal(event.Data(), &sheetRow)
+	if extractData != nil {
+		log.Fatalf("Unable to Unmarshal %v",extractData)
+	}
+	
 
-	fmt.Println("Insert Email")
-	var email string
-    fmt.Scanf("%v \n", &email)
-
-	fmt.Println("Insert Date - DD/MM/YYYY")
-	var date string
-    fmt.Scanf("%v \n", &date)
-
+	//Insert Row Value
 	row := &sheets.ValueRange{
-	Values: [][]interface{}{{row_id, name, email, date}},
+		Values: [][] interface{}{{sheetRow["id"], sheetRow["name"], sheetRow["email"], sheetRow["description"], sheetRow["date"] }},
 	}
 
-	response2, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
-		if err != nil || response2.HTTPStatusCode != 200 {
+	response, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
+		if err != nil || response.HTTPStatusCode != 200 {
 		log.Fatalf("Failed to Append Value to Spreadsheet %v",err)
 		return
 	}
+
 }
+
+
