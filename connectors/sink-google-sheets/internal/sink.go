@@ -115,22 +115,19 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 	}
 
 
-	sheetRow := make(map[string]string)
-	sheetRow["id"] = "ID"
-	sheetRow["name"] = "Name"
-	sheetRow["email"] = "Email"
-	sheetRow["description"] = "Description"
-	sheetRow["date"] = "Date"
+	// Receive any kind of Cloud Event
+	sheetRow := make(map[string]interface{})
+	json.Unmarshal(event.Data(), &sheetRow)
 	
-	extractData := json.Unmarshal(event.Data(), &sheetRow)
-	if extractData != nil {
-		log.Fatalf("Unable to Unmarshal %v",extractData)
+	var values []interface{}
+	for _, v := range sheetRow {
+		values = append(values, v)
 	}
-	
 
+	
 	//Insert Row Value
 	row := &sheets.ValueRange{
-		Values: [][] interface{}{{sheetRow["id"], sheetRow["name"], sheetRow["email"], sheetRow["description"], sheetRow["date"] }},
+		Values: [][] interface{}{ values },
 	}
 
 	response, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
@@ -138,6 +135,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 		log.Fatalf("Failed to Append Value to Spreadsheet %v",err)
 		return
 	}
+
 
 }
 
