@@ -6,7 +6,7 @@ title: MySQL CDC（Debezium)
 
 ## Introduction
 
-The MySQL Source is a [Vanus Connector][vc] which uses [Debezium][debezium]to obtain a snapshot of the existing data in a MySQL database and then monitors and records all subsequent row-level changes to that data.
+The MySQL Source is a [Vanus Connector][vc] which uses [Debezium][debezium] to obtain a snapshot of the existing data in a MySQL database and then monitors and records all subsequent row-level changes to that data.
 
 For example, this MySQL database has the following columns:
 
@@ -46,14 +46,15 @@ The row recorded will be transformed into a CloudEvent in this way:
 This section will teach you how to use MySQL Source to convert a database record to a CloudEvent.
 
 ### Prerequisites
+
 - Have a container runtime (i.e., docker).
 - Have a MySQL Server `8.0`, `5.7`, or `5.6`.
 
 #### Setting up MySQL
 
 1. Enable binary logging.
-         
-  MySQL Binlog is enabled by default, and it must be enabled for MySQL replication. You can configure your MySQL server configuration file with the   following properties, which are described below:
+
+MySQL Binlog is enabled by default, and it must be enabled for MySQL replication. You can configure your MySQL server configuration file with the following properties, which are described below:
 
     ```text
     server-id         = 223344
@@ -62,12 +63,13 @@ This section will teach you how to use MySQL Source to convert a database record
     binlog_row_image  = FULL
     expire_logs_days  = 10
     ```
-    
+
     See the [MySQL doc](https://dev.mysql.com/doc/refman/8.0/en/replication-options-binary-log.html) for more details;
 
 2. Enable GTIDs (Optional).
 
    GTIDs are available in MySQL 5.6.5 and later. See the [MySQL doc](https://dev.mysql.com/doc/refman/8.0/en/replication-options-gtids.html#option_mysqld_gtid-mode) for more details.
+
    1. Enable gtid_mode
       ```sql
        mysql> gtid_mode=ON;
@@ -79,7 +81,7 @@ This section will teach you how to use MySQL Source to convert a database record
 
 3. #### Setup database (Optional)
 
-1. Create database and table 
+4. Create database and table
    ```sql
    create database vanus_test;
    CREATE TABLE IF NOT EXISTS vanus_test.user
@@ -90,19 +92,19 @@ This section will teach you how to use MySQL Source to convert a database record
      PRIMARY KEY (`id`)
    ) ENGINE=InnoDB;
    ```
-2. Insert data
+5. Insert data
    ```sql
    insert into vanus_test.`user` values(100,"vanus","dev@example.com");
    ```
-   
- 4. #### Create a new user (recommended)
- User Root can be used but not recommended
- 
- Create user and grant role
-   ```sql
-   CREATE USER 'vanus'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
-   GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'vanus'@'%';
-   ```
+6. #### Create a new user (recommended)
+   User Root can be used but not recommended
+
+Create user and grant role
+
+```sql
+CREATE USER 'vanus'@'%' IDENTIFIED WITH mysql_native_password BY '123456';
+GRANT SELECT, RELOAD, SHOW DATABASES, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'vanus'@'%';
+```
 
 ### Create the config file
 
@@ -117,7 +119,7 @@ db:
   password: "123456"
 database_include: [ "vanus_test" ]
 # format should be database_name.table_name
-table_include: [ "vanus_test.user" ] 
+table_include: [ "vanus_test.user" ]
 
 store:
   type: FILE
@@ -128,7 +130,7 @@ EOF
 ```
 
 | name                | requirement | description                                                                                       |
-|---------------------|-------------|---------------------------------------------------------------------------------------------------|
+| ------------------- | ----------- | ------------------------------------------------------------------------------------------------- |
 | target              | required    | target URL will send CloudEvents to                                                               |
 | name                | required    | unique name for the connector                                                                     |
 | db.host             | required    | IP address or host name of db                                                                     |
@@ -168,7 +170,6 @@ docker run -it --rm \
 ```
 
 Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
- 
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
@@ -283,26 +284,31 @@ spec:
 This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 ### Prerequisites
+
 - Have a running K8s cluster
 - Have a running Vanus cluster
 - Vsctl Installed
 
 1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Update the target config of the MySQL Source
+
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
 4. Run the MySQL Source
+
 ```shell
   kubectl apply -f source-mysql.yaml
 ```
