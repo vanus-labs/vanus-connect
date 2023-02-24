@@ -39,6 +39,8 @@ type GoogleSheetSink struct {
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	// TODO
 	s.config = cfg.(*GoogleSheetConfig)
+
+	//context.Background()
 	
 	return nil
 }
@@ -66,9 +68,6 @@ func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkg
 
 func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 
-		//Create API Context
-	ctx := context.Background()
-
 	// authenticate and get configuration
 	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
 		if err != nil {
@@ -77,10 +76,10 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 		}
 
 	//Create Client
-	client := config.Client(ctx)
+	client := config.Client(context.Background())
 
 	//Create Service using Client
-	srv, err := sheets.NewService(ctx, option.WithHTTPClient(client))
+	srv, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
 	if err != nil {
         log.Fatalf("Failed to Create Service Account %v",err)
         return
@@ -130,7 +129,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 		Values: [][] interface{}{ values },
 	}
 
-	response, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
+	response, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
 		if err != nil || response.HTTPStatusCode != 200 {
 		log.Fatalf("Failed to Append Value to Spreadsheet %v",err)
 		return
