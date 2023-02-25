@@ -34,13 +34,28 @@ func NewGoogleSheetSink() cdkgo.Sink {
 
 type GoogleSheetSink struct {
 	config *GoogleSheetConfig
+	client *sheets.Service
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	// TODO
 	s.config = cfg.(*GoogleSheetConfig)
 
-	//context.Background()
+	// authenticate and get configuration
+	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
+		if err != nil {
+			return err
+		}
+
+	//Create Client
+	client := config.Client(context.Background())
+
+	//Create Service using Client
+	srv, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+	if err != nil {
+        return err
+	}
+	s.client = srv
 	
 	return nil
 }
@@ -67,24 +82,7 @@ func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkg
 
 
 func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
-
-	// authenticate and get configuration
-	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
-		if err != nil {
-			log.Fatalf("Failed to authenticate google service accounts key %v", err)
-			return
-		}
-
-	//Create Client
-	client := config.Client(context.Background())
-
-	//Create Service using Client
-	srv, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
-	if err != nil {
-        log.Fatalf("Failed to Create Service Account %v",err)
-        return
-	}
-
+	
 	//Initialize Sheet ID & Spreadsheet ID
 	
 	spreadSheetUrl := s.config.Sheet_url
@@ -98,7 +96,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 	spreadSheetId := spreadSheetUrl[39:83]
 
 	//Get SheetName from SpreadSheetID
-	res1, err := srv.Spreadsheets.Get(spreadSheetId).Fields("sheets(properties(sheetId,title))").Do()
+	res1, err := s.client.Spreadsheets.Get(spreadSheetId).Fields("sheets(properties(sheetId,title))").Do()
 	if err != nil {
         log.Fatalf("Failed to get SheetName %v",err)
         return
@@ -129,7 +127,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 		Values: [][] interface{}{ values },
 	}
 
-	response, err := srv.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
+	response, err := s.client.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
 		if err != nil || response.HTTPStatusCode != 200 {
 		log.Fatalf("Failed to Append Value to Spreadsheet %v",err)
 		return
