@@ -39,8 +39,6 @@ type GoogleSheetSink struct {
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	// TODO
 	s.config = cfg.(*GoogleSheetConfig)
-
-	//context.Background()
 	
 	return nil
 }
@@ -86,7 +84,6 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 	}
 
 	//Initialize Sheet ID & Spreadsheet ID
-	
 	spreadSheetUrl := s.config.Sheet_url
 	
 	sheetId, err := strconv.Atoi(spreadSheetUrl[93:94])
