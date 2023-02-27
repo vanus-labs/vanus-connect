@@ -17,7 +17,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 	"strconv"
 	ce "github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
@@ -35,13 +35,15 @@ func NewGoogleSheetSink() cdkgo.Sink {
 type GoogleSheetSink struct {
 	config *GoogleSheetConfig
 	client *sheets.Service
+	spreadSheetId string
+	sheetName  string
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	// TODO
 	s.config = cfg.(*GoogleSheetConfig)
 
-	// authenticate and get configuration
+	// Authenticate and get configuration
 	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
 		if err != nil {
 			return err
@@ -56,7 +58,43 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
         return err
 	}
 	s.client = srv
+
+	//Initialize Sheet ID & Spreadsheet ID
+	spreadSheetUrl := s.config.Sheet_url
 	
+	//Get Sheet ID
+
+	sheetId, err := strconv.Atoi(spreadSheetUrl[93:94])
+	if err != nil {
+        fmt.Errorf("Failed to get sheet ID: %s", err)
+        return err
+
+	}
+
+	// Get SpreadSheet ID
+	spreadSheetID := spreadSheetUrl[39:83]
+
+	s.spreadSheetId = spreadSheetID
+
+	//Get SheetName from SpreadSheetID
+	res1, err := s.client.Spreadsheets.Get(spreadSheetID).Fields("sheets(properties(sheetId,title))").Do()
+	if err != nil {
+        fmt.Errorf("Failed to get sheet name: %s", err)
+        return err
+	}
+
+	sheetName := ""
+	for _, v := range res1.Sheets {
+		prop := v.Properties
+		if prop.SheetId == int64(sheetId) {
+			sheetName = prop.Title
+			break
+		}
+	}
+
+	s.sheetName = sheetName
+
+
 	return nil
 }
 
@@ -82,35 +120,6 @@ func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkg
 
 
 func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
-	
-	//Initialize Sheet ID & Spreadsheet ID
-	
-	spreadSheetUrl := s.config.Sheet_url
-	
-	sheetId, err := strconv.Atoi(spreadSheetUrl[93:94])
-	if err != nil {
-        log.Fatalf("Failed to Convert String %v",err)
-        return
-	}
-
-	spreadSheetId := spreadSheetUrl[39:83]
-
-	//Get SheetName from SpreadSheetID
-	res1, err := s.client.Spreadsheets.Get(spreadSheetId).Fields("sheets(properties(sheetId,title))").Do()
-	if err != nil {
-        log.Fatalf("Failed to get SheetName %v",err)
-        return
-	}
-
-	sheetName := ""
-	for _, v := range res1.Sheets {
-		prop := v.Properties
-		if prop.SheetId == int64(sheetId) {
-			sheetName = prop.Title
-			break
-		}
-	}
-
 
 	// Receive any kind of Cloud Event
 	sheetRow := make(map[string]interface{})
@@ -121,17 +130,18 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
 		values = append(values, v)
 	}
 
-	
 	//Insert Row Value
 	row := &sheets.ValueRange{
 		Values: [][] interface{}{ values },
 	}
 
-	response, err := s.client.Spreadsheets.Values.Append(spreadSheetId, sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
+	response, err := s.client.Spreadsheets.Values.Append(s.spreadSheetId, s.sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
 		if err != nil || response.HTTPStatusCode != 200 {
-		log.Fatalf("Failed to Append Value to Spreadsheet %v",err)
+		fmt.Errorf("Failed to Insert new row %s", err)
 		return
 	}
+
+
 
 
 }
