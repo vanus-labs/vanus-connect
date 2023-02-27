@@ -9,7 +9,7 @@ title: PostgreSQL CDC (Debezium)
 The PostgreSQL Source is a [Vanus Connector][vc] which use [Debezium][debezium] obtain a snapshot of the existing data
 in a PostgreSQL schema and then monitor and record all subsequent row-level changes to that data.
 
-For example, PostgreSQL database vanus_test with schema public has table user Look:
+For example, a PostgreSQL database schema look like this:
 
 ```text
 Column      |          Type          | Collation | Nullable | Default
@@ -21,7 +21,7 @@ Column      |          Type          | Collation | Nullable | Default
  
 ```
 
-The row record will be transformed into a CloudEvent looks like:
+The row record will be transformed into a CloudEvent in the following way:
 
 ```json
 {
@@ -49,7 +49,7 @@ The row record will be transformed into a CloudEvent looks like:
 
 ## Quick Start
 
-This section shows how PostgreSQL Source convert db record to a CloudEvent.
+This section will teach you how to use PostgreSQL Source to convert db record to a CloudEvent.
 
 ### Prerequisites
 - Have a container runtime (i.e., docker).

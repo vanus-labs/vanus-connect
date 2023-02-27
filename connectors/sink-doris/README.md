@@ -10,7 +10,7 @@ The Doris Sink is a [Vanus Connector][vc] which aims to handle incoming CloudEve
 part of the original event and deliver these extracted `data` to [Doris][doris]. The Doris Sink use [Stream Load][stream load]
 way to import data.
 
-For example, the incoming CloudEvent looks like:
+For example, an incoming CloudEvent looks like:
 
 ```json
 {
@@ -28,7 +28,7 @@ For example, the incoming CloudEvent looks like:
 }
 ```
 
-The Doris Sink will extract `data` field write to [Doris][doris] table like:
+The Doris Sink will extract the `data` field and write it to [Doris][doris] table like:
 
 ```text
 +------+----------+------------+
@@ -85,7 +85,7 @@ docker run -it --rm --network=host\
 
 ### Test
 
-Connect to Doris and use command to create database and table.
+Connect to Doris and use the following command to create a database and table.
 
 ```shell
 create database vanus_test;
@@ -103,7 +103,7 @@ PROPERTIES (
 );
 ```
 
-Open a terminal and use following command to send a CloudEvent to the Sink.
+Open a terminal and use following command to send a CloudEvent to the Doris Sink.
 
 ```shell
 curl --location --request POST 'localhost:8080' \
@@ -123,7 +123,7 @@ curl --location --request POST 'localhost:8080' \
 }'
 ```
 
-you will see data in doris table vanus_test
+The result in Doris will be as follow:
 
 ```text
 +------+----------+------------+
