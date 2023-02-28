@@ -47,30 +47,28 @@ type GoogleSheetSink struct {
 	client           *sheets.Service
 	spreadsheetID    string
 	defaultSheetName string
-	sheetIDs         map[string]int64
-	sheetHeaders     map[string][]string
+	sheetIDs         map[string]int64    // key: sheetName, value: sheetID
+	sheetHeaders     map[string][]string // key: sheetName, value: sheet headers which is on the first row
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 
 	config := cfg.(*GoogleSheetConfig)
+	s.spreadsheetID = config.SheetID
+	s.defaultSheetName = config.SheetName
 
-	//Create sheet Service
+	// new sheet Service
 	srv, err := sheets.NewService(context.Background(), option.WithCredentialsJSON([]byte(config.Credentials)))
 	if err != nil {
 		return errors.Wrap(err, "new sheet service with credential error")
 	}
 	s.client = srv
 
-	s.spreadsheetID = config.SheetID
-	s.defaultSheetName = config.SheetName
-
-	//Get SheetName from SpreadSheetID
+	// get SheetName from SpreadSheetID
 	spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
 	if err != nil {
 		return errors.Wrap(err, "spreadsheets get error")
 	}
-
 	for _, sheet := range spreadSheet.Sheets {
 		s.sheetIDs[sheet.Properties.Title] = sheet.Properties.SheetId
 	}
@@ -99,6 +97,7 @@ func (s *GoogleSheetSink) createSheet(sheetName string) error {
 	for _, sheet := range resp.UpdatedSpreadsheet.Sheets {
 		if sheet.Properties.Title == sheetName {
 			s.sheetIDs[sheetName] = sheet.Properties.SheetId
+			break
 		}
 	}
 	return nil
@@ -135,8 +134,9 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) cdkgo.Result {
 	} else {
 		sheetName = s.defaultSheetName
 	}
+	// check sheetName's sheetID is existed
 	if _, exist = s.sheetIDs[sheetName]; !exist {
-		// sheetName no exist, create sheet
+		// sheetName no exist sheetID, create the sheetName
 		err := s.createSheet(sheetName)
 		if err != nil {
 			log.Error("create sheet error", map[string]interface{}{
