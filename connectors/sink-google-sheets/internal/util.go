@@ -16,9 +16,35 @@ package internal
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"google.golang.org/api/sheets/v4"
 )
+
+// https://docs.google.com/spreadsheets/d/1tZJPUCOiiR0liRsNtLKhCoQR-Cb8_oPVGMU0kvnabcd/edit#gid=0
+func getSheetID(sheetURL string) (int64, error) {
+	// get sheet id
+	arr := strings.Split(sheetURL, "#")
+	if len(arr) < 2 {
+		return 0, fmt.Errorf("sheet URL is invalid")
+	}
+	sheetIDStr := arr[1]
+	if len(sheetIDStr) < 5 {
+		return 0, fmt.Errorf("sheet URL gid %s is invalid", sheetIDStr)
+	}
+	sheetID, err := strconv.ParseInt(sheetIDStr[4:], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return sheetID, nil
+}
+
+// https://docs.google.com/spreadsheets/d/1tZJPUCOiiR0liRsNtLKhCoQR-Cb8_oPVGMU0kvnabcd/edit#gid=0
+func getSpreadsheetID(sheetURL string) (string, error) {
+	arr := strings.Split(sheetURL[39:], "/")
+	return arr[0], nil
+}
 
 func sheetValue(value interface{}) *sheets.ExtendedValue {
 	if value == nil {

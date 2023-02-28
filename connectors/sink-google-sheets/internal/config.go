@@ -25,8 +25,7 @@ func NewGoogleSheetConfig() cdkgo.SinkConfigAccessor {
 type GoogleSheetConfig struct {
 	// Google Sheet Credentials
 	Credentials string `json:"credentials" yaml:"credentials" validate:"required""`
-	SheetID     string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
-	SheetName   string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
+	SheetURL    string `json:"sheet_url" yaml:"sheet_url" validate:"required"`
 
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 }

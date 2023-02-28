@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
@@ -54,9 +55,16 @@ type GoogleSheetSink struct {
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 
 	config := cfg.(*GoogleSheetConfig)
-	s.spreadsheetID = config.SheetID
-	s.defaultSheetName = config.SheetName
-
+	sheetURL := strings.TrimSpace(config.SheetURL)
+	sheetID, err := getSheetID(sheetURL)
+	if err != nil {
+		return errors.Wrap(err, "ge sheet id error")
+	}
+	spreadsheetID, err := getSpreadsheetID(sheetURL)
+	if err != nil {
+		return errors.Wrap(err, "ge spread sheet id error")
+	}
+	s.spreadsheetID = spreadsheetID
 	// new sheet Service
 	srv, err := sheets.NewService(context.Background(), option.WithCredentialsJSON([]byte(config.Credentials)))
 	if err != nil {
@@ -71,6 +79,12 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
 	}
 	for _, sheet := range spreadSheet.Sheets {
 		s.sheetIDs[sheet.Properties.Title] = sheet.Properties.SheetId
+		if sheet.Properties.SheetId == sheetID {
+			s.defaultSheetName = sheet.Properties.Title
+		}
+	}
+	if s.defaultSheetName == "" {
+		return fmt.Errorf("sheetURL sheetID %d no exist", sheetID)
 	}
 	return nil
 }
