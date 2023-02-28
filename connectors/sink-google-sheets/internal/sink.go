@@ -18,132 +18,222 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
+	"net/http"
+
 	ce "github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"golang.org/x/oauth2/google"
+	"github.com/linkall-labs/cdk-go/log"
+	"github.com/pkg/errors"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
+)
+
+const xvSheetName = "xvsheetname"
+
+var (
+	errInvalidSheetName = cdkgo.NewResult(http.StatusBadRequest, fmt.Sprintf("extension %s is invalid", xvSheetName))
 )
 
 var _ cdkgo.Sink = &GoogleSheetSink{}
 
 func NewGoogleSheetSink() cdkgo.Sink {
-	return &GoogleSheetSink{}
+	return &GoogleSheetSink{
+		sheetHeaders: map[string][]string{},
+		sheetIDs:     map[string]int64{},
+	}
 }
 
 type GoogleSheetSink struct {
-	config *GoogleSheetConfig
-	client *sheets.Service
-	spreadSheetId string
-	sheetName  string
+	client           *sheets.Service
+	spreadsheetID    string
+	defaultSheetName string
+	sheetIDs         map[string]int64
+	sheetHeaders     map[string][]string
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-	// TODO
-	s.config = cfg.(*GoogleSheetConfig)
 
-	// Authenticate and get configuration
-	config, err := google.JWTConfigFromJSON([]byte(s.config.Credentials), "https://www.googleapis.com/auth/spreadsheets")
-		if err != nil {
-			return err
-		}
+	config := cfg.(*GoogleSheetConfig)
 
-	//Create Client
-	client := config.Client(context.Background())
-
-	//Create Service using Client
-	srv, err := sheets.NewService(context.Background(), option.WithHTTPClient(client))
+	//Create sheet Service
+	srv, err := sheets.NewService(context.Background(), option.WithCredentialsJSON([]byte(config.Credentials)))
 	if err != nil {
-        return err
+		return errors.Wrap(err, "new sheet service with credential error")
 	}
 	s.client = srv
 
-	//Initialize Sheet ID & Spreadsheet ID
-	spreadSheetUrl := s.config.Sheet_url
-	
-	//Get Sheet ID
-
-	sheetId, err := strconv.Atoi(spreadSheetUrl[93:94])
-	if err != nil {
-        fmt.Errorf("Failed to get sheet ID: %s", err)
-        return err
-
-	}
-
-	// Get SpreadSheet ID
-	spreadSheetID := spreadSheetUrl[39:83]
-
-	s.spreadSheetId = spreadSheetID
+	s.spreadsheetID = config.SheetID
+	s.defaultSheetName = config.SheetName
 
 	//Get SheetName from SpreadSheetID
-	res1, err := s.client.Spreadsheets.Get(spreadSheetID).Fields("sheets(properties(sheetId,title))").Do()
+	spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
 	if err != nil {
-        fmt.Errorf("Failed to get sheet name: %s", err)
-        return err
+		return errors.Wrap(err, "spreadsheets get error")
 	}
 
-	sheetName := ""
-	for _, v := range res1.Sheets {
-		prop := v.Properties
-		if prop.SheetId == int64(sheetId) {
-			sheetName = prop.Title
-			break
+	for _, sheet := range spreadSheet.Sheets {
+		s.sheetIDs[sheet.Properties.Title] = sheet.Properties.SheetId
+	}
+	return nil
+}
+
+func (s *GoogleSheetSink) createSheet(sheetName string) error {
+	sheetAdd := sheets.AddSheetRequest{
+		Properties: &sheets.SheetProperties{
+			Hidden:    false,
+			SheetType: "GRID",
+			Title:     sheetName,
+		},
+	}
+
+	updateRequests := sheets.BatchUpdateSpreadsheetRequest{
+		IncludeSpreadsheetInResponse: true,
+		Requests:                     []*sheets.Request{{AddSheet: &sheetAdd}},
+		ResponseIncludeGridData:      false,
+	}
+
+	resp, err := s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Do()
+	if err != nil {
+		return errors.Wrap(err, "create sheet error")
+	}
+	for _, sheet := range resp.UpdatedSpreadsheet.Sheets {
+		if sheet.Properties.Title == sheetName {
+			s.sheetIDs[sheetName] = sheet.Properties.SheetId
 		}
 	}
-
-	s.sheetName = sheetName
-
-
 	return nil
 }
 
 func (s *GoogleSheetSink) Name() string {
-	// TODO
 	return "GoogleSheetSink"
 }
 
 func (s *GoogleSheetSink) Destroy() error {
-	// TODO
 	return nil
 }
 
 func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
-	// TODO
 	for _, event := range events {
-
-		s.saveDataToSpreadsheet(event)
+		r := s.saveDataToSpreadsheet(event)
+		if r != cdkgo.SuccessResult {
+			return r
+		}
 	}
 	return cdkgo.SuccessResult
 }
 
-
-
-func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) {
-
-	// Receive any kind of Cloud Event
+func (s *GoogleSheetSink) saveDataToSpreadsheet(event *ce.Event) cdkgo.Result {
+	var sheetName string
+	// get sheetName
+	v, exist := event.Extensions()[xvSheetName]
+	if exist {
+		str, ok := v.(string)
+		if !ok {
+			return errInvalidSheetName
+		}
+		sheetName = str
+	} else {
+		sheetName = s.defaultSheetName
+	}
+	if _, exist = s.sheetIDs[sheetName]; !exist {
+		// sheetName no exist, create sheet
+		err := s.createSheet(sheetName)
+		if err != nil {
+			log.Error("create sheet error", map[string]interface{}{
+				log.KeyError: err,
+				"sheetName":  sheetName,
+			})
+			return cdkgo.NewResult(http.StatusInternalServerError, "create sheet error")
+		}
+	}
+	// sheet row
 	sheetRow := make(map[string]interface{})
-	json.Unmarshal(event.Data(), &sheetRow)
-	
-	var values []interface{}
-	for _, v := range sheetRow {
-		values = append(values, v)
+	err := json.Unmarshal(event.Data(), &sheetRow)
+	if err != nil {
+		log.Error("data json unmarshal error", map[string]interface{}{
+			log.KeyError: err,
+			"data":       string(event.Data()),
+		})
+		return cdkgo.NewResult(http.StatusBadRequest, "data json unmarshal error")
 	}
-
-	//Insert Row Value
-	row := &sheets.ValueRange{
-		Values: [][] interface{}{ values },
+	// get sheet headers
+	headers, err := s.getHeader(sheetName, sheetRow)
+	if err != nil {
+		log.Error("get header error", map[string]interface{}{
+			log.KeyError: err,
+			"sheetName":  sheetName,
+		})
+		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 	}
-
-	response, err := s.client.Spreadsheets.Values.Append(s.spreadSheetId, s.sheetName, row).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(context.Background()).Do()
-		if err != nil || response.HTTPStatusCode != 200 {
-		fmt.Errorf("Failed to Insert new row %s", err)
-		return
+	// make cell data
+	var values []*sheets.CellData
+	for _, key := range headers {
+		values = append(values, &sheets.CellData{
+			UserEnteredValue: sheetValue(sheetRow[key]),
+		})
 	}
-
-
-
-
+	// append data
+	err = s.appendData(sheetName, values)
+	if err != nil {
+		log.Error("append sheet data error", map[string]interface{}{
+			log.KeyError: err,
+			"sheetName":  sheetName,
+		})
+		return cdkgo.NewResult(http.StatusInternalServerError, "append data error")
+	}
+	return cdkgo.SuccessResult
 }
 
+func (s *GoogleSheetSink) getHeader(sheetName string, sheetRow map[string]interface{}) ([]string, error) {
+	headers, exist := s.sheetHeaders[sheetName]
+	if exist && len(headers) != 0 {
+		return headers, nil
+	}
+	// get header in first row
+	resp, err := s.client.Spreadsheets.Values.Get(s.spreadsheetID, fmt.Sprintf("%s!A1:Z1", sheetName)).Do()
+	if err != nil {
+		return nil, errors.Wrap(err, "get sheet header error")
+	}
+	if len(resp.Values) == 0 {
+		// make header
+		for k := range sheetRow {
+			headers = append(headers, k)
+		}
+		// insert headers
+		var values []*sheets.CellData
+		for _, key := range headers {
+			values = append(values, &sheets.CellData{
+				UserEnteredValue: sheetValue(key),
+			})
+		}
+		err = s.appendData(sheetName, values)
+		if err != nil {
+			return nil, errors.Wrap(err, "insert sheet header error")
+		}
+	} else {
+		for _, value := range resp.Values[0] {
+			headers = append(headers, fmt.Sprintf("%v", value))
+		}
+	}
+	s.sheetHeaders[sheetName] = headers
+	return headers, nil
+}
 
+func (s *GoogleSheetSink) appendData(sheetName string, values []*sheets.CellData) error {
+	addValues := sheets.AppendCellsRequest{
+		Fields:  "*",
+		Rows:    []*sheets.RowData{{Values: values}},
+		SheetId: s.sheetIDs[sheetName],
+	}
+
+	updateRequests := sheets.BatchUpdateSpreadsheetRequest{
+		IncludeSpreadsheetInResponse: false,
+		Requests:                     []*sheets.Request{{AppendCells: &addValues}},
+		ResponseIncludeGridData:      false,
+	}
+	_, err := s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Do()
+	if err != nil {
+		return err
+	}
+	return nil
+}

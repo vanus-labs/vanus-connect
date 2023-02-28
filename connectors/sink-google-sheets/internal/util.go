@@ -12,13 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package internal
 
 import (
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/sink/googlesheets/internal"
+	"fmt"
+
+	"google.golang.org/api/sheets/v4"
 )
 
-func main() {
-	cdkgo.RunSink(internal.NewGoogleSheetConfig, internal.NewGoogleSheetSink)
+func sheetValue(value interface{}) *sheets.ExtendedValue {
+	if value == nil {
+		return &sheets.ExtendedValue{
+			StringValue: ptrString(""),
+		}
+	}
+	switch v := value.(type) {
+	case bool:
+		return &sheets.ExtendedValue{
+			BoolValue: &v,
+		}
+	case float64:
+		return &sheets.ExtendedValue{
+			NumberValue: &v,
+		}
+	case string:
+		return &sheets.ExtendedValue{
+			StringValue: &v,
+		}
+	default:
+		return &sheets.ExtendedValue{
+			StringValue: ptrString(fmt.Sprintf("%v", v)),
+		}
+	}
+}
+
+func ptrString(str string) *string {
+	return &str
 }
