@@ -16,7 +16,7 @@ package main
 
 import (
 	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/sink/example/internal"
+	"github.com/linkall-labs/connector/sink/googlesheets/internal"
 )
 
 func main() {

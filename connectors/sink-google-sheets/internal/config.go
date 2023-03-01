@@ -24,26 +24,8 @@ func NewGoogleSheetConfig() cdkgo.SinkConfigAccessor {
 
 type GoogleSheetConfig struct {
 	// Google Sheet Credentials
-	Credentials     string `json:"credentials" yaml:"credentials"`
-	Sheet_url     string `json:"sheet_url" yaml:"sheet_url"`
+	Credentials string `json:"credentials" yaml:"credentials" validate:"required""`
+	SheetURL    string `json:"sheet_url" yaml:"sheet_url" validate:"required"`
 
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	// TODO
-	Secret Secret `json:"secret" yaml:"secret"`
-}
-
-func (c *GoogleSheetConfig) GetSecret() cdkgo.SecretAccessor {
-	return &c.Secret
-}
-
-func (c *GoogleSheetConfig) Validate() error {
-	// TODO
-	return c.SinkConfig.Validate()
-}
-
-
-type Secret struct {
-	// Host     string 'json:"host" yaml:"host" validate:"required"`
-	// Username string `json:"username" yaml:"username" validate:"required"`
-	// Password string `json:"password" yaml:"password" validate:"required"`
 }
