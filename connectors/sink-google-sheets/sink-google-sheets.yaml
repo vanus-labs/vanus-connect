@@ -31,7 +31,8 @@ data:
       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
       "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sheetauth%40user-auth-123456.iam.gserviceaccount.com"
       }
-    sheet_url: https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
+    sheet_id: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+    sheet_name: Sheet1
 
 ---
 apiVersion: apps/v1

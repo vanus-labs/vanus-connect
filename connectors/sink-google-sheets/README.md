@@ -59,16 +59,18 @@ credentials: |-
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sheetauth%40user-auth-123456.iam.gserviceaccount.com"
   }
-sheet_url : https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
+sheet_id: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+sheet_name: Sheet1
 
 EOF
 ```
 
-| Name        | Required |   Default    | Description                                   |
-|:------------|:--------:|:------------:|-----------------------------------------------|
-| port        |    NO    |     8080     | the port which Google Sheets Sink listens on  |
-| credentials |   YES    |              | Google [Service Account][sa] credentials JSON |
-| sheet_url   |   YES    |              | Google sheet url                              |
+| Name        | Required |   Default    | Description                                                                                                 |
+|:------------|:--------:|:------------:|-------------------------------------------------------------------------------------------------------------|
+| port        |    NO    |     8080     | the port which Google Sheets Sink listens on                                                                |
+| credentials |   YES    |              | Google [Service Account][sa] credentials JSON                                                               |
+| sheet_id    |   YES    |              | Google SpreadSheet ID that can be get from the URL `https://docs.google.com/spreadsheets/d/<SHEET_ID>/edit` |
+| sheet_name  |   YES    |              | Google Sheet name, example `Sheet1`                                                                         |
 
 The Google Sheets Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify
 the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -154,7 +156,8 @@ data:
       "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
       "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sheetauth%40user-auth-123456.iam.gserviceaccount.com"
       }
-    sheet_url: https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
+    sheet_id: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms
+    sheet_name: Sheet1
 
 ---
 apiVersion: apps/v1
