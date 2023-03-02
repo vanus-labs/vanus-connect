@@ -15,14 +15,13 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"google.golang.org/api/sheets/v4"
 )
 
-// https://docs.google.com/spreadsheets/d/1tZJPUCOiiR0liRsNtLKhCoQR-Cb8_oPVGMU0kvnabcd/edit#gid=0
+// https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
 func getSheetID(sheetURL string) (int64, error) {
 	// get sheet id
 	arr := strings.Split(sheetURL, "#")
@@ -40,38 +39,44 @@ func getSheetID(sheetURL string) (int64, error) {
 	return sheetID, nil
 }
 
-// https://docs.google.com/spreadsheets/d/1tZJPUCOiiR0liRsNtLKhCoQR-Cb8_oPVGMU0kvnabcd/edit#gid=0
+// https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
 func getSpreadsheetID(sheetURL string) (string, error) {
 	arr := strings.Split(sheetURL[39:], "/")
 	return arr[0], nil
 }
 
-func sheetValue(value interface{}) *sheets.ExtendedValue {
+func sheetValue(value interface{}) interface{} {
 	if value == nil {
-		return &sheets.ExtendedValue{
-			StringValue: ptrString(""),
-		}
+		return nil
 	}
-	switch v := value.(type) {
-	case bool:
-		return &sheets.ExtendedValue{
-			BoolValue: &v,
-		}
-	case float64:
-		return &sheets.ExtendedValue{
-			NumberValue: &v,
-		}
-	case string:
-		return &sheets.ExtendedValue{
-			StringValue: &v,
-		}
+	switch value.(type) {
+	case string, bool, float64:
+		return value
 	default:
-		return &sheets.ExtendedValue{
-			StringValue: ptrString(fmt.Sprintf("%v", v)),
+		v, err := json.Marshal(value)
+		if err == nil {
+			return string(v)
 		}
 	}
+	return nil
 }
 
-func ptrString(str string) *string {
-	return &str
+func convertFloat(value interface{}) (v float64, err error) {
+	if value == nil {
+		return 0, nil
+	}
+	switch _value := value.(type) {
+	case float64:
+		v = _value
+	case string:
+		if _value == "" {
+			v = 0
+		} else {
+			v, err = strconv.ParseFloat(_value, 64)
+			if err != nil {
+				return 0, err
+			}
+		}
+	}
+	return v, nil
 }
