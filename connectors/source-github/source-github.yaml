@@ -20,8 +20,8 @@ data:
   config.yml: |-
     target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
     port: 8080
-    secret:
-      github_webhook_secret: ""
+    github:
+      webhook_secret: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,7 +46,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-                name: github
+              name: github
           volumeMounts:
             - name: source-github-config
               mountPath: /vanus-connect/config

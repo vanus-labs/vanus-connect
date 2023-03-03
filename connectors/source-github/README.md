@@ -6,7 +6,9 @@ title: GitHub
 
 ## Introduction
 
-The GitHub Source is a [Vanus Connector][vc] which aims to retrieve GitHub webhook events and transform them into CloudEvents based on the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
+The GitHub Source is a [Vanus Connector][vc] which aims to retrieve GitHub webhook events and transform them into
+CloudEvents based on
+the [CloudEvents Adapter specification](https://github.com/cloudevents/spec/blob/main/cloudevents/adapters/github.md)
 by wrapping the body of the original request into the data field.
 
 An original GitHub webhook event looks like:
@@ -85,18 +87,19 @@ This section will teach you how to use GitHub Source to convert events from GitH
 cat << EOF > config.yml
 target: http://localhost:31081
 port: 8082
-secret:
-  github_webhook_secret: ""
+github:
+  webhook_secret: ""
 EOF
 ```
 
-| Name                  | Required | Default | Description                              |
-| :-------------------- | :------- | :------ | :--------------------------------------- |
-| target                | YES      |         | the target URL to send CloudEvents       |
-| port                  | YES      | 8080    | the port to receive GitHub webhook event |
-| github_webhook_secret | NO       |         | the GitHub webhook secret                |
+| Name                  | Required | Default | Description                               |
+|:----------------------|:--------:|:-------:|:------------------------------------------|
+| target                |   YES    |         | the target URL to send CloudEvents        |
+| port                  |   YES    |  8080   | the port to receive GitHub webhook event  |
+| github.webhook_secret |    NO    |         | the GitHub webhook secret                 |
 
-The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The GitHub Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -108,15 +111,17 @@ docker run -it --rm --network=host \
 
 ### Test
 
-We have designed for you a sandbox environment, removing the need to use your local
-machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
+We have designed for you a sandbox environment, removing the need to use your local machine. You can run Connectors
+directly and safely on the [Playground](https://play.linkall.com/).
 
-1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL. ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
+1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario
+   under Payload
+   URL. ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
 
 2. Create a GitHub webhook for your repository.
 
-   1. Create a webhook under the Settings tab inside your GitHub repository.
-   2. Set the configuration for your webhook.
+    1. Create a webhook under the Settings tab inside your GitHub repository.
+    2. Set the configuration for your webhook.
 
 3. Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
 
@@ -126,7 +131,8 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
-Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to
+our Display Sink.
 
 After running Display Sink, run the Github Source
 
@@ -169,64 +175,65 @@ kubectl apply -f source-github.yaml
 apiVersion: v1
 kind: Service
 metadata:
-   name: source-github
-   namespace: vanus
+  name: source-github
+  namespace: vanus
 spec:
-   selector:
-      app: source-github
-   type: ClusterIP
-   ports:
-      - port: 8080
-        name: source-github
+  selector:
+    app: source-github
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-github
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-   name: source-github
-   namespace: vanus
+  name: source-github
+  namespace: vanus
 data:
-   config.yml: |-
-      target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
-      port: 8080
-      secret:
-        github_webhook_secret: ""
+  config.yml: |-
+    target: "http://vanus-gateway.vanus:8080/gateway/quick_start"
+    port: 8080
+    github:
+      webhook_secret: ""
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-   name: source-github
-   namespace: vanus
-   labels:
-      app: source-github
+  name: source-github
+  namespace: vanus
+  labels:
+    app: source-github
 spec:
-   selector:
-      matchLabels:
-         app: source-github
-   replicas: 1
-   template:
-      metadata:
-         labels:
-            app: source-github
-      spec:
-         containers:
-            - name: source-github
-              image: public.ecr.aws/vanus/connector/source-github
-              imagePullPolicy: Always
-              ports:
-                 - containerPort: 8080
-                      name: github
-              volumeMounts:
-                 - name: source-github-config
-                   mountPath: /vanus-connect/config
-         volumes:
+  selector:
+    matchLabels:
+      app: source-github
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-github
+    spec:
+      containers:
+        - name: source-github
+          image: public.ecr.aws/vanus/connector/source-github
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: github
+          volumeMounts:
             - name: source-github-config
-              configMap:
-                 name: source-github
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: source-github-config
+          configMap:
+            name: source-github
 ```
 
 ## Integrate with Vanus
 
-This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a source connector can send CloudEvents to a
+running [Vanus cluster](https://github.com/linkall-labs/vanus).
 
 ### Prerequisites
 
@@ -234,7 +241,8 @@ This section shows how a source connector can send CloudEvents to a running [Van
 - Have a running Vanus cluster
 - Vsctl Installed
 
-1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway
+   service)
 
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
