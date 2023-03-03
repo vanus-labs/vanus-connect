@@ -84,7 +84,7 @@ docker run -it --rm \
 Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
-curl --location --request POST 'localhost:31080' \
+curl --location --request POST 'localhost:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
   "id" : "42d5b039-daef-4071-8584-e61df8fc1354",
