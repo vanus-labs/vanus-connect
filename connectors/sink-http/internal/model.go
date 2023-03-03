@@ -18,6 +18,6 @@ type Request struct {
 	Method  string            `json:"method,omitempty"`
 	Path    string            `json:"path,omitempty"`
 	Query   string            `json:"query,omitempty"`
-	Body    string            `json:"body,omitempty"`
+	Body    interface{}       `json:"body"`
 	Headers map[string]string `json:"headers,omitempty"`
 }

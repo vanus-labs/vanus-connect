@@ -15,7 +15,9 @@
 package internal
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -107,14 +109,20 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 	if method == "" {
 		method = s.method
 	}
-
-	req, err := http.NewRequest(method, u.String(), strings.NewReader(m.Body))
+	reader, contentType, err := getReader(m.Body)
+	if err != nil {
+		return cdkgo.NewResult(http.StatusInternalServerError, "read body error")
+	}
+	req, err := http.NewRequest(method, u.String(), reader)
 	if err != nil {
 		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("new http request error %s", err.Error()))
 	}
 
 	if s.Auth.Username != "" || s.Auth.Password != "" {
 		req.SetBasicAuth(s.Auth.Username, s.Auth.Password)
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	// common default header
 	for k, v := range s.headers {
@@ -138,4 +146,22 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 		return cdkgo.NewResult(connector.Code(res.StatusCode), fmt.Sprintf("http response code %d resp %s", res.StatusCode, string(resp)))
 	}
 	return cdkgo.SuccessResult
+}
+
+func getReader(body interface{}) (io.Reader, string, error) {
+	if body == nil {
+		return bytes.NewReader([]byte{}), "", nil
+	}
+	switch b := body.(type) {
+	case bool, float64:
+		return strings.NewReader(fmt.Sprintf("%v", b)), "text/plain", nil
+	case string:
+		return strings.NewReader(b), "", nil
+	default:
+		_bytes, err := json.Marshal(body)
+		if err != nil {
+			return nil, "", err
+		}
+		return bytes.NewBuffer(_bytes), "application/json", nil
+	}
 }
