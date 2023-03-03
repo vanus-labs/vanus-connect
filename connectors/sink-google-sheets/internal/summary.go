@@ -17,12 +17,16 @@ package internal
 import (
 	"context"
 	"fmt"
+	"github.com/linkall-labs/cdk-go/log"
 	"github.com/pkg/errors"
+	"time"
 )
 
 type SummaryConfig struct {
+	SheetName  string   `json:"sheet_name" yaml:"sheet_name"`
 	PrimaryKey string   `json:"primary_key" yaml:"primary_key" validate:"required"`
 	Columns    []Column `json:"columns" yaml:"columns"`
+	GroupBy    GroupBy  `json:"group_by" yaml:"group_by"`
 }
 
 type Column struct {
@@ -37,9 +41,18 @@ const (
 	Replace CalType = "replace"
 )
 
+type GroupBy string
+
+const (
+	Yearly  GroupBy = "yearly"
+	Monthly GroupBy = "monthly"
+	Weekly  GroupBy = "weekly"
+)
+
 type Summary struct {
 	service    *GoogleSheetService
 	sheetName  string
+	groupBy    GroupBy
 	primaryKey string
 	columnMap  map[string]CalType
 	headers    []string
@@ -48,8 +61,12 @@ type Summary struct {
 func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetService) (*Summary, error) {
 	s := &Summary{
 		service:    service,
-		sheetName:  sheetName,
+		sheetName:  config.SheetName,
+		groupBy:    config.GroupBy,
 		primaryKey: config.PrimaryKey,
+	}
+	if s.sheetName == "" {
+		s.sheetName = sheetName
 	}
 	err := s.init(config)
 	if err != nil {
@@ -74,72 +91,36 @@ func (s *Summary) init(config *SummaryConfig) error {
 		}
 		s.columnMap[column.Name] = calType
 	}
-	// create sheet
-	err := s.service.createSheetIfNotExist(context.Background(), s.sheetName)
-	if err != nil {
-		return err
-	}
-	// get header
-	headers, err := s.service.getHeader(s.sheetName)
-	if err != nil {
-		if err == headerNotExistErr {
-			// insert header
-			err = s.service.insertHeader(context.Background(), s.sheetName, s.headers)
-			if err != nil {
-				return errors.Wrap(err, "insert summary header error")
-			}
-		} else {
-			return err
-		}
-	} else {
-		// check headers
-		for i, v := range headers {
-			if _, ok := s.columnMap[v]; !ok {
-				if v == s.primaryKey {
-					continue
-				}
-				return fmt.Errorf("sheet column %d name %s exist but config culumn not eixst", i, v)
-			}
-		}
-		s.headers = headers
-	}
 	return nil
 }
 
-func (s *Summary) appendData(ctx context.Context, data map[string]interface{}) error {
+func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[string]interface{}) error {
 	value, ok := data[s.primaryKey]
 	if !ok {
 		return errors.New("primary key not exist")
 	}
+	sheetName := s.getSheetName(eventTime)
+	// check sheet
+	err := s.service.createSheetIfNotExist(ctx, sheetName)
+	if err != nil {
+		return err
+	}
+	// get header
+	headers, err := s.getHeader(ctx, sheetName)
+	if err != nil {
+		return err
+	}
 	// get data
-	rowIndex, rowValues, err := s.service.getData(ctx, s.sheetName, 0, value)
+	rowIndex, rowValues, err := s.service.getData(ctx, sheetName, 0, value)
 	if err != nil {
 		return err
 	}
 	if rowValues == nil {
-		// no exist, need insert data
-		var values []interface{}
-		for _, key := range s.headers {
-			v, _ := data[key]
-			calType, _ := s.columnMap[key]
-			if calType == Sum {
-				vFloat, err := convertFloat(v)
-				if err != nil {
-					return fmt.Errorf("column %s must be number, but event value is %v", key, v)
-				}
-				values = append(values, vFloat)
-			} else {
-				values = append(values, sheetValue(v))
-			}
-		}
-		err = s.service.appendData(ctx, s.sheetName, values)
-		if err != nil {
-			return err
-		}
-		return nil
+		// no exist insert data
+		return s.insertData(ctx, sheetName, headers, data)
 	}
-	// update
-	for i, key := range s.headers {
+	// update data
+	for i, key := range headers {
 		v, ok := data[key]
 		if !ok || v == nil {
 			continue
@@ -148,16 +129,90 @@ func (s *Summary) appendData(ctx context.Context, data map[string]interface{}) e
 		if calType == Sum {
 			currFloat, err := convertFloat(rowValues[i])
 			if err != nil {
-				return errors.Wrap(err, fmt.Sprintf("column %s must be number,but sheet value is %v", key, rowValues[i]))
+				log.Warning("number sheet value is invalid", map[string]interface{}{
+					s.primaryKey: value,
+					"column":     key,
+					"value":      rowValues[i],
+				})
 			}
 			vFloat, err := convertFloat(v)
 			if err != nil {
-				return fmt.Errorf("column %s must be number, but event value is %v", key, v)
+				log.Warning("number event value is invalid", map[string]interface{}{
+					s.primaryKey: value,
+					"column":     key,
+					"value":      v,
+				})
+				continue
 			}
 			rowValues[i] = currFloat + vFloat
 		} else {
 			rowValues[i] = sheetValue(v)
 		}
 	}
-	return s.service.updateData(ctx, s.sheetName, rowIndex+1, rowValues)
+	return s.service.updateData(ctx, sheetName, rowIndex+1, rowValues)
+}
+
+func (s *Summary) insertData(ctx context.Context, sheetName string, headers []string, data map[string]interface{}) error {
+	var values []interface{}
+	for _, key := range headers {
+		v, _ := data[key]
+		calType, _ := s.columnMap[key]
+		if calType == Sum {
+			vFloat, err := convertFloat(v)
+			if err != nil {
+				log.Warning("number event value is invalid", map[string]interface{}{
+					s.primaryKey: data[s.primaryKey],
+					"column":     key,
+					"value":      v,
+				})
+			}
+			values = append(values, vFloat)
+		} else {
+			values = append(values, sheetValue(v))
+		}
+	}
+	err := s.service.appendData(ctx, sheetName, values)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Summary) getSheetName(eventTime time.Time) string {
+	if s.groupBy == "" {
+		return s.sheetName
+	}
+	if eventTime.IsZero() {
+		eventTime = time.Now()
+	}
+	switch s.groupBy {
+	case Yearly:
+		return fmt.Sprintf("%s_%d", s.sheetName, eventTime.Year())
+	case Monthly:
+		return fmt.Sprintf("%s_%s", s.sheetName, eventTime.Format("2006_01"))
+	case Weekly:
+		year, week := eventTime.ISOWeek()
+		return fmt.Sprintf("%s_%d_%d", s.sheetName, year, week)
+	default:
+		return s.sheetName
+	}
+}
+
+func (s *Summary) getHeader(ctx context.Context, sheetName string) ([]string, error) {
+	headers, err := s.service.getHeader(sheetName)
+	if err == nil {
+		return headers, nil
+	}
+	if err != nil {
+		if err == headerNotExistErr {
+			// insert header
+			err = s.service.insertHeader(ctx, sheetName, s.headers)
+			if err != nil {
+				return nil, err
+			}
+			return s.headers, nil
+		}
+		return nil, err
+	}
+	return headers, nil
 }

@@ -163,7 +163,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 		return cdkgo.NewResult(http.StatusInternalServerError, "append data error")
 	}
 	if s.summary != nil {
-		err = s.summary.appendData(ctx, sheetRow)
+		err = s.summary.appendData(ctx, event.Time(), sheetRow)
 		if err != nil {
 			log.Error("append summary data error", map[string]interface{}{
 				log.KeyError: err,
