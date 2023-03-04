@@ -198,8 +198,8 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		}
 		event.SetTime(time.Now())
 	case "create", "delete":
-		event.SetType(t + "." + getString(payload["ref"]))
-		event.SetSubject(getString(payload["ref_type"]))
+		event.SetType(t + "." + getString(payload["ref_type"]))
+		event.SetSubject(getString(payload["ref"]))
 		event.SetTime(time.Now())
 	case "deploy_key":
 		key, ok := payload["key"].(map[string]interface{})
