@@ -153,13 +153,12 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 	action, ok := payload["action"].(string)
 	if ok {
 		event.SetType(t + "." + action)
-	} else {
-		event.SetType(t)
 	}
 	switch eventType {
 	case "star":
 		event.SetTime(getTime(repo["starred_at"]))
 	case "push":
+		event.SetType(t)
 		event.SetSubject(getString(payload["ref"]))
 		event.SetTime(getTime(repo["updated_at"]))
 	case "issues":
@@ -212,25 +211,32 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 			event.SetTime(getTime(time))
 		}
 	case "deployment":
+		event.SetType(t)
 		deployment, ok := payload["deployment"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(deployment["id"]))
 			event.SetTime(getTime(deployment["updated_at"]))
 		}
 	case "deployment_status":
-		deployment, ok := payload["deployment_status"].(map[string]interface{})
+		deployment, ok := payload["deployment"].(map[string]interface{})
 		if ok {
-			event.SetType(t + "." + getString(deployment["state"]))
-			event.SetSubject(getString(deployment["url"]))
-			event.SetTime(getTime(deployment["updated_at"]))
+			event.SetSource(getString(deployment["url"]))
+		}
+		deploymentStatus, ok := payload["deployment_status"].(map[string]interface{})
+		if ok {
+			event.SetType(t + "." + getString(deploymentStatus["state"]))
+			event.SetSubject(getString(deploymentStatus["url"]))
+			event.SetTime(getTime(deploymentStatus["updated_at"]))
 		}
 	case "fork":
+		event.SetType(t)
 		forkee, ok := payload["forkee"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(forkee["url"]))
 			event.SetTime(getTime(forkee["created_at"]))
 		}
 	case "github_app_authorization":
+		event.SetType(t)
 		event.SetTime(time.Now())
 		sender, ok := payload["sender"].(map[string]interface{})
 		if ok {
@@ -328,6 +334,7 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		}
 		event.SetTime(time.Now())
 	case "page_build":
+		event.SetType(t)
 		build, ok := payload["build"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(build["url"]))
@@ -337,13 +344,20 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 			event.SetTime(getTime(pusher["updated_at"]))
 		}
 	case "project_card", "project_column", "project":
-
 		project, ok := payload[eventType].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(project["id"]))
 			event.SetTime(getTime(project["updated_at"]))
 		}
-	case "public", "repository", "repository_import":
+	case "repository":
+		owner, ok := repo["owner"].(map[string]interface{})
+		if ok {
+			event.SetSource(getString(owner["url"]))
+		}
+		event.SetSubject(getString(repo["name"]))
+		event.SetTime(getTime(repo["updated_at"]))
+	case "public", "repository_import":
+		event.SetType(t)
 		owner, ok := repo["owner"].(map[string]interface{})
 		if ok {
 			event.SetSource(getString(owner["url"]))
@@ -351,10 +365,10 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		event.SetSubject(getString(repo["name"]))
 		event.SetTime(getTime(repo["updated_at"]))
 	case "pull_request":
-		event.SetSubject(getString(repo["number"]))
+		event.SetSubject(getString(payload["number"]))
 		event.SetTime(getTime(repo["updated_at"]))
 	case "pull_request_review":
-		pull, ok := repo["pull_request"].(map[string]interface{})
+		pull, ok := payload["pull_request"].(map[string]interface{})
 		if ok {
 			event.SetSource(getString(pull["url"]))
 		}
@@ -364,23 +378,23 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 			event.SetTime(getTime(review["submitted_at"]))
 		}
 	case "pull_request_review_comment":
-		pull, ok := repo["pull_request"].(map[string]interface{})
+		pull, ok := payload["pull_request"].(map[string]interface{})
 		if ok {
 			event.SetSource(getString(pull["url"]))
 			event.SetTime(getTime(pull["updated_at"]))
 		}
-		comment, ok := repo["comment"].(map[string]interface{})
+		comment, ok := payload["comment"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(comment["id"]))
 		}
 	case "registry_package":
-		registry, ok := repo["registry_package"].(map[string]interface{})
+		registry, ok := payload["registry_package"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(registry["html_url"]))
 			event.SetTime(getTime(registry["updated_at"]))
 		}
 	case "release":
-		release, ok := repo["release"].(map[string]interface{})
+		release, ok := payload["release"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(release["id"]))
 			time, ok := release["published_at"].(string)
@@ -390,30 +404,27 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 			event.SetTime(getTime(time))
 		}
 	case "repository_vulnerability_alert":
-		alert, ok := repo["alert"].(map[string]interface{})
+		alert, ok := payload["alert"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(alert["id"]))
 		}
 		event.SetTime(time.Now())
 	case "security_advisory":
-		advisory, ok := repo["security_advisory"].(map[string]interface{})
+		advisory, ok := payload["security_advisory"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(advisory["ghsa_id"]))
 			event.SetTime(getTime(advisory["updated_at"]))
 		}
 	case "status":
-		event.SetType(t + "." + getString(payload["status"]))
 		event.SetSubject(getString(payload["sha"]))
 		event.SetTime(getTime(payload["updated_at"]))
 	case "team", "team_add":
-		event.SetType(t + "." + getString(payload["action"]))
 		event.SetTime(getTime(payload["updated_at"]))
-		team, ok := repo["team"].(map[string]interface{})
+		team, ok := payload["team"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(team["id"]))
 		}
 	case "watch":
-		event.SetType(t + "." + getString(payload["action"]))
 		event.SetTime(time.Now())
 	default:
 		log.Info("unknown event type", map[string]interface{}{
