@@ -351,7 +351,7 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		event.SetSubject(getString(repo["name"]))
 		event.SetTime(getTime(repo["updated_at"]))
 	case "pull_request":
-		event.SetSubject(getString(repo["number"]))
+		event.SetSubject(getString(payload["number"]))
 		event.SetTime(getTime(repo["updated_at"]))
 	case "pull_request_review":
 		pull, ok := repo["pull_request"].(map[string]interface{})
