@@ -187,7 +187,7 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 	case "commit_comment":
 		comment, ok := payload["comment"].(map[string]interface{})
 		if ok {
-			event.SetSource(getString("url") + "/" + getString("comment_id"))
+			event.SetSource(getString(comment["url"]) + "/" + getString(comment["comment_id"]))
 			event.SetSubject(getString(comment["id"]))
 			event.SetTime(getTime(comment["updated_at"]))
 		}
@@ -416,7 +416,7 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		event.SetType(t + "." + getString(payload["action"]))
 		event.SetTime(time.Now())
 	default:
-		log.Info("unknow event type", map[string]interface{}{
+		log.Info("unknown event type", map[string]interface{}{
 			"eventType": eventType,
 		})
 		event.SetTime(time.Now())

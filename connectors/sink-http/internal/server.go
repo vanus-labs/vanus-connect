@@ -150,7 +150,7 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 
 func getReader(body interface{}) (io.Reader, string, error) {
 	if body == nil {
-		return bytes.NewReader([]byte{}), "", nil
+		return nil, "", nil
 	}
 	switch b := body.(type) {
 	case bool, float64:
