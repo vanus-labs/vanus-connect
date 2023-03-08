@@ -112,7 +112,7 @@ docker run -it --rm --network=host \
 ### Test
 
 We have designed for you a sandbox environment, removing the need to use your local machine. You can run Connectors
-directly and safely on the [Playground](https://play.vanus.com/).
+directly and safely on the [Playground](https://play.linkall.com/).
 
 1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario
    under Payload

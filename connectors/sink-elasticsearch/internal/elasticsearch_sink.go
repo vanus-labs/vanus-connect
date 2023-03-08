@@ -19,19 +19,20 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/elastic/go-elasticsearch/v7/esutil"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/elastic/go-elasticsearch/v7/esutil"
+
 	ce "github.com/cloudevents/sdk-go/v2"
 	es "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/log"
 	"github.com/pkg/errors"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 type elasticsearchSink struct {

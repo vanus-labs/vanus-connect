@@ -26,7 +26,7 @@ For example, if an incoming CloudEvent looks like:
 ```
 
 The Slack channel will receive a message like:
-![message](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
+![message](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ## Quick Start
 
@@ -39,18 +39,18 @@ In this section we will show you how to use Slack Sink to send a message to a Sl
 ### Create an App in Slack
 
   1. Create an app on slack.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
   2. Select `From scratch`.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
   3. Set the bot name and Workspace.
   4. Click on permissions in the central menu.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
   5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
   6. Install to workspace.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
   7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
   
 ### Create the config file
 
@@ -109,7 +109,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 Now, you should see in your slack channel your message.
-![message.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
+![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/message.png?raw=true)
 
 ### Clean
 
@@ -277,7 +277,7 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-slack.yaml
 ```shell

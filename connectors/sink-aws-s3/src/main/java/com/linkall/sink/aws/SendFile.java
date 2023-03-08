@@ -17,7 +17,7 @@ public class SendFile {
     public static void main(String[] args) {
 
         CloudEventBuilder eventTemplate = CloudEventBuilder.v1()
-                .withSource(URI.create("https://github.com/linkall-labs/vanus/connectors/sendfile"))
+                .withSource(URI.create("https://github.com/vanus-labs/vanus/connectors/sendfile"))
                 .withDataContentType("application/json")
                 .withType("simulation client");
         CloudEvent event = eventTemplate

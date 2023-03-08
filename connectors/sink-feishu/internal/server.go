@@ -22,8 +22,8 @@ import (
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
 	"github.com/pkg/errors"
+	cdkgo "github.com/vanus-labs/cdk-go"
 	"k8s.io/utils/strings/slices"
 )
 

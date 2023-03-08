@@ -1,13 +1,12 @@
-module github.com/linkall-labs/connector/sink/mongodb
+module github.com/vanus-labs/connector/sink/mongodb
 
 go 1.18
 
 require (
-	github.com/buger/jsonparser v1.1.1
-	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.4.0
+	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/ohler55/ojg v1.14.5
 	github.com/pkg/errors v0.9.1
+	github.com/vanus-labs/cdk-go v0.5.0
 	go.mongodb.org/mongo-driver v1.11.1
 	go.uber.org/ratelimit v0.2.0
 )
@@ -42,10 +41,10 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.41.0 // indirect
 	google.golang.org/protobuf v1.26.0 // indirect

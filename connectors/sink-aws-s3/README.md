@@ -175,7 +175,7 @@ spec:
 ## Integrate with Vanus
 
 This section shows how a sink connector can receive CloudEvents from a
-running [Vanus cluster](https://github.com/linkall-labs/vanus).
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-aws-s3.yaml
 

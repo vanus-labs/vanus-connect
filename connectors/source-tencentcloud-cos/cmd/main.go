@@ -15,8 +15,8 @@
 package main
 
 import (
-	"github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/source/tencent-cloud/cos/internal"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/connector/source/tencent-cloud/cos/internal"
 )
 
 func main() {

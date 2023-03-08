@@ -251,7 +251,7 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 ### Prerequisites
 

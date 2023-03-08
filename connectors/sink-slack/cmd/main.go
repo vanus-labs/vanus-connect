@@ -15,8 +15,8 @@
 package main
 
 import (
-	"github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/connector/sink/slack/internal"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/connector/sink/slack/internal"
 )
 
 func main() {
