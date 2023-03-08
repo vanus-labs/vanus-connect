@@ -14,7 +14,7 @@
 
 package internal
 
-import cdkgo "github.com/linkall-labs/cdk-go"
+import cdkgo "github.com/vanus-labs/cdk-go"
 
 var _ cdkgo.SinkConfigAccessor = &exampleConfig{}
 
