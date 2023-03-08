@@ -82,7 +82,7 @@ docker stop sink-<name>
 ### Extension Attributes
 
 The <name> Sink have additional reactions if the incoming CloudEvent contains
-following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+following [Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 .
 
 | Attribute      | Required | Examples  | Description                           |
@@ -155,7 +155,7 @@ kubectl apply -f sink-<name>.yaml
 ## Integrate with Vanus
 
 This section shows how a sink connector can receive CloudEvents from a
-running [Vanus cluster](https://github.com/linkall-labs/vanus).
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-<name>.yaml
 

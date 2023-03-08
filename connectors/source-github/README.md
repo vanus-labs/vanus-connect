@@ -112,11 +112,11 @@ docker run -it --rm --network=host \
 ### Test
 
 We have designed for you a sandbox environment, removing the need to use your local machine. You can run Connectors
-directly and safely on the [Playground](https://play.linkall.com/).
+directly and safely on the [Playground](https://play.vanus.com/).
 
 1. We've already exposed the GitHub Source to the internet if you're using the Playground. Go to GitHub-Twitter Scenario
    under Payload
-   URL. ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
+   URL. ![Payload img](https://raw.githubusercontent.com/vanus-labs/vanus-connect/main/connectors/source-github/payload.png)
 
 2. Create a GitHub webhook for your repository.
 
@@ -233,7 +233,7 @@ spec:
 ## Integrate with Vanus
 
 This section shows how a source connector can send CloudEvents to a
-running [Vanus cluster](https://github.com/linkall-labs/vanus).
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 ### Prerequisites
 

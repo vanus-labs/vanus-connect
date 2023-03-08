@@ -1,11 +1,11 @@
-module github.com/linkall-labs/connector/sink/googlesheets
+module github.com/vanus-labs/connector/sink/googlesheets
 
 go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
-	github.com/linkall-labs/cdk-go v0.4.0
 	github.com/pkg/errors v0.9.1
+	github.com/vanus-labs/cdk-go v0.5.0
 	google.golang.org/api v0.110.0
 )
 
@@ -36,8 +36,8 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.6.0 // indirect
+	golang.org/x/crypto v0.0.0-20220314234659-1baeb1ce4c0b // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.5.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect

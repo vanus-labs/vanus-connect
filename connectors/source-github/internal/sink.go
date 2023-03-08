@@ -20,8 +20,8 @@ import (
 	"net/http"
 	"time"
 
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/log"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 type GitHubSource struct {

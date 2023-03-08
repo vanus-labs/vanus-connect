@@ -15,9 +15,10 @@
 package internal
 
 import (
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/pkg/errors"
 	"net/url"
+
+	"github.com/pkg/errors"
+	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
 func NewConfig() cdkgo.SinkConfigAccessor {

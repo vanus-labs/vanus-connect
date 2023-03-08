@@ -1,11 +1,11 @@
-module github.com/linkall-labs/source-github
+module github.com/vanus-labs/source-github
 
 go 1.18
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.12.0
-	github.com/linkall-labs/cdk-go v0.4.0
+	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/pkg/errors v0.9.1
+	github.com/vanus-labs/cdk-go v0.5.0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 )
 
@@ -31,10 +31,10 @@ require (
 	go.uber.org/goleak v1.1.12 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.19.1 // indirect
-	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 // indirect
-	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
-	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
-	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/crypto v0.0.0-20220314234659-1baeb1ce4c0b // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	google.golang.org/grpc v1.41.0 // indirect
