@@ -21,7 +21,7 @@ Go to your target group, click Chat Settings > Group Bots > Add Bot, and select 
 
 Enter a name and description for your bot, or set up an avatar for the bot, and then click "Add".
 
-![add-a-bot](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-feishu/add-a-bot.gif?raw=true)
+![add-a-bot](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-feishu/add-a-bot.gif?raw=true)
 
 You will get the webhook address of the bot in the following format:
 
@@ -31,7 +31,7 @@ https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxxxxxxxxx
 
 > ⚠️ Please keep this webhook address properly. Do not publish it on GitHub, blogs, and other publicly accessible sites to avoid it being maliciously called to send spam messages.
 
-![bot-config](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-feishu/feishu-config.png?raw=true)
+![bot-config](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-feishu/feishu-config.png?raw=true)
 
 > ⚠️ You must set your signature verification to make sure push messages work.
 
@@ -92,7 +92,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you can see a notification from your bot in your group chat.
-![received-notification](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-feishu/received-message.png?raw=true)
+![received-notification](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-feishu/received-message.png?raw=true)
 
 ### Clean
 
@@ -414,7 +414,7 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-feishu.yaml
 ```shell

@@ -15,8 +15,8 @@
 package main
 
 import (
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/sink-doris/internal"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/sink-doris/internal"
 )
 
 func main() {

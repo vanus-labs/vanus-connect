@@ -22,10 +22,10 @@ import (
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/log"
 	"github.com/nikoksr/notify/service/slack"
 	"github.com/pkg/errors"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 const (

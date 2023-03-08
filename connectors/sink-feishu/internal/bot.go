@@ -27,8 +27,8 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/go-resty/resty/v2"
-	"github.com/linkall-labs/cdk-go/log"
 	"github.com/tidwall/gjson"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 type messageType string

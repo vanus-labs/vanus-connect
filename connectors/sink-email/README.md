@@ -27,7 +27,7 @@ For example, the incoming CloudEvent looks like:
 ```
 
 then recipients will receive an email like:
-![received.png](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/sink-email/received.png)
+![received.png](https://raw.githubusercontent.com/vanus-labs/vanus-connect/main/connectors/sink-email/received.png)
 
 ## Quick Start
 
@@ -89,7 +89,7 @@ curl --location --request POST 'localhost:31080' \
 ```
 
 now, you cloud see a new email in your mailbox.
-![received.png](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/sink-email/received.png)
+![received.png](https://raw.githubusercontent.com/vanus-labs/vanus-connect/main/connectors/sink-email/received.png)
 
 ### Clean
 
@@ -246,7 +246,7 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-email.yaml
 ```shell

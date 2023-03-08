@@ -83,7 +83,7 @@ the `data` will be as payload to invoke function
 
 you can see logs in [SCF console](https://console.cloud.tencent.com/scf)
 
-![log.png](https://github.com/linkall-labs/vanus-connect/blob/main/connectors/sink-tencentcloud-scf/scf-log.png?raw=true)
+![log.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-tencentcloud-scf/scf-log.png?raw=true)
 
 ### Clean resource
 
@@ -165,7 +165,7 @@ spec:
 ## Integrate with Vanus
 
 This section shows how a sink connector can receive CloudEvents from a
-running [Vanus cluster](https://github.com/linkall-labs/vanus).
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 1. Run the sink-tencentcloud-scf.yaml
 

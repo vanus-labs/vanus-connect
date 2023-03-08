@@ -25,8 +25,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/cdk-go/log"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 const (

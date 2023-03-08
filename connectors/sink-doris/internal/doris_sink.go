@@ -19,7 +19,7 @@ import (
 	"net/http"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	cdkgo "github.com/linkall-labs/cdk-go"
+	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
 type dorisSink struct {

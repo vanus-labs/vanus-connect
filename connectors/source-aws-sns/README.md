@@ -83,7 +83,7 @@ This section will show you how to use Amazon S3 Source to converts S3 events to 
   machine. You can run Connectors directly and safely on the [Playground](https://play.linkall.com/).
    
    We've already exposed webhook to the internet if you're using the Playground. Go to GitHub-Twitter Scenario under Payload URL.
-   ![Payload img](https://raw.githubusercontent.com/linkall-labs/vanus-connect/main/connectors/source-github/payload.png)
+   ![Payload img](https://raw.githubusercontent.com/vanus-labs/vanus-connect/main/connectors/source-github/payload.png)
 
 ### Create the config file
 
@@ -239,7 +239,7 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/linkall-labs/vanus).
+This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 ### Prerequisites
 - Have a running K8s cluster

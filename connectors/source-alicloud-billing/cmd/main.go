@@ -15,8 +15,8 @@
 package main
 
 import (
-	cdkgo "github.com/linkall-labs/cdk-go"
-	"github.com/linkall-labs/source-alicloud-billing/internal"
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/source-alicloud-billing/internal"
 )
 
 func main() {

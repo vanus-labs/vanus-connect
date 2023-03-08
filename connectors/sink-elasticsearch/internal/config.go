@@ -15,7 +15,7 @@
 package internal
 
 import (
-	cdkgo "github.com/linkall-labs/cdk-go"
+	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
 type InsertMode string
