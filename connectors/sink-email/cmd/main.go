@@ -15,6 +15,7 @@
 package main
 
 import (
+	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/connector/sink/email/internal"
 )
 
