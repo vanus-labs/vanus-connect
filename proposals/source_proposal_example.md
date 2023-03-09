@@ -55,6 +55,7 @@ The CloudEvent will look like:
 	          "age": "30"
   }
 }
+```
 
 In order to get the best result the Data should be a string in a json format, but the kafka connector can receive any type of messages.
 
