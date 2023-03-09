@@ -8,8 +8,8 @@ This page describes the design of the Facebook Lead Ads Sink in detail.
 
 ## Programming Language
 
--[x] Golang
--[] Java
+- [x] Golang
+- [ ] Java
 
 ## Prerequisites
 
