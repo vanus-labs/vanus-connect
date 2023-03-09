@@ -1,4 +1,4 @@
-# Source XXX Proposal
+# Source Kafka Proposal
 
 ## Description
 
