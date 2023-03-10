@@ -14,10 +14,11 @@ This page describes the design of the Facebook Lead Ads Sink in detail.
 ## Prerequisites
 
 Before you start you will need the following:
-- The ``ads management`` permission
-- The ``pages manage ads`` permission
-- The ``pages read engagement`` permission
-- The ``pages show list`` permission
+- A facebook developer account with 
+  - The ``ads management`` permission
+  - The ``pages manage ads`` permission
+  - The ``pages read engagement`` permission
+  - The ``pages show list`` permission
 - A Page access token from a User who can perform the ``ADVERTISE`` task on the Page
 
 
@@ -30,11 +31,6 @@ The Facebook Lead Ads Sink needs following configurations to work properly.
 
 | Name        | Required | Default | Description                                                |
 |:------------|:--------:|:-------:|------------------------------------------------------------|
-| name |   YES    |         | This is the Form name for the Facebook Lead Ads  |
-| follow_up_action   |   YES    |         | This is the URL that Facebook will redirect the user after submitting the form.                                  |
-| questions   |   YES    |         | This is the question(s) that will be asked in the form.  |
-| context_card_id   |   YES     |       | This is the ID of the context card that will be shown to users after they submit the form.
-| legal_case_id |   YES  |          | This is the ID of the legal content that will be shown to users before they submit the form.
 | access_token |    YES  |          | This is the access token that is required to access the Facebook Graph API.
 
 ### Required CloudEvents Data Format
@@ -43,11 +39,14 @@ The Facebook Lead Ads Sink requires following JSON data format in CloudEvent's `
 
 ```json
 {
-  "key1" : "value1",
-  "key2" : "value2",
-  "key3" : "value3",
-  "key4" : "value4",
-  ...
+    "name": "<FORM_NAME>",
+    "follow_up_action": "<URL>",
+    "questions": {
+        "type": "<EMAIL>",
+        ...
+    }
+    "context_card_id": "<CONTEXT_CARD_ID>",
+    "legal_case_id": "<LEGAL_CASE_ID>"
 }
 ```
 
@@ -79,4 +78,4 @@ In order to create the Lead Ads form successfully, the JSON ``data`` field must 
 
 ### Used Libraries/APIs
 
-[Lead Ads from META Marketing API](https://developers.facebook.com/docs/marketing-api/guides/lead-ads/create).
+[Lead Ads from Meta Marketing API](https://developers.facebook.com/docs/marketing-api/guides/lead-ads/create).
