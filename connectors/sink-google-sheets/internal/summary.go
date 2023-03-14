@@ -17,9 +17,10 @@ package internal
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/vanus-labs/cdk-go/log"
-	"time"
 )
 
 type SummaryConfig struct {
@@ -55,7 +56,7 @@ type Summary struct {
 	groupBy    GroupBy
 	primaryKey string
 	columnMap  map[string]CalType
-	headers    []string
+	headers    map[string]int
 }
 
 func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetService) (*Summary, error) {
@@ -77,14 +78,16 @@ func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetSer
 
 func (s *Summary) init(config *SummaryConfig) error {
 	s.columnMap = make(map[string]CalType, len(config.Columns)+1)
-	s.headers = make([]string, 0, len(config.Columns)+1)
-	s.headers = append(s.headers, s.primaryKey)
+	s.headers = make(map[string]int, len(config.Columns))
+	var headerIndex int
+	s.headers[s.primaryKey] = headerIndex
 	s.columnMap[s.primaryKey] = Replace
 	for _, column := range config.Columns {
 		if column.Name == s.primaryKey {
 			continue
 		}
-		s.headers = append(s.headers, column.Name)
+		headerIndex++
+		s.headers[column.Name] = headerIndex
 		calType := column.Type
 		if calType != Sum {
 			calType = Replace
@@ -120,19 +123,19 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 		return s.insertData(ctx, sheetName, headers, data)
 	}
 	// update data
-	for i, key := range headers {
-		v, ok := data[key]
-		if !ok || v == nil {
+	for key, index := range headers {
+		v, exist := data[key]
+		if !exist || v == nil {
 			continue
 		}
 		calType, _ := s.columnMap[key]
 		if calType == Sum {
-			currFloat, err := convertFloat(rowValues[i])
+			currFloat, err := convertFloat(rowValues[index])
 			if err != nil {
 				log.Warning("number sheet value is invalid", map[string]interface{}{
 					s.primaryKey: value,
 					"column":     key,
-					"value":      rowValues[i],
+					"value":      rowValues[index],
 				})
 			}
 			vFloat, err := convertFloat(v)
@@ -144,17 +147,17 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 				})
 				continue
 			}
-			rowValues[i] = currFloat + vFloat
+			rowValues[index] = currFloat + vFloat
 		} else {
-			rowValues[i] = sheetValue(v)
+			rowValues[index] = sheetValue(v)
 		}
 	}
 	return s.service.updateData(ctx, sheetName, rowIndex+1, rowValues)
 }
 
-func (s *Summary) insertData(ctx context.Context, sheetName string, headers []string, data map[string]interface{}) error {
-	var values []interface{}
-	for _, key := range headers {
+func (s *Summary) insertData(ctx context.Context, sheetName string, headers map[string]int, data map[string]interface{}) error {
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
 		v, _ := data[key]
 		calType, _ := s.columnMap[key]
 		if calType == Sum {
@@ -166,9 +169,9 @@ func (s *Summary) insertData(ctx context.Context, sheetName string, headers []st
 					"value":      v,
 				})
 			}
-			values = append(values, vFloat)
+			values[index] = vFloat
 		} else {
-			values = append(values, sheetValue(v))
+			values[index] = sheetValue(v)
 		}
 	}
 	err := s.service.appendData(ctx, sheetName, values)
@@ -198,7 +201,7 @@ func (s *Summary) getSheetName(eventTime time.Time) string {
 	}
 }
 
-func (s *Summary) getHeader(ctx context.Context, sheetName string) ([]string, error) {
+func (s *Summary) getHeader(ctx context.Context, sheetName string) (map[string]int, error) {
 	headers, err := s.service.getHeader(sheetName)
 	if err == nil {
 		return headers, nil

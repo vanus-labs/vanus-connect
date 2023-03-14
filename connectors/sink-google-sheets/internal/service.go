@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/vanus-labs/cdk-go/log"
 	"google.golang.org/api/option"
@@ -30,13 +31,13 @@ var (
 type GoogleSheetService struct {
 	client        *sheets.Service
 	spreadsheetID string
-	sheetIDs      map[string]int64    // key: sheetName, value: sheetID
-	sheetHeaders  map[string][]string // key: sheetName, value: sheet headers which is on the first row
+	sheetIDs      map[string]int64          // key: sheetName, value: sheetID
+	sheetHeaders  map[string]map[string]int // key: sheetName, value: sheet headers
 }
 
 func newGoogleSheetService(spreadSheetID, credentialsJSON string) (*GoogleSheetService, error) {
 	service := &GoogleSheetService{
-		sheetHeaders: map[string][]string{},
+		sheetHeaders: map[string]map[string]int{},
 		sheetIDs:     map[string]int64{},
 	}
 	err := service.init(spreadSheetID, credentialsJSON)
@@ -72,7 +73,7 @@ func (s *GoogleSheetService) getSheetName(sheetID int64) string {
 	}
 	return ""
 }
-func (s *GoogleSheetService) getHeader(sheetName string) ([]string, error) {
+func (s *GoogleSheetService) getHeader(sheetName string) (map[string]int, error) {
 	headers, exist := s.sheetHeaders[sheetName]
 	if exist && len(headers) != 0 {
 		return headers, nil
@@ -84,22 +85,38 @@ func (s *GoogleSheetService) getHeader(sheetName string) ([]string, error) {
 	if len(resp.Values) == 0 {
 		return nil, headerNotExistErr
 	}
-	for _, value := range resp.Values[0] {
-		headers = append(headers, fmt.Sprintf("%v", value))
+	headers = make(map[string]int, len(resp.Values[0]))
+	for index, value := range resp.Values[0] {
+		columnName := fmt.Sprintf("%v", value)
+		headers[columnName] = index
 	}
 	s.sheetHeaders[sheetName] = headers
 	return headers, nil
 }
 
-func (s *GoogleSheetService) insertHeader(ctx context.Context, sheetName string, headers []string) error {
+func (s *GoogleSheetService) insertHeader(ctx context.Context, sheetName string, headers map[string]int) error {
 	// insert headers
-	var values []interface{}
-	for _, key := range headers {
-		values = append(values, key)
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
+		values[index] = key
 	}
 	err := s.appendData(ctx, sheetName, values)
 	if err != nil {
 		return errors.Wrap(err, "insert sheet header error")
+	}
+	s.sheetHeaders[sheetName] = headers
+	return nil
+}
+
+func (s *GoogleSheetService) updateHeader(ctx context.Context, sheetName string, headers map[string]int) error {
+	// update headers
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
+		values[index] = key
+	}
+	err := s.updateData(ctx, sheetName, 1, values)
+	if err != nil {
+		return errors.Wrap(err, "update sheet header error")
 	}
 	s.sheetHeaders[sheetName] = headers
 	return nil
