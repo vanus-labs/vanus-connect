@@ -32,5 +32,5 @@ type GoogleSheetConfig struct {
 	SheetID   string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
 	SheetName string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
 
-	Summary *SummaryConfig `json:"summary" yaml:"summary"`
+	Summary []SummaryConfig `json:"summary" yaml:"summary"`
 }

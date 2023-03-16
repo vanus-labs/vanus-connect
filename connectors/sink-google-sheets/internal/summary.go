@@ -24,7 +24,7 @@ import (
 )
 
 type SummaryConfig struct {
-	SheetName  string   `json:"sheet_name" yaml:"sheet_name"`
+	SheetName  string   `json:"sheet_name" yaml:"sheet_name" validate:"required"`
 	PrimaryKey string   `json:"primary_key" yaml:"primary_key" validate:"required"`
 	Columns    []Column `json:"columns" yaml:"columns"`
 	GroupBy    GroupBy  `json:"group_by" yaml:"group_by"`
@@ -59,15 +59,12 @@ type Summary struct {
 	headers    map[string]int
 }
 
-func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetService) (*Summary, error) {
+func newSummary(config SummaryConfig, service *GoogleSheetService) (*Summary, error) {
 	s := &Summary{
 		service:    service,
 		sheetName:  config.SheetName,
 		groupBy:    config.GroupBy,
 		primaryKey: config.PrimaryKey,
-	}
-	if s.sheetName == "" {
-		s.sheetName = sheetName
 	}
 	err := s.init(config)
 	if err != nil {
@@ -76,7 +73,7 @@ func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetSer
 	return s, nil
 }
 
-func (s *Summary) init(config *SummaryConfig) error {
+func (s *Summary) init(config SummaryConfig) error {
 	s.columnMap = make(map[string]CalType, len(config.Columns)+1)
 	s.headers = make(map[string]int, len(config.Columns))
 	var headerIndex int
@@ -93,6 +90,43 @@ func (s *Summary) init(config *SummaryConfig) error {
 			calType = Replace
 		}
 		s.columnMap[column.Name] = calType
+	}
+	// check header
+	sheetName := s.getSheetName(time.Now())
+	err := s.service.createSheetIfNotExist(context.Background(), sheetName)
+	if err != nil {
+		log.Warning("create summary sheet error", map[string]interface{}{
+			log.KeyError: err,
+			"sheet_name": sheetName,
+		})
+		return nil
+	}
+	headers, err := s.getHeader(context.Background(), sheetName)
+	if err != nil {
+		log.Warning("get header error", map[string]interface{}{
+			log.KeyError: err,
+			"sheet_name": sheetName,
+		})
+		return nil
+	}
+	index := len(headers)
+	var change bool
+	for k := range s.headers {
+		if _, exist := headers[k]; exist {
+			continue
+		}
+		headers[k] = index
+		index++
+		change = true
+	}
+	if change {
+		err = s.service.updateHeader(context.Background(), sheetName, headers)
+		if err != nil {
+			log.Warning("update header error", map[string]interface{}{
+				log.KeyError: err,
+				"sheet_name": sheetName,
+			})
+		}
 	}
 	return nil
 }
@@ -123,6 +157,9 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 		return s.insertData(ctx, sheetName, headers, data)
 	}
 	// update data
+	for i := len(rowValues); i < len(headers); i++ {
+		rowValues = append(rowValues, nil)
+	}
 	for key, index := range headers {
 		v, exist := data[key]
 		if !exist || v == nil {
@@ -206,16 +243,13 @@ func (s *Summary) getHeader(ctx context.Context, sheetName string) (map[string]i
 	if err == nil {
 		return headers, nil
 	}
-	if err != nil {
-		if err == headerNotExistErr {
-			// insert header
-			err = s.service.insertHeader(ctx, sheetName, s.headers)
-			if err != nil {
-				return nil, err
-			}
-			return s.headers, nil
+	if err == headerNotExistErr {
+		// insert header
+		err = s.service.insertHeader(ctx, sheetName, s.headers)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
+		return s.headers, nil
 	}
-	return headers, nil
+	return nil, err
 }

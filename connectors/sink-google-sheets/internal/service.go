@@ -65,14 +65,6 @@ func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string) error {
 	return nil
 }
 
-func (s *GoogleSheetService) getSheetName(sheetID int64) string {
-	for k, v := range s.sheetIDs {
-		if v == sheetID {
-			return k
-		}
-	}
-	return ""
-}
 func (s *GoogleSheetService) getHeader(sheetName string) (map[string]int, error) {
 	headers, exist := s.sheetHeaders[sheetName]
 	if exist && len(headers) != 0 {
@@ -150,17 +142,40 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 		Requests:                     []*sheets.Request{{AddSheet: &sheetAdd}},
 		ResponseIncludeGridData:      false,
 	}
-
-	resp, err := s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Context(ctx).Do()
-	if err != nil {
-		return errors.Wrap(err, "create sheet api error")
-	}
-	for _, sheet := range resp.UpdatedSpreadsheet.Sheets {
-		if sheet.Properties.Title == sheetName {
-			s.sheetIDs[sheetName] = sheet.Properties.SheetId
-			return nil
+	for retry := 0; retry < 3; retry++ {
+		spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
+		if err != nil {
+			log.Warning("get spread sheets error", map[string]interface{}{
+				log.KeyError: err,
+			})
+			continue
 		}
+		for _, sheet := range spreadSheet.Sheets {
+			if sheet.Properties.Title == sheetName {
+				log.Info("sheet create success", map[string]interface{}{
+					"sheet_name": sheetName,
+					"sheet_id":   sheet.Properties.SheetId,
+				})
+				s.sheetIDs[sheetName] = sheet.Properties.SheetId
+				return nil
+			}
+		}
+		log.Info("sheet no exist will create it", map[string]interface{}{
+			"sheet_name": sheetName,
+		})
+		_, err = s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Context(ctx).Do()
+		if err != nil {
+			log.Info("sheet create error", map[string]interface{}{
+				log.KeyError: err,
+				"sheet_name": sheetName,
+			})
+			continue
+		}
+		log.Info("sheet create api success", map[string]interface{}{
+			"sheet_name": sheetName,
+		})
 	}
+
 	return errors.New("create sheet failed")
 }
 
