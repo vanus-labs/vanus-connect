@@ -1,4 +1,4 @@
-module github.com/vanus-labs/connector/source/http
+module github.com/vanus-labs/connector/source/shopify
 
 go 1.18
 

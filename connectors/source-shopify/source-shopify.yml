@@ -1,46 +1,47 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: source-http
+  name: source-shopify
   namespace: vanus
 spec:
   selector:
-    app: source-http
+    app: source-shopify
   type: ClusterIP
   ports:
     - port: 8080
-      name: source-http
+      name: source-shopify
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: source-http
+  name: source-shopify
   namespace: vanus
 data:
   config.yml: |-
     target: http://<url>:<port>/gateway/<eventbus>
+    client_secret: "xxxxxxx"
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: source-http
+  name: source-shopify
   namespace: vanus
   labels:
-    app: source-http
+    app: source-shopify
 spec:
   selector:
     matchLabels:
-      app: source-http
+      app: source-shopify
   replicas: 1
   template:
     metadata:
       labels:
-        app: source-http
+        app: source-shopify
     spec:
       containers:
-        - name: source-http
-          image: public.ecr.aws/vanus/connector/source-http:latest
+        - name: source-shopify
+          image: public.ecr.aws/vanus/connector/source-shopify:latest
           resources:
             requests:
               memory: "128Mi"
@@ -55,4 +56,4 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: source-http
+            name: source-shopify
