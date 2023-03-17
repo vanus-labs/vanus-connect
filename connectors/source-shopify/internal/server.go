@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+<<<<<<< HEAD
 	"hash"
 =======
 	"bufio"
@@ -42,6 +43,8 @@ import (
 =======
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+=======
+>>>>>>> 7a9eb27 (update readme)
 	"hash"
 >>>>>>> 2f93b62 (feat: add shopify source)
 	"net"
@@ -54,6 +57,7 @@ import (
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+<<<<<<< HEAD
 =======
 
 	"github.com/google/uuid"
@@ -64,6 +68,8 @@ import (
 	"time"
 
 >>>>>>> 2f93b62 (feat: add shopify source)
+=======
+>>>>>>> 7a9eb27 (update readme)
 	"github.com/valyala/fasthttp"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -80,8 +86,12 @@ const (
 	name        = "Shopify Source"
 	defaultPort = 8080
 
+<<<<<<< HEAD
 	defaultSource              = "vanus-shopify-source" // TODO webhook id
 >>>>>>> 2f93b62 (feat: add shopify source)
+=======
+	defaultSource              = "vanus-shopify-source"
+>>>>>>> 7a9eb27 (update readme)
 	extendAttributesOrderID    = "xvshopifyorderid"
 	extendAttributesTopic      = "xvshopifytopic"
 	extendAttributesWebhookID  = "xvshopifywebhookid"
@@ -124,24 +134,6 @@ func (c *shopifySourceConfig) GetSecret() cdkgo.SecretAccessor {
 )
 
 var _ cdkgo.SourceConfigAccessor = &shopifySourceConfig{}
-
-type HTTPEvent struct {
-	Path      string            `json:"path"`
-	Method    string            `json:"method"`
-	QueryArgs map[string]string `json:"query_args"`
-	Headers   map[string]string `json:"headers"`
-	Body      interface{}       `json:"body"`
-}
-
-func (he *HTTPEvent) toMap() map[string]interface{} {
-	return map[string]interface{}{
-		"path":       he.Path,
-		"method":     he.Method,
-		"query_args": he.QueryArgs,
-		"headers":    he.Headers,
-		"body":       he.Body,
-	}
-}
 
 type shopifySourceConfig struct {
 	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
@@ -256,10 +248,14 @@ func (c *shopifySource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) 
 	c.ln = ln
 	go func() {
 <<<<<<< HEAD
+<<<<<<< HEAD
 		log.Info("Shopify source is ready to serving", map[string]interface{}{
 =======
 		log.Info("HTTP source is ready to serving", map[string]interface{}{
 >>>>>>> d269259 (feat: add shopify source)
+=======
+		log.Info("Shopify source is ready to serving", map[string]interface{}{
+>>>>>>> 7a9eb27 (update readme)
 			"listen": c.cfg.Port,
 		})
 		if err := fasthttp.Serve(ln, c.handleFastHTTP); err != nil {

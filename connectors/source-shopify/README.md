@@ -3,6 +3,7 @@
 <<<<<<< HEAD
 title: Shopify
 ---
+<<<<<<< HEAD
 # Shopify Source
 
 ## Introduction
@@ -283,6 +284,8 @@ title: Shopify
 >>>>>>> 2f93b62 (feat: add shopify source)
 ---
 
+=======
+>>>>>>> 7a9eb27 (update readme)
 # Shopify Source
 
 ## Introduction
@@ -292,6 +295,7 @@ The Shopify Source is a [Vanus Connector][vc] which aims to convert an incoming 
 For example, if type of incoming events is a `orders/create`:
 
 which is converted to:
+<details><summary><strong>Click to view</strong></summary>
 
 ```shell
 +-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -543,6 +547,7 @@ which is converted to:
 |     |                                                                                                                                                                       |
 +-----+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 ```
+</details>
 
 ## Quick Start
 
@@ -572,6 +577,7 @@ EOF
 ```
 
 
+<<<<<<< HEAD
 | Name          | Required | Default | Description                        |
 | :-------------- | :--------: | :-------: | :----------------------------------- |
 | target        |   YES   |        | the target URL to send CloudEvents |
@@ -586,10 +592,12 @@ client_secret: <client_secret_of_your_app>
 EOF
 ```
 
+=======
+>>>>>>> 7a9eb27 (update readme)
 | Name          | Required | Default | Description                        |
-|:--------------|:--------:|:-------:|:-----------------------------------|
-| target        |   YES    |         | the target URL to send CloudEvents |
-| client_secret |   YES    |         | the client secret of your app      |
+| :-------------- | :--------: | :-------: | :----------------------------------- |
+| target        |   YES   |        | the target URL to send CloudEvents |
+| client_secret |   YES   |        | the client secret of your app      |
 
 <<<<<<< HEAD
 The HTTP Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -615,6 +623,7 @@ ngrok http 8080
 ```
 
 you will get a `Forwarding` URL like `https://xxxx.xxxx.ngrok.io` after ngrok started
+<<<<<<< HEAD
 
 ![ngrok.png](ngrok.png)
 
@@ -647,11 +656,14 @@ ngrok http 8080
 ```
 
 you will get a `Forwarding` URL like `https://xxxx.xxxx.ngrok.io` after ngrok started  
+=======
+>>>>>>> 7a9eb27 (update readme)
 
 ![ngrok.png](ngrok.png)
 
-### Create a webhook via cURL
+### Create a Shopify webhook via cURL
 
+replace `<your_shop_name>, <your_shop_access_token>, <Forwarding URL>` to yours. 
 ```shell
 curl --location --request POST 'https://<your_shop_name>.myshopify.com/admin/api/2023-01/webhooks.json' \
 --header 'X-Shopify-Access-Token: <your_shop_access_token>' \
@@ -664,7 +676,7 @@ curl --location --request POST 'https://<your_shop_name>.myshopify.com/admin/api
     }
 }'
 ```
-  
+
 ### Test
 
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
@@ -685,6 +697,7 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
 <details><summary><strong>Click to view</strong></summary>
 
+<<<<<<< HEAD
 ```json
 {
   "specversion": "1.0",
@@ -945,40 +958,253 @@ Open the browser and create a test order in your shop,
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
+=======
+>>>>>>> 7a9eb27 (update readme)
 ```json
 {
   "specversion": "1.0",
-  "id": "abc",
-  "source": "123",
-  "type": "456",
-  "subject": "def",
+  "id": "aa5a3aa1-fbd2-4d76-961c-cc205f5b625b",
+  "source": "vanus-shopify-source",
+  "type": "orders/create",
   "datacontenttype": "application/json",
-  "time": "2023-01-29T03:25:26.229114Z",
+  "time": "2023-03-17T11:14:55.307657525Z",
   "data": {
-    "body": {
-      "test": "demo"
+    "admin_graphql_api_id": "gid://shopify/Order/5277067936038",
+    "app_id": 1354745,
+    "browser_ip": "3.34.96.234",
+    "buyer_accepts_marketing": false,
+    "cancel_reason": null,
+    "cancelled_at": null,
+    "cart_token": null,
+    "checkout_id": 36657551147302,
+    "checkout_token": "5e58edbdaa96ad5e2dc2d6d9a95f4b68",
+    "client_details": {
+      "accept_language": null,
+      "browser_height": null,
+      "browser_ip": "3.34.96.234",
+      "browser_width": null,
+      "session_hash": null,
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36"
     },
-    "headers": {
-      "Accept": "*/*",
-      "Content-Length": "21",
-      "Content-Type": "text/plain",
-      "Host": "localhost:8080",
-      "User-Agent": "curl/7.85.0"
+    "closed_at": null,
+    "company": null,
+    "confirmed": true,
+    "created_at": "2023-03-17T07:14:52-04:00",
+    "currency": "HKD",
+    "current_subtotal_price": "2629.95",
+    "current_subtotal_price_set": {
+      "presentment_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      }
     },
-    "method": "POST",
-    "path": "/webhook",
-    "query_args": {
-      "id": "abc",
-      "source": "123",
-      "subject": "def",
-      "type": "456"
-    }
+    "current_total_discounts": "0.00",
+    "current_total_discounts_set": {
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      }
+    },
+    "current_total_duties_set": null,
+    "current_total_price": "2629.95",
+    "current_total_price_set": {
+      "presentment_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      }
+    },
+    "current_total_tax": "0.00",
+    "current_total_tax_set": {
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      }
+    },
+    "customer_locale": "en",
+    "device_id": null,
+    "discount_applications": [],
+    "discount_codes": [],
+    "estimated_taxes": false,
+    "financial_status": "paid",
+    "fulfillment_status": null,
+    "fulfillments": [],
+    "gateway": "manual",
+    "id": 5277067936038,
+    "landing_site": null,
+    "landing_site_ref": null,
+    "line_items": [
+      {
+        "admin_graphql_api_id": "gid://shopify/LineItem/13782232269094",
+        "discount_allocations": [],
+        "duties": [],
+        "fulfillable_quantity": 1,
+        "fulfillment_service": "snow-city-warehouse",
+        "fulfillment_status": null,
+        "gift_card": false,
+        "grams": 0,
+        "id": 13782232269094,
+        "name": "The 3p Fulfilled Snowboard",
+        "price": "2629.95",
+        "price_set": {
+          "presentment_money": {
+            "amount": "2629.95",
+            "currency_code": "HKD"
+          },
+          "shop_money": {
+            "amount": "2629.95",
+            "currency_code": "HKD"
+          }
+        },
+        "product_exists": true,
+        "product_id": 8187823063334,
+        "properties": [],
+        "quantity": 1,
+        "requires_shipping": true,
+        "sku": "sku-hosted-1",
+        "tax_lines": [],
+        "taxable": true,
+        "title": "The 3p Fulfilled Snowboard",
+        "total_discount": "0.00",
+        "total_discount_set": {
+          "presentment_money": {
+            "amount": "0.00",
+            "currency_code": "HKD"
+          },
+          "shop_money": {
+            "amount": "0.00",
+            "currency_code": "HKD"
+          }
+        },
+        "variant_id": 44650297164070,
+        "variant_inventory_management": "shopify",
+        "variant_title": null,
+        "vendor": "VanusCloudTest"
+      }
+    ],
+    "location_id": 79864037670,
+    "merchant_of_record_app_id": null,
+    "name": "#1018",
+    "note": null,
+    "note_attributes": [],
+    "number": 18,
+    "order_number": 1018,
+    "order_status_url": "https://vanuscloudtest.myshopify.com/73188213030/orders/67c021532f1acd9731573def31c96678/authenticate?key=ae755b290a6285ecf85dcb4a406e7f9d",
+    "original_total_duties_set": null,
+    "payment_gateway_names": [
+      "manual"
+    ],
+    "payment_terms": null,
+    "presentment_currency": "HKD",
+    "processed_at": "2023-03-17T07:14:51-04:00",
+    "processing_method": "manual",
+    "reference": "d1487c532906960e20e32149cad2cb8d",
+    "referring_site": null,
+    "refunds": [],
+    "shipping_lines": [],
+    "source_identifier": "d1487c532906960e20e32149cad2cb8d",
+    "source_name": "shopify_draft_order",
+    "source_url": null,
+    "subtotal_price": "2629.95",
+    "subtotal_price_set": {
+      "presentment_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      }
+    },
+    "tags": "",
+    "tax_lines": [],
+    "taxes_included": false,
+    "test": false,
+    "token": "67c021532f1acd9731573def31c96678",
+    "total_discounts": "0.00",
+    "total_discounts_set": {
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      }
+    },
+    "total_line_items_price": "2629.95",
+    "total_line_items_price_set": {
+      "presentment_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      }
+    },
+    "total_outstanding": "0.00",
+    "total_price": "2629.95",
+    "total_price_set": {
+      "presentment_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "2629.95",
+        "currency_code": "HKD"
+      }
+    },
+    "total_shipping_price_set": {
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      }
+    },
+    "total_tax": "0.00",
+    "total_tax_set": {
+      "presentment_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      },
+      "shop_money": {
+        "amount": "0.00",
+        "currency_code": "HKD"
+      }
+    },
+    "total_tip_received": "0.00",
+    "total_weight": 0,
+    "updated_at": "2023-03-17T07:14:53-04:00",
+    "user_id": 93721493798
   },
-  "xvshopifyremoteip": "::1",
-  "xvshopifyremoteaddr": "[::1]:57822",
-  "xvshopifybodyisjson": true
+  "xvshopifyapiversion": "2023-01",
+  "xvshopifytopic": "orders/create",
+  "xvshopifyorderid": "5277067936038",
+  "xvshopifydomain": "vanuscloudtest.myshopify.com",
+  "xvshopifywebhookid": "ad6a6b00-2352-4dfc-9e57-aabe1d12f2da"
 }
 ```
+
+</details>
 
 ### Clean
 
@@ -997,6 +1223,9 @@ docker stop source-shopify sink-display
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 7a9eb27 (update readme)
 
 | Attribute |        Default        |
 | :---------: | :----------------------: |
@@ -1016,6 +1245,7 @@ The Shopify Source defines following [CloudEvents Extension Attributes](https://
 | xvshopifywebhookid | string | The webhook id of incoming request belongs to                                                                                                    |
 |   xvshopifydomain   | string | The shop name of incoming request belongs to                                                                                                     |
 | xvshopifyapiversion | string | The Shopify Request API Version                                                                                                                  |
+<<<<<<< HEAD
 =======
 #### Changing Default Required Attributes
 
@@ -1058,6 +1288,8 @@ The Shopify Source defines following [CloudEvents Extension Attributes](https://
 |   xvshopifydomain   | string | The shop name of incoming request belongs to                                                                                                      |
 | xvshopifyapiversion | string | The Shopify Request API Version                                                                                                                   |
 >>>>>>> 2f93b62 (feat: add shopify source)
+=======
+>>>>>>> 7a9eb27 (update readme)
 
 ## Run in Kubernetes
 
