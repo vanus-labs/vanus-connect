@@ -39,7 +39,7 @@ func NewGoogleSheetSink() cdkgo.Sink {
 type GoogleSheetSink struct {
 	service          *GoogleSheetService
 	defaultSheetName string
-	summary          *Summary
+	summary          []*Summary
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -53,12 +53,14 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
 	}
 	s.service = service
 	s.defaultSheetName = sheetName
-	if config.Summary != nil {
-		summary, err := newSummary(config.Summary, s.defaultSheetName+"_summary", service)
-		if err != nil {
-			return err
+	if len(config.Summary) > 0 {
+		for i := range config.Summary {
+			summary, err := newSummary(config.Summary[i], service)
+			if err != nil {
+				return err
+			}
+			s.summary = append(s.summary, summary)
 		}
-		s.summary = summary
 	}
 	return nil
 }
@@ -172,12 +174,15 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 		})
 		return cdkgo.NewResult(http.StatusInternalServerError, "append data error")
 	}
-	if s.summary != nil {
-		err = s.summary.appendData(ctx, event.Time(), sheetRow)
-		if err != nil {
-			log.Error("append summary data error", map[string]interface{}{
-				log.KeyError: err,
-			})
+	if len(s.summary) > 0 {
+		for i := range s.summary {
+			err = s.summary[i].appendData(ctx, event.Time(), sheetRow)
+			if err != nil {
+				log.Error("append summary data error", map[string]interface{}{
+					log.KeyError: err,
+					"index":      i,
+				})
+			}
 		}
 	}
 	return cdkgo.SuccessResult
