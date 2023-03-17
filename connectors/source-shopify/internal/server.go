@@ -22,8 +22,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/uuid"
 	"hash"
 	"net"
 	"net/http"
@@ -31,6 +29,8 @@ import (
 	"sync"
 	"time"
 
+	v2 "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -40,7 +40,7 @@ const (
 	name        = "Shopify Source"
 	defaultPort = 8080
 
-	defaultSource              = "vanus-shopify-source" // TODO webhook id
+	defaultSource              = "vanus-shopify-source"
 	extendAttributesOrderID    = "xvshopifyorderid"
 	extendAttributesTopic      = "xvshopifytopic"
 	extendAttributesWebhookID  = "xvshopifywebhookid"
@@ -56,24 +56,6 @@ const (
 )
 
 var _ cdkgo.SourceConfigAccessor = &shopifySourceConfig{}
-
-type HTTPEvent struct {
-	Path      string            `json:"path"`
-	Method    string            `json:"method"`
-	QueryArgs map[string]string `json:"query_args"`
-	Headers   map[string]string `json:"headers"`
-	Body      interface{}       `json:"body"`
-}
-
-func (he *HTTPEvent) toMap() map[string]interface{} {
-	return map[string]interface{}{
-		"path":       he.Path,
-		"method":     he.Method,
-		"query_args": he.QueryArgs,
-		"headers":    he.Headers,
-		"body":       he.Body,
-	}
-}
 
 type shopifySourceConfig struct {
 	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
@@ -128,7 +110,7 @@ func (c *shopifySource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) 
 	}
 	c.ln = ln
 	go func() {
-		log.Info("HTTP source is ready to serving", map[string]interface{}{
+		log.Info("Shopify source is ready to serving", map[string]interface{}{
 			"listen": c.cfg.Port,
 		})
 		if err := fasthttp.Serve(ln, c.handleFastHTTP); err != nil {

@@ -9,7 +9,7 @@ WORKDIR /build/vanus-connect/connectors/${connector}
 RUN go mod tidy
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connect/bin/${connector} ./cmd/main.go
 
-FROM centos:8.4.2105
+FROM --platform=$BUILDPLATFORM ubuntu:22.10
 
 ARG connector
 
