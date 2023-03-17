@@ -16,6 +16,7 @@ package internal
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -27,15 +28,27 @@ import (
 =======
 	"bufio"
 	"bytes"
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+<<<<<<< HEAD
 >>>>>>> d269259 (feat: add shopify source)
+=======
+	v2 "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/uuid"
+	"hash"
+>>>>>>> 2f93b62 (feat: add shopify source)
 	"net"
 	"net/http"
 	"strings"
 	"sync"
+<<<<<<< HEAD
 <<<<<<< HEAD
 	"time"
 
@@ -47,6 +60,10 @@ import (
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 >>>>>>> d269259 (feat: add shopify source)
+=======
+	"time"
+
+>>>>>>> 2f93b62 (feat: add shopify source)
 	"github.com/valyala/fasthttp"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -54,10 +71,17 @@ import (
 
 const (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	name        = "Shopify Source"
 	defaultPort = 8080
 
 	defaultSource              = "vanus-shopify-source"
+=======
+	name        = "Shopify Source"
+	defaultPort = 8080
+
+	defaultSource              = "vanus-shopify-source" // TODO webhook id
+>>>>>>> 2f93b62 (feat: add shopify source)
 	extendAttributesOrderID    = "xvshopifyorderid"
 	extendAttributesTopic      = "xvshopifytopic"
 	extendAttributesWebhookID  = "xvshopifywebhookid"
@@ -70,6 +94,7 @@ const (
 	shopifyXHeaderShopDomain = "X-Shopify-Shop-Domain"
 	shopifyXHeaderTopic      = "X-Shopify-Topic"
 	shopifyXHeaderWebhookID  = "X-Shopify-Webhook-Id"
+<<<<<<< HEAD
 )
 
 var _ cdkgo.SourceConfigAccessor = &shopifySourceConfig{}
@@ -94,9 +119,11 @@ func (c *shopifySourceConfig) GetSecret() cdkgo.SecretAccessor {
 	extendAttributesBodyIsJSON = "xvhttpbodyisjson"
 	extendAttributesRemoteIP   = "xvhttpremoteip"
 	extendAttributesRemoteAddr = "xvhttpremoteaddr"
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 )
 
-var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
+var _ cdkgo.SourceConfigAccessor = &shopifySourceConfig{}
 
 type HTTPEvent struct {
 	Path      string            `json:"path"`
@@ -116,17 +143,23 @@ func (he *HTTPEvent) toMap() map[string]interface{} {
 	}
 }
 
-type httpSourceConfig struct {
+type shopifySourceConfig struct {
 	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
-	Port               int `json:"port" yaml:"port"`
+	Port               int    `json:"port" yaml:"port"`
+	ClientSecret       string `json:"client_secret" yaml:"client_secret"`
 }
 
+<<<<<<< HEAD
 func (c *httpSourceConfig) GetSecret() cdkgo.SecretAccessor {
 >>>>>>> d269259 (feat: add shopify source)
+=======
+func (c *shopifySourceConfig) GetSecret() cdkgo.SecretAccessor {
+>>>>>>> 2f93b62 (feat: add shopify source)
 	return nil
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {
+<<<<<<< HEAD
 <<<<<<< HEAD
 	return &shopifySourceConfig{}
 }
@@ -137,17 +170,26 @@ func NewShopifySource() cdkgo.Source {
 	return &shopifySource{
 =======
 	return &httpSourceConfig{}
+=======
+	return &shopifySourceConfig{}
+>>>>>>> 2f93b62 (feat: add shopify source)
 }
 
-var _ cdkgo.Source = &httpSource{}
+var _ cdkgo.Source = &shopifySource{}
 
+<<<<<<< HEAD
 func NewHTTPSource() cdkgo.Source {
 	return &httpSource{
 >>>>>>> d269259 (feat: add shopify source)
+=======
+func NewShopifySource() cdkgo.Source {
+	return &shopifySource{
+>>>>>>> 2f93b62 (feat: add shopify source)
 		ch: make(chan *cdkgo.Tuple, 1024),
 	}
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 type shopifySource struct {
 	cfg   *shopifySourceConfig
@@ -166,18 +208,28 @@ func (c *shopifySource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) 
 =======
 type httpSource struct {
 	cfg   *httpSourceConfig
+=======
+type shopifySource struct {
+	cfg   *shopifySourceConfig
+>>>>>>> 2f93b62 (feat: add shopify source)
 	mutex sync.Mutex
 	ch    chan *cdkgo.Tuple
 	ln    net.Listener
+	hm    hash.Hash
 }
 
-func (c *httpSource) Chan() <-chan *cdkgo.Tuple {
+func (c *shopifySource) Chan() <-chan *cdkgo.Tuple {
 	return c.ch
 }
 
+<<<<<<< HEAD
 func (c *httpSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	_cfg, ok := cfg.(*httpSourceConfig)
 >>>>>>> d269259 (feat: add shopify source)
+=======
+func (c *shopifySource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+	_cfg, ok := cfg.(*shopifySourceConfig)
+>>>>>>> 2f93b62 (feat: add shopify source)
 	if !ok {
 		return errors.New("invalid config")
 	}
@@ -188,10 +240,15 @@ func (c *httpSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) err
 	c.cfg = _cfg
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	c.hm = hmac.New(sha256.New, []byte(c.cfg.ClientSecret))
 
 =======
 >>>>>>> d269259 (feat: add shopify source)
+=======
+	c.hm = hmac.New(sha256.New, []byte(c.cfg.ClientSecret))
+
+>>>>>>> 2f93b62 (feat: add shopify source)
 	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", c.cfg.Port))
 	if err != nil {
 		return err
@@ -216,6 +273,7 @@ func (c *httpSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) err
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 func (c *shopifySource) Name() string {
 	return name
 }
@@ -228,6 +286,13 @@ func (c *httpSource) Name() string {
 
 func (c *httpSource) Destroy() error {
 >>>>>>> d269259 (feat: add shopify source)
+=======
+func (c *shopifySource) Name() string {
+	return name
+}
+
+func (c *shopifySource) Destroy() error {
+>>>>>>> 2f93b62 (feat: add shopify source)
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if err := c.ln.Close(); err != nil {
@@ -239,12 +304,16 @@ func (c *httpSource) Destroy() error {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 func (c *shopifySource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 	body := ctx.PostBody()
 	h := hmac.New(sha256.New, []byte(c.cfg.ClientSecret))
 	h.Write(body)
 	hmacCalculated := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	hmacHeader := string(ctx.Request.Header.Peek(shopifyXHeaderHmac))
+<<<<<<< HEAD
 
 	// validate signature
 	if !strings.EqualFold(hmacCalculated, hmacHeader) {
@@ -264,44 +333,50 @@ func (c *shopifySource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 	if err = e.SetData(v2.ApplicationJSON, m); err != nil {
 =======
 func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 
-	he := &HTTPEvent{
-		Path:      string(ctx.Path()),
-		Method:    string(ctx.Method()),
-		QueryArgs: getQueryArgs(ctx),
-		Headers:   getHeaders(ctx),
+	// validate signature
+	if !strings.EqualFold(hmacCalculated, hmacHeader) {
+		ctx.Response.SetStatusCode(http.StatusUnauthorized)
+		return
 	}
 
+	topic := string(ctx.Request.Header.Peek(shopifyXHeaderTopic))
 	e := v2.NewEvent()
-	mappingAttributes(ctx, &e)
-
-	// try to convert request.Body to json
+	e.SetID(uuid.NewString())
+	e.SetSource(defaultSource)
+	e.SetType(topic)
+	e.SetTime(time.Now())
 	m := map[string]interface{}{}
 	err := json.Unmarshal(ctx.Request.Body(), &m)
-	if err == nil {
-		he.Body = m
-		e.SetExtension(extendAttributesBodyIsJSON, true)
-	} else {
-		he.Body = string(ctx.Request.Body())
-		e.SetExtension(extendAttributesBodyIsJSON, false)
-	}
 
+<<<<<<< HEAD
 	if err = e.SetData(v2.ApplicationJSON, he.toMap()); err != nil {
 >>>>>>> d269259 (feat: add shopify source)
+=======
+	if err = e.SetData(v2.ApplicationJSON, m); err != nil {
+>>>>>>> 2f93b62 (feat: add shopify source)
 		ctx.Response.SetStatusCode(http.StatusBadRequest)
 		ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
 		return
 	}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 	e.SetExtension(extendAttributesOrderID, string(ctx.Request.Header.Peek(shopifyXHeaderOrderID)))
 	e.SetExtension(extendAttributesTopic, topic)
 	e.SetExtension(extendAttributesWebhookID, string(ctx.Request.Header.Peek(shopifyXHeaderWebhookID)))
 	e.SetExtension(extendAttributesShopDomain, string(ctx.Request.Header.Peek(shopifyXHeaderShopDomain)))
 	e.SetExtension(extendAttributesAPIVersion, string(ctx.Request.Header.Peek(shopifyXHeaderAPIVersion)))
 
+<<<<<<< HEAD
 =======
 >>>>>>> d269259 (feat: add shopify source)
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
 	log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
 		"event": e.String(),
 	})
@@ -323,6 +398,7 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 	}
 	wg.Wait()
 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 
@@ -400,3 +476,5 @@ func getHeaders(ctx *fasthttp.RequestCtx) map[string]string {
 	return m
 }
 >>>>>>> d269259 (feat: add shopify source)
+=======
+>>>>>>> 2f93b62 (feat: add shopify source)
