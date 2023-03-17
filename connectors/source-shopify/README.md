@@ -1,4 +1,5 @@
 ---
+<<<<<<< HEAD
 title: Shopify
 ---
 # Shopify Source
@@ -274,12 +275,75 @@ This section will show you how to use Shopify Source to convert a Shopify Order 
 - Have `cURL`
 - Have acknowledges on how to create Shopify Webhook. details can be found [here](https://shopify.dev/docs/apps/webhooks/configuration/shopifys)
 - Have [Ngrok](https://ngrok.com/), this makes Shopify Source available on Internet
+=======
+title: HTTP
+---
+
+# HTTP Source
+
+## Introduction
+
+The HTTP Source is a [Vanus Connector][vc] which aims to convert an incoming HTTP Request to a CloudEvent.
+
+For example, the incoming HTTP Request looks like:
+
+```bash
+curl --location --request POST 'localhost:8080/webhook?source=123&id=abc&type=456&subject=def&test=demo' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "test":"demo"
+}'
+```
+
+which is converted to:
+
+```json
+{
+  "specversion": "1.0",
+  "id": "abc",
+  "source": "123",
+  "type": "456",
+  "subject": "def",
+  "datacontenttype": "application/json",
+  "time": "2023-01-29T03:25:26.229114Z",
+  "data": {
+    "body": {
+      "test": "demo"
+    },
+    "headers": {
+      "Accept": "*/*",
+      "Content-Length": "21",
+      "Content-Type": "text/plain",
+      "Host": "localhost:8080",
+      "User-Agent": "curl/7.85.0"
+    },
+    "method": "POST",
+    "path": "/webhook",
+    "query_args": {
+      "id": "abc",
+      "source": "123",
+      "subject": "def",
+      "test": "demo",
+      "type": "456"
+    }
+  },
+  "xvhttpremoteip": "::1",
+  "xvhttpremoteaddr": "[::1]:57822",
+  "xvhttpbodyisjson": true
+}
+```
+
+## Quick Start
+
+This section will show you how to use HTTP Source to convert an HTTP request(made by cURL) to a CloudEvent.
+>>>>>>> d269259 (feat: add shopify source)
 
 ### Create Config file
 
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
+<<<<<<< HEAD
 client_secret: <client_secret_of_your_app>
 EOF
 ```
@@ -291,12 +355,25 @@ EOF
 | client_secret |   YES   |        | the client secret of your app      |
 
 The Shopify Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+=======
+port: 8082
+EOF
+```
+
+| Name   | Required | Default | Description                        |
+| :----- | :------: | :-----: | :--------------------------------- |
+| target |   YES    |         | the target URL to send CloudEvents |
+| port   |    NO    |  8080   | the port to receive HTTP request   |
+
+The HTTP Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+>>>>>>> d269259 (feat: add shopify source)
 
 ### Start with Docker
 
 ```shell
 docker run -it --rm --network=host \
   -v ${PWD}:/vanus-connect/config \
+<<<<<<< HEAD
   --name source-shopify public.ecr.aws/vanus/connector/source-shopify
 ```
 
@@ -324,6 +401,9 @@ curl --location --request POST 'https://<your_shop_name>.myshopify.com/admin/api
         "format": "json"
     }
 }'
+=======
+  --name source-http public.ecr.aws/vanus/connector/source-http
+>>>>>>> d269259 (feat: add shopify source)
 ```
 
 ### Test
@@ -336,6 +416,7 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
+<<<<<<< HEAD
 Open the browser and create a test order in your shop,
 
 ![shopify.png](shopify.png)
@@ -594,12 +675,74 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
 ```shell
 docker stop source-shopify sink-display
+=======
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send the CloudEvents to the Display Sink.
+
+```shell
+docker run -it --rm --network=host \
+  -v ${PWD}:/vanus-connect/config \
+  --name source-http public.ecr.aws/vanus/connector/source-http
+```
+
+Open a terminal and use the following command to send an http request to HTTP Source
+
+```shell
+curl --location --request POST 'localhost:8082/webhook?source=123&id=abc&type=456&subject=def' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "test":"demo"
+}'
+```
+
+Here is the sort of CloudEvent you should expect to receive in the Display Sink:
+
+```json
+{
+  "specversion": "1.0",
+  "id": "abc",
+  "source": "123",
+  "type": "456",
+  "subject": "def",
+  "datacontenttype": "application/json",
+  "time": "2023-01-29T03:25:26.229114Z",
+  "data": {
+    "body": {
+      "test": "demo"
+    },
+    "headers": {
+      "Accept": "*/*",
+      "Content-Length": "21",
+      "Content-Type": "text/plain",
+      "Host": "localhost:8080",
+      "User-Agent": "curl/7.85.0"
+    },
+    "method": "POST",
+    "path": "/webhook",
+    "query_args": {
+      "id": "abc",
+      "source": "123",
+      "subject": "def",
+      "type": "456"
+    }
+  },
+  "xvhttpremoteip": "::1",
+  "xvhttpremoteaddr": "[::1]:57822",
+  "xvhttpbodyisjson": true
+}
+```
+
+### Clean
+
+```shell
+docker stop source-http sink-display
+>>>>>>> d269259 (feat: add shopify source)
 ```
 
 ## Source details
 
 ### Attributes
 
+<<<<<<< HEAD
 
 | Attribute |        Default        |
 | :---------: | :----------------------: |
@@ -619,17 +762,47 @@ The Shopify Source defines following [CloudEvents Extension Attributes](https://
 | xvshopifywebhookid | string | The webhook id of incoming request belongs to                                                                                                    |
 |   xvshopifydomain   | string | The shop name of incoming request belongs to                                                                                                     |
 | xvshopifyapiversion | string | The Shopify Request API Version                                                                                                                  |
+=======
+#### Changing Default Required Attributes
+
+If you want to change the default attributes of `id`, `source`, `type`, and `subject`(defined by [CloudEvents](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#required-attributes)) to your own, you could use the `Query Parameter` to set them.
+
+| Attribute  |      Default       | Query Parameter | Example                                 |
+| :--------: | :----------------: | :-------------- | :-------------------------------------- |
+|     id     |        UUID        | ?id=xxx         | http://url:port/webhook?id=xxxx         |
+|   source   | vanus-http-source  | ?source=xxx     | http://url:port/webhook?source=xxxx     |
+|    type    | naive-http-request | ?type=xxx       | http://url:port/webhook?type=xxxx       |
+|  subject   |       empty        | ?subject=xxx    | http://url:port/webhook?subject=xxxx    |
+| dataschema |       empty        | ?dataschema=xxx | http://url:port/webhook?dataschema=xxxx |
+
+`datacontenttype` will be automatically inferred based on the request body. If the body can be converted to `JSON`, the `application/json` will be set. Otherwise, `text/plain` will be set.
+
+#### Extension Attributes
+
+The HTTP Source defines following [CloudEvents Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+
+|    Attribute     |  Type   | Description                                                                                                                      |
+| :--------------: | :-----: | :------------------------------------------------------------------------------------------------------------------------------- |
+| xvhttpbodyisjson | boolean | HTTP Sink will validate if request body is JSON format data, if it is, this attribute is `true`, otherwise `false`               |
+|  xvhttpremoteip  | string  | The IP of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP      |
+| xvhttpremoteaddr | string  | The address of the request from where, if the request was through reverse-proxy like Nginx, the value may be not the original IP |
+>>>>>>> d269259 (feat: add shopify source)
 
 ## Run in Kubernetes
 
 ```shell
+<<<<<<< HEAD
 kubectl apply -f source-shopify.yaml
+=======
+kubectl apply -f source-http.yaml
+>>>>>>> d269259 (feat: add shopify source)
 ```
 
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
+<<<<<<< HEAD
   name: source-shopify
   namespace: vanus
 spec:
@@ -639,21 +812,40 @@ spec:
   ports:
     - port: 8080
       name: source-shopify
+=======
+  name: source-http
+  namespace: vanus
+spec:
+  selector:
+    app: source-http
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-http
+>>>>>>> d269259 (feat: add shopify source)
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
+<<<<<<< HEAD
   name: source-shopify
+=======
+  name: source-http
+>>>>>>> d269259 (feat: add shopify source)
   namespace: vanus
 data:
   config.yml: |-
     target: http://<url>:<port>/gateway/<eventbus>
+<<<<<<< HEAD
     client_secret: "xxxxxxx"
+=======
+>>>>>>> d269259 (feat: add shopify source)
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+<<<<<<< HEAD
   name: source-shopify
   namespace: vanus
   labels:
@@ -662,15 +854,33 @@ spec:
   selector:
     matchLabels:
       app: source-shopify
+=======
+  name: source-http
+  namespace: vanus
+  labels:
+    app: source-http
+spec:
+  selector:
+    matchLabels:
+      app: source-http
+>>>>>>> d269259 (feat: add shopify source)
   replicas: 1
   template:
     metadata:
       labels:
+<<<<<<< HEAD
         app: source-shopify
     spec:
       containers:
         - name: source-shopify
           image: public.ecr.aws/vanus/connector/source-shopify:latest
+=======
+        app: source-http
+    spec:
+      containers:
+        - name: source-http
+          image: public.ecr.aws/vanus/connector/source-http:latest
+>>>>>>> d269259 (feat: add shopify source)
           resources:
             requests:
               memory: "128Mi"
@@ -685,7 +895,11 @@ spec:
       volumes:
         - name: config
           configMap:
+<<<<<<< HEAD
             name: source-shopify
+=======
+            name: source-http
+>>>>>>> d269259 (feat: add shopify source)
 ```
 
 ## Integrate with Vanus
@@ -710,16 +924,27 @@ export VANUS_GATEWAY=192.168.49.2:30001
 vsctl eventbus create --name quick-start
 ```
 
+<<<<<<< HEAD
 3. Update the target config of the Shopify Source
+=======
+3. Update the target config of the HTTP Source
+>>>>>>> d269259 (feat: add shopify source)
 
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
+<<<<<<< HEAD
 4. Run the Shopify Source
 
 ```shell
 kubectl apply -f source-shopify.yaml
+=======
+4. Run the HTTP Source
+
+```shell
+kubectl apply -f source-http.yaml
+>>>>>>> d269259 (feat: add shopify source)
 ```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
