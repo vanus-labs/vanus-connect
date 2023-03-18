@@ -18,9 +18,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/vanus-labs/connector/sink/googlesheets/oauth"
+	"golang.org/x/oauth2/google"
+
+	"google.golang.org/api/option"
+
+	"golang.org/x/oauth2"
+
 	"github.com/pkg/errors"
 	"github.com/vanus-labs/cdk-go/log"
-	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -35,23 +41,23 @@ type GoogleSheetService struct {
 	sheetHeaders  map[string]map[string]int // key: sheetName, value: sheet headers
 }
 
-func newGoogleSheetService(spreadSheetID, credentialsJSON string) (*GoogleSheetService, error) {
+func newGoogleSheetService(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) (*GoogleSheetService, error) {
 	service := &GoogleSheetService{
 		sheetHeaders: map[string]map[string]int{},
 		sheetIDs:     map[string]int64{},
 	}
-	err := service.init(spreadSheetID, credentialsJSON)
+	err := service.init(spreadSheetID, credentialsJSON, oauthCfg)
 	return service, err
 }
 
-func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string) error {
+func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) error {
 	s.spreadsheetID = spreadSheetID
 	// new sheet Service
-	srv, err := sheets.NewService(context.Background(), option.WithCredentialsJSON([]byte(credentialsJSON)))
+	client, err := s.initClient(credentialsJSON, oauthCfg)
 	if err != nil {
-		return errors.Wrap(err, "new sheet service with credential error")
+		return err
 	}
-	s.client = srv
+	s.client = client
 
 	// get SheetName from SpreadSheetID
 	spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
@@ -63,6 +69,29 @@ func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string) error {
 		s.sheetIDs[sheet.Properties.Title] = sheet.Properties.SheetId
 	}
 	return nil
+}
+
+func (s *GoogleSheetService) initClient(credentialsJSON string, oauthCfg *OAuth) (*sheets.Service, error) {
+	var opts []option.ClientOption
+	if oauthCfg != nil {
+		config := oauth.Config{
+			Config: oauth2.Config{
+				ClientID:     oauthCfg.ClientID,
+				ClientSecret: oauthCfg.ClientSecret,
+				Endpoint:     google.Endpoint,
+			},
+			TokenChange: oauthCfg.TokenChange,
+		}
+		tokenSource := config.TokenSource(context.Background(), oauthCfg.GetToken())
+		opts = append(opts, option.WithTokenSource(tokenSource))
+	} else {
+		opts = append(opts, option.WithCredentialsJSON([]byte(credentialsJSON)))
+	}
+	client, err := sheets.NewService(context.Background(), opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "new sheet service error")
+	}
+	return client, nil
 }
 
 func (s *GoogleSheetService) getHeader(sheetName string) (map[string]int, error) {

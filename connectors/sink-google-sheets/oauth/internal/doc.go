@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package internal
 
-import (
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/sink/googlesheets/internal"
-)
-
-func main() {
-
-	cdkgo.RunSink(internal.NewGoogleSheetConfig, internal.NewGoogleSheetSink)
-}
+// copy from golang.org/x/oauth2/internal

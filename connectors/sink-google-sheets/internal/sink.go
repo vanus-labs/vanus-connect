@@ -47,7 +47,7 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
 	spreadsheetID := config.SheetID
 	sheetName := config.SheetName
 
-	service, err := newGoogleSheetService(spreadsheetID, config.Credentials)
+	service, err := newGoogleSheetService(spreadsheetID, config.Credentials, config.OAuth)
 	if err != nil {
 		return err
 	}
