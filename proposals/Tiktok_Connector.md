@@ -29,8 +29,9 @@ The Tiktok event have the following specification:
 | content           | string   | A serialized JSON string of event information.                               |
 
 
+###example payload
 
-```example payload
+```
 > {
     "client_key": "bwo2m45353a6k85",
     "event": "video.publish.completed",
