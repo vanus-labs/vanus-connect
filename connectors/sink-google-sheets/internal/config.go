@@ -15,6 +15,9 @@
 package internal
 
 import (
+	"errors"
+	"fmt"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
@@ -28,9 +31,27 @@ type GoogleSheetConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 	// Google  Credentials JSON
 	Credentials string `json:"credentials" yaml:"credentials" validate:"required""`
+	OAuth       *OAuth `json:"oauth" yaml:"oauth"`
 	//SheetURL    string `json:"sheet_url" yaml:"sheet_url" validate:"required"`
 	SheetID   string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
 	SheetName string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
 
 	Summary []SummaryConfig `json:"summary" yaml:"summary"`
+}
+
+func (cfg *GoogleSheetConfig) Validate() error {
+	if cfg.OAuth == nil && cfg.Credentials == "" {
+		return errors.New("credentials or oauth must set one")
+	}
+	if len(cfg.Summary) > 0 {
+		sheetNameMap := map[string]struct{}{cfg.SheetName: {}}
+		for _, summary := range cfg.Summary {
+			if _, exist := sheetNameMap[summary.SheetName]; exist {
+				return errors.New(fmt.Sprintf("sheetName %s is repeated", summary.SheetName))
+			} else {
+				sheetNameMap[summary.SheetName] = struct{}{}
+			}
+		}
+	}
+	return cfg.SinkConfig.Validate()
 }
