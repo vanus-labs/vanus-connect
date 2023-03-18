@@ -50,10 +50,11 @@ func (a *OAuth) TokenChange(token *oauth2.Token) {
 	}
 	v, err := json.Marshal(token)
 	if err != nil {
-		log.Error("kv store save oauth token error", map[string]interface{}{
+		log.Error("kv store save oauth token marshal error", map[string]interface{}{
 			log.KeyError:    err,
 			"refresh_token": token.RefreshToken,
 		})
+		return
 	}
 	err = kvStore.Set(context.Background(), storeKey, v)
 	if err != nil {
@@ -61,6 +62,7 @@ func (a *OAuth) TokenChange(token *oauth2.Token) {
 			log.KeyError: err,
 			storeKey:     string(v),
 		})
+		return
 	}
 	log.Info("save oauth token to store success", map[string]interface{}{
 		"refresh_token": token.RefreshToken,
