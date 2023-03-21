@@ -20,6 +20,5 @@ import (
 )
 
 func main() {
-
 	cdkgo.RunSink(internal.NewGoogleSheetConfig, internal.NewGoogleSheetSink)
 }
