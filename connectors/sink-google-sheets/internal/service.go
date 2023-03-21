@@ -211,7 +211,7 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, values []interface{}) error {
 	_, err := s.client.Spreadsheets.Values.Append(s.spreadsheetID, sheetName, &sheets.ValueRange{
 		Values: [][]interface{}{values},
-	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
+	}).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
 	if err != nil {
 		return err
 	}
