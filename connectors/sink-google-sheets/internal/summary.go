@@ -147,13 +147,18 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 	if err != nil {
 		return err
 	}
+	primaryIndex := headers[s.primaryKey]
 	// get data
-	rowIndex, rowValues, err := s.service.getData(ctx, sheetName, 0, value)
+	rowIndex, rowValues, err := s.service.getData(ctx, sheetName, primaryIndex, value)
 	if err != nil {
 		return err
 	}
 	if rowValues == nil {
 		// no exist insert data
+		log.Info("summary new row", map[string]interface{}{
+			"sheetName":  sheetName,
+			s.primaryKey: value,
+		})
 		return s.insertData(ctx, sheetName, headers, data)
 	}
 	// update data
