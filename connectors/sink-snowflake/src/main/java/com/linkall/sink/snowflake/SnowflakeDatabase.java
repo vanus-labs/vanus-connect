@@ -21,8 +21,8 @@ public class SnowflakeDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(SnowflakeDatabase.class);
 
     private static final Duration NETWORK_TIMEOUT = Duration.ofMinutes(1);
-    private static final Duration QUERY_TIMEOUT = Duration.ofHours(3);
-    private static final String DRIVER_CLASS_NAME = "net.snowflake.client.jdbc.SnowflakeDriver";
+    private static final Duration QUERY_TIMEOUT = Duration.ofMinutes(60);
+    private static final String DRIVER_CLASS_NAME = "com.snowflake.client.jdbc.SnowflakeDriver";
 
     private Connection connection;
     private Properties properties;
@@ -48,7 +48,7 @@ public class SnowflakeDatabase {
         for (int i = 0; i < retry; i++) {
             try {
                 return getConnection().createStatement().execute(sql);
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 LOGGER.error("sql execute error, retry times = {}", i, e);
                 if (i >= retry) {
                     throw e;
@@ -108,7 +108,7 @@ public class SnowflakeDatabase {
         prop.put("role", dbConfig.getRole());
         prop.put("networkTimeout", Math.toIntExact(NETWORK_TIMEOUT.toSeconds()));
         prop.put("queryTimeout", Math.toIntExact(QUERY_TIMEOUT.toSeconds()));
-        prop.put("application", "vanus");
+        prop.put("CLIENT_SESSION_KEEP_ALIVE", "true");
         if (dbConfig.getProperties()!=null) {
             prop.putAll(dbConfig.getProperties());
         }
