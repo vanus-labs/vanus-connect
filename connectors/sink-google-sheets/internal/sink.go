@@ -17,11 +17,11 @@ package internal
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	ce "github.com/cloudevents/sdk-go/v2"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
-	"net/http"
-	"sort"
 )
 
 const xvSheetName = "xvsheetname"
@@ -39,7 +39,7 @@ func NewGoogleSheetSink() cdkgo.Sink {
 type GoogleSheetSink struct {
 	service          *GoogleSheetService
 	defaultSheetName string
-	summary          *Summary
+	summary          []*Summary
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -47,31 +47,20 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
 	spreadsheetID := config.SheetID
 	sheetName := config.SheetName
 
-	//sheetURL := strings.TrimSpace(config.SheetURL)
-	//spreadsheetID, err := getSpreadsheetID(sheetURL)
-	//if err != nil {
-	//	return errors.Wrap(err, "ge spread sheet id error")
-	//}
-	//sheetID, err := getSheetID(sheetURL)
-	//if err != nil {
-	//	return errors.Wrap(err, "ge sheet id error")
-	//}
-	service, err := newGoogleSheetService(spreadsheetID, config.Credentials)
+	service, err := newGoogleSheetService(spreadsheetID, config.Credentials, config.OAuth)
 	if err != nil {
 		return err
 	}
 	s.service = service
 	s.defaultSheetName = sheetName
-	//s.defaultSheetName = service.getSheetName(sheetID)
-	//if s.defaultSheetName == "" {
-	//	return fmt.Errorf("sheetURL sheetID %d not exist", sheetID)
-	//}
-	if config.Summary != nil {
-		summary, err := newSummary(config.Summary, s.defaultSheetName+"_summary", service)
-		if err != nil {
-			return err
+	if len(config.Summary) > 0 {
+		for i := range config.Summary {
+			summary, err := newSummary(config.Summary[i], service)
+			if err != nil {
+				return err
+			}
+			s.summary = append(s.summary, summary)
 		}
-		s.summary = summary
 	}
 	return nil
 }
@@ -129,10 +118,12 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 	headers, err := s.service.getHeader(sheetName)
 	if err != nil {
 		if err == headerNotExistErr {
+			var index int
+			headers = make(map[string]int, len(sheetRow))
 			for k := range sheetRow {
-				headers = append(headers, k)
+				headers[k] = index
+				index++
 			}
-			sort.Strings(headers)
 			err = s.service.insertHeader(ctx, sheetName, headers)
 			if err != nil {
 				log.Error("insert header error", map[string]interface{}{
@@ -149,9 +140,30 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 		}
 	}
-	var values []interface{}
-	for _, key := range headers {
-		values = append(values, sheetValue(sheetRow[key]))
+	total := len(headers)
+	var headerChange bool
+	for key := range sheetRow {
+		_, exist = headers[key]
+		if exist {
+			continue
+		}
+		headers[key] = total
+		headerChange = true
+		total++
+	}
+	if headerChange {
+		err = s.service.updateHeader(ctx, sheetName, headers)
+		if err != nil {
+			log.Error("insert header error", map[string]interface{}{
+				log.KeyError: err,
+				"sheetName":  sheetName,
+			})
+			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+		}
+	}
+	values := make([]interface{}, total)
+	for key, index := range headers {
+		values[index] = sheetValue(sheetRow[key])
 	}
 	// append data
 	err = s.service.appendData(ctx, sheetName, values)
@@ -162,12 +174,15 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 		})
 		return cdkgo.NewResult(http.StatusInternalServerError, "append data error")
 	}
-	if s.summary != nil {
-		err = s.summary.appendData(ctx, event.Time(), sheetRow)
-		if err != nil {
-			log.Error("append summary data error", map[string]interface{}{
-				log.KeyError: err,
-			})
+	if len(s.summary) > 0 {
+		for i := range s.summary {
+			err = s.summary[i].appendData(ctx, event.Time(), sheetRow)
+			if err != nil {
+				log.Error("append summary data error", map[string]interface{}{
+					log.KeyError: err,
+					"index":      i,
+				})
+			}
 		}
 	}
 	return cdkgo.SuccessResult

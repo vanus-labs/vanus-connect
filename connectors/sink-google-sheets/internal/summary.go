@@ -17,13 +17,14 @@ package internal
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/vanus-labs/cdk-go/log"
-	"time"
 )
 
 type SummaryConfig struct {
-	SheetName  string   `json:"sheet_name" yaml:"sheet_name"`
+	SheetName  string   `json:"sheet_name" yaml:"sheet_name" validate:"required"`
 	PrimaryKey string   `json:"primary_key" yaml:"primary_key" validate:"required"`
 	Columns    []Column `json:"columns" yaml:"columns"`
 	GroupBy    GroupBy  `json:"group_by" yaml:"group_by"`
@@ -55,18 +56,15 @@ type Summary struct {
 	groupBy    GroupBy
 	primaryKey string
 	columnMap  map[string]CalType
-	headers    []string
+	headers    map[string]int
 }
 
-func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetService) (*Summary, error) {
+func newSummary(config SummaryConfig, service *GoogleSheetService) (*Summary, error) {
 	s := &Summary{
 		service:    service,
 		sheetName:  config.SheetName,
 		groupBy:    config.GroupBy,
 		primaryKey: config.PrimaryKey,
-	}
-	if s.sheetName == "" {
-		s.sheetName = sheetName
 	}
 	err := s.init(config)
 	if err != nil {
@@ -75,21 +73,60 @@ func newSummary(config *SummaryConfig, sheetName string, service *GoogleSheetSer
 	return s, nil
 }
 
-func (s *Summary) init(config *SummaryConfig) error {
+func (s *Summary) init(config SummaryConfig) error {
 	s.columnMap = make(map[string]CalType, len(config.Columns)+1)
-	s.headers = make([]string, 0, len(config.Columns)+1)
-	s.headers = append(s.headers, s.primaryKey)
+	s.headers = make(map[string]int, len(config.Columns))
+	var headerIndex int
+	s.headers[s.primaryKey] = headerIndex
 	s.columnMap[s.primaryKey] = Replace
 	for _, column := range config.Columns {
 		if column.Name == s.primaryKey {
 			continue
 		}
-		s.headers = append(s.headers, column.Name)
+		headerIndex++
+		s.headers[column.Name] = headerIndex
 		calType := column.Type
 		if calType != Sum {
 			calType = Replace
 		}
 		s.columnMap[column.Name] = calType
+	}
+	// check header
+	sheetName := s.getSheetName(time.Now())
+	err := s.service.createSheetIfNotExist(context.Background(), sheetName)
+	if err != nil {
+		log.Warning("create summary sheet error", map[string]interface{}{
+			log.KeyError: err,
+			"sheet_name": sheetName,
+		})
+		return nil
+	}
+	headers, err := s.getHeader(context.Background(), sheetName)
+	if err != nil {
+		log.Warning("get header error", map[string]interface{}{
+			log.KeyError: err,
+			"sheet_name": sheetName,
+		})
+		return nil
+	}
+	index := len(headers)
+	var change bool
+	for k := range s.headers {
+		if _, exist := headers[k]; exist {
+			continue
+		}
+		headers[k] = index
+		index++
+		change = true
+	}
+	if change {
+		err = s.service.updateHeader(context.Background(), sheetName, headers)
+		if err != nil {
+			log.Warning("update header error", map[string]interface{}{
+				log.KeyError: err,
+				"sheet_name": sheetName,
+			})
+		}
 	}
 	return nil
 }
@@ -110,29 +147,37 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 	if err != nil {
 		return err
 	}
+	primaryIndex := headers[s.primaryKey]
 	// get data
-	rowIndex, rowValues, err := s.service.getData(ctx, sheetName, 0, value)
+	rowIndex, rowValues, err := s.service.getData(ctx, sheetName, primaryIndex, value)
 	if err != nil {
 		return err
 	}
 	if rowValues == nil {
 		// no exist insert data
+		log.Info("summary new row", map[string]interface{}{
+			"sheetName":  sheetName,
+			s.primaryKey: value,
+		})
 		return s.insertData(ctx, sheetName, headers, data)
 	}
 	// update data
-	for i, key := range headers {
-		v, ok := data[key]
-		if !ok || v == nil {
+	for i := len(rowValues); i < len(headers); i++ {
+		rowValues = append(rowValues, nil)
+	}
+	for key, index := range headers {
+		v, exist := data[key]
+		if !exist || v == nil {
 			continue
 		}
 		calType, _ := s.columnMap[key]
 		if calType == Sum {
-			currFloat, err := convertFloat(rowValues[i])
+			currFloat, err := convertFloat(rowValues[index])
 			if err != nil {
 				log.Warning("number sheet value is invalid", map[string]interface{}{
 					s.primaryKey: value,
 					"column":     key,
-					"value":      rowValues[i],
+					"value":      rowValues[index],
 				})
 			}
 			vFloat, err := convertFloat(v)
@@ -144,17 +189,17 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 				})
 				continue
 			}
-			rowValues[i] = currFloat + vFloat
+			rowValues[index] = currFloat + vFloat
 		} else {
-			rowValues[i] = sheetValue(v)
+			rowValues[index] = sheetValue(v)
 		}
 	}
 	return s.service.updateData(ctx, sheetName, rowIndex+1, rowValues)
 }
 
-func (s *Summary) insertData(ctx context.Context, sheetName string, headers []string, data map[string]interface{}) error {
-	var values []interface{}
-	for _, key := range headers {
+func (s *Summary) insertData(ctx context.Context, sheetName string, headers map[string]int, data map[string]interface{}) error {
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
 		v, _ := data[key]
 		calType, _ := s.columnMap[key]
 		if calType == Sum {
@@ -166,9 +211,9 @@ func (s *Summary) insertData(ctx context.Context, sheetName string, headers []st
 					"value":      v,
 				})
 			}
-			values = append(values, vFloat)
+			values[index] = vFloat
 		} else {
-			values = append(values, sheetValue(v))
+			values[index] = sheetValue(v)
 		}
 	}
 	err := s.service.appendData(ctx, sheetName, values)
@@ -198,21 +243,18 @@ func (s *Summary) getSheetName(eventTime time.Time) string {
 	}
 }
 
-func (s *Summary) getHeader(ctx context.Context, sheetName string) ([]string, error) {
+func (s *Summary) getHeader(ctx context.Context, sheetName string) (map[string]int, error) {
 	headers, err := s.service.getHeader(sheetName)
 	if err == nil {
 		return headers, nil
 	}
-	if err != nil {
-		if err == headerNotExistErr {
-			// insert header
-			err = s.service.insertHeader(ctx, sheetName, s.headers)
-			if err != nil {
-				return nil, err
-			}
-			return s.headers, nil
+	if err == headerNotExistErr {
+		// insert header
+		err = s.service.insertHeader(ctx, sheetName, s.headers)
+		if err != nil {
+			return nil, err
 		}
-		return nil, err
+		return s.headers, nil
 	}
-	return headers, nil
+	return nil, err
 }

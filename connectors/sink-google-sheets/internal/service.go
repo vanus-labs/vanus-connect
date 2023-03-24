@@ -17,9 +17,16 @@ package internal
 import (
 	"context"
 	"fmt"
+
+	"github.com/vanus-labs/connector/sink/googlesheets/oauth"
+	"golang.org/x/oauth2/google"
+
+	"google.golang.org/api/option"
+
+	"golang.org/x/oauth2"
+
 	"github.com/pkg/errors"
 	"github.com/vanus-labs/cdk-go/log"
-	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
 
@@ -30,27 +37,27 @@ var (
 type GoogleSheetService struct {
 	client        *sheets.Service
 	spreadsheetID string
-	sheetIDs      map[string]int64    // key: sheetName, value: sheetID
-	sheetHeaders  map[string][]string // key: sheetName, value: sheet headers which is on the first row
+	sheetIDs      map[string]int64          // key: sheetName, value: sheetID
+	sheetHeaders  map[string]map[string]int // key: sheetName, value: sheet headers
 }
 
-func newGoogleSheetService(spreadSheetID, credentialsJSON string) (*GoogleSheetService, error) {
+func newGoogleSheetService(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) (*GoogleSheetService, error) {
 	service := &GoogleSheetService{
-		sheetHeaders: map[string][]string{},
+		sheetHeaders: map[string]map[string]int{},
 		sheetIDs:     map[string]int64{},
 	}
-	err := service.init(spreadSheetID, credentialsJSON)
+	err := service.init(spreadSheetID, credentialsJSON, oauthCfg)
 	return service, err
 }
 
-func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string) error {
+func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) error {
 	s.spreadsheetID = spreadSheetID
 	// new sheet Service
-	srv, err := sheets.NewService(context.Background(), option.WithCredentialsJSON([]byte(credentialsJSON)))
+	client, err := s.initClient(credentialsJSON, oauthCfg)
 	if err != nil {
-		return errors.Wrap(err, "new sheet service with credential error")
+		return err
 	}
-	s.client = srv
+	s.client = client
 
 	// get SheetName from SpreadSheetID
 	spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
@@ -64,15 +71,30 @@ func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string) error {
 	return nil
 }
 
-func (s *GoogleSheetService) getSheetName(sheetID int64) string {
-	for k, v := range s.sheetIDs {
-		if v == sheetID {
-			return k
+func (s *GoogleSheetService) initClient(credentialsJSON string, oauthCfg *OAuth) (*sheets.Service, error) {
+	var opts []option.ClientOption
+	if oauthCfg != nil {
+		config := oauth.Config{
+			Config: oauth2.Config{
+				ClientID:     oauthCfg.ClientID,
+				ClientSecret: oauthCfg.ClientSecret,
+				Endpoint:     google.Endpoint,
+			},
+			TokenChange: oauthCfg.TokenChange,
 		}
+		tokenSource := config.TokenSource(context.Background(), oauthCfg.GetToken())
+		opts = append(opts, option.WithTokenSource(tokenSource))
+	} else {
+		opts = append(opts, option.WithCredentialsJSON([]byte(credentialsJSON)))
 	}
-	return ""
+	client, err := sheets.NewService(context.Background(), opts...)
+	if err != nil {
+		return nil, errors.Wrap(err, "new sheet service error")
+	}
+	return client, nil
 }
-func (s *GoogleSheetService) getHeader(sheetName string) ([]string, error) {
+
+func (s *GoogleSheetService) getHeader(sheetName string) (map[string]int, error) {
 	headers, exist := s.sheetHeaders[sheetName]
 	if exist && len(headers) != 0 {
 		return headers, nil
@@ -84,22 +106,38 @@ func (s *GoogleSheetService) getHeader(sheetName string) ([]string, error) {
 	if len(resp.Values) == 0 {
 		return nil, headerNotExistErr
 	}
-	for _, value := range resp.Values[0] {
-		headers = append(headers, fmt.Sprintf("%v", value))
+	headers = make(map[string]int, len(resp.Values[0]))
+	for index, value := range resp.Values[0] {
+		columnName := fmt.Sprintf("%v", value)
+		headers[columnName] = index
 	}
 	s.sheetHeaders[sheetName] = headers
 	return headers, nil
 }
 
-func (s *GoogleSheetService) insertHeader(ctx context.Context, sheetName string, headers []string) error {
+func (s *GoogleSheetService) insertHeader(ctx context.Context, sheetName string, headers map[string]int) error {
 	// insert headers
-	var values []interface{}
-	for _, key := range headers {
-		values = append(values, key)
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
+		values[index] = key
 	}
 	err := s.appendData(ctx, sheetName, values)
 	if err != nil {
 		return errors.Wrap(err, "insert sheet header error")
+	}
+	s.sheetHeaders[sheetName] = headers
+	return nil
+}
+
+func (s *GoogleSheetService) updateHeader(ctx context.Context, sheetName string, headers map[string]int) error {
+	// update headers
+	values := make([]interface{}, len(headers))
+	for key, index := range headers {
+		values[index] = key
+	}
+	err := s.updateData(ctx, sheetName, 1, values)
+	if err != nil {
+		return errors.Wrap(err, "update sheet header error")
 	}
 	s.sheetHeaders[sheetName] = headers
 	return nil
@@ -133,24 +171,47 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 		Requests:                     []*sheets.Request{{AddSheet: &sheetAdd}},
 		ResponseIncludeGridData:      false,
 	}
-
-	resp, err := s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Context(ctx).Do()
-	if err != nil {
-		return errors.Wrap(err, "create sheet api error")
-	}
-	for _, sheet := range resp.UpdatedSpreadsheet.Sheets {
-		if sheet.Properties.Title == sheetName {
-			s.sheetIDs[sheetName] = sheet.Properties.SheetId
-			return nil
+	for retry := 0; retry < 3; retry++ {
+		spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
+		if err != nil {
+			log.Warning("get spread sheets error", map[string]interface{}{
+				log.KeyError: err,
+			})
+			continue
 		}
+		for _, sheet := range spreadSheet.Sheets {
+			if sheet.Properties.Title == sheetName {
+				log.Info("sheet create success", map[string]interface{}{
+					"sheet_name": sheetName,
+					"sheet_id":   sheet.Properties.SheetId,
+				})
+				s.sheetIDs[sheetName] = sheet.Properties.SheetId
+				return nil
+			}
+		}
+		log.Info("sheet no exist will create it", map[string]interface{}{
+			"sheet_name": sheetName,
+		})
+		_, err = s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Context(ctx).Do()
+		if err != nil {
+			log.Info("sheet create error", map[string]interface{}{
+				log.KeyError: err,
+				"sheet_name": sheetName,
+			})
+			continue
+		}
+		log.Info("sheet create api success", map[string]interface{}{
+			"sheet_name": sheetName,
+		})
 	}
+
 	return errors.New("create sheet failed")
 }
 
 func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, values []interface{}) error {
 	_, err := s.client.Spreadsheets.Values.Append(s.spreadsheetID, sheetName, &sheets.ValueRange{
 		Values: [][]interface{}{values},
-	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
+	}).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
 	if err != nil {
 		return err
 	}

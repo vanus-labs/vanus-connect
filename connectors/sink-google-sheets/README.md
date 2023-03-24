@@ -116,6 +116,17 @@ Open the Google Sheets URL you will look data has appended.
 docker stop sink-google-sheets
 ```
 
+## Sink details
+
+### Extension Attributes
+
+Google Sheet Sink has defined a few [CloudEvents Extension Attribute][ce-attr]
+to determine how to process event.
+
+| Attribute        | Required | Examples               | Description                                                                                                    |
+|:-----------------|:--------:|------------------------|----------------------------------------------------------------------------------------------------------------|
+| xvsheetname      |    NO    | Sheet1                 | which special sheet name used for the event, if not set it will use config sheet_name as the google sheet name |
+
 ## Run in Kubernetes
 
 ```shell
@@ -225,5 +236,7 @@ vsctl subscription create \
   --eventbus quick-start \
   --sink 'http://sink-google-sheets:8080'
 ```
+
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
+[ce-attr]: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes
 [sa]: https://developers.google.com/workspace/guides/create-credentials?hl=zh-cn#service-account

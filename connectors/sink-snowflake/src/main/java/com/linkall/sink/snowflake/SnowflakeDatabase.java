@@ -4,13 +4,11 @@
 
 package com.linkall.sink.snowflake;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Properties;
@@ -23,45 +21,94 @@ public class SnowflakeDatabase {
     private static final Logger LOGGER = LoggerFactory.getLogger(SnowflakeDatabase.class);
 
     private static final Duration NETWORK_TIMEOUT = Duration.ofMinutes(1);
-    private static final Duration QUERY_TIMEOUT = Duration.ofHours(3);
-    private static final String DRIVER_CLASS_NAME = "net.snowflake.client.jdbc.SnowflakeDriver";
+    private static final Duration QUERY_TIMEOUT = Duration.ofMinutes(60);
+    private static final String DRIVER_CLASS_NAME = "com.snowflake.client.jdbc.SnowflakeDriver";
 
-    private DataSource dataSource;
+    private Connection connection;
+    private Properties properties;
+    private String url;
+    private int retry = 3;
+
+    static {
+        try {
+            Class.forName(DRIVER_CLASS_NAME);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
 
     public SnowflakeDatabase(DbConfig dbConfig) {
-        dataSource = createDataSource(dbConfig);
+        properties = createProperties(dbConfig);
+        url = String.format("jdbc:snowflake://%s", dbConfig.getHost());
     }
 
     public boolean execute(String sql) throws SQLException {
         LOGGER.debug("execute sql:{}", sql);
-        return dataSource.getConnection().createStatement().execute(sql);
+        for (int i = 0; i < retry; i++) {
+            try {
+                return getConnection().createStatement().execute(sql);
+            } catch (Exception e) {
+                LOGGER.error("sql execute error, retry times = {}", i, e);
+                if (i >= retry) {
+                    throw e;
+                }
+                if (isConnectionValid()) {
+                    LOGGER.info("connection valid false, will close connection");
+                    closeConnection();
+                }
+            }
+        }
+        return false;
     }
 
-    public Connection getConnection() throws Exception {
-        return dataSource.getConnection();
+    public void closeConnection() {
+        if (connection!=null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                LOGGER.warn("connection close failed", e);
+            } finally {
+                connection = null;
+            }
+        }
     }
 
-    private DataSource createDataSource(DbConfig dbConfig) {
-        final HikariConfig config = new HikariConfig();
-        config.setPoolName("connection-pool-" + dbConfig.getHost());
-        config.setUsername(dbConfig.getUsername());
-        config.setPassword(dbConfig.getPassword());
-        config.setDriverClassName(DRIVER_CLASS_NAME);
-        config.setJdbcUrl(String.format("jdbc:snowflake://%s", dbConfig.getHost()));
-        config.setDataSourceProperties(createProperties(dbConfig));
-        return new HikariDataSource(config);
+    public boolean isConnectionValid() {
+        try {
+            return connection!=null && connection.isValid(5);
+        } catch (SQLException e) {
+            LOGGER.error("connection valid error", e);
+            return false;
+        }
     }
 
+    public synchronized Connection getConnection() throws SQLException {
+        if (connection!=null) {
+            return connection;
+        }
+        connection = createConnection();
+        if (connection==null) {
+            throw new SQLException("new connection is null");
+        }
+        return connection;
+    }
+
+    public Connection createConnection() throws SQLException {
+        return DriverManager.getConnection(url, properties);
+    }
 
     private Properties createProperties(DbConfig dbConfig) {
         Properties prop = new Properties();
+        prop.put("user", dbConfig.getUsername());
+        prop.put("password", dbConfig.getPassword());
         prop.put("db", dbConfig.getDatabase());
         prop.put("schema", dbConfig.getSchema());
         prop.put("warehouse", dbConfig.getWarehouse());
         prop.put("role", dbConfig.getRole());
         prop.put("networkTimeout", Math.toIntExact(NETWORK_TIMEOUT.toSeconds()));
         prop.put("queryTimeout", Math.toIntExact(QUERY_TIMEOUT.toSeconds()));
-        prop.put("application", "vanus");
+        prop.put("CLIENT_SESSION_KEEP_ALIVE", "true");
         if (dbConfig.getProperties()!=null) {
             prop.putAll(dbConfig.getProperties());
         }
