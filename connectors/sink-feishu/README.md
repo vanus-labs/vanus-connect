@@ -56,7 +56,7 @@ EOF
 | enable                     | **YES**  |    -    | service list you want Feishu Sink is enabled                                      |
 | bot.webhooks               | **YES**  |    -    | list of chat-group's configuration                                                |
 | bot.webhooks.[].chat_group | **YES**  |    -    | the chat_group name, you can set any value to it                                  |
-| bot.webhooks.[].signature  | **YES**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
+| bot.webhooks.[].signature  |  **No**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
 | bot.webhooks.[].url        | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
 The Feishu Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.

@@ -37,7 +37,7 @@ This quick start will guide you through the process of running an Amazon S3 Sink
 - An Amazon S3 bucket.
 - AWS IAM [Access Key][accesskey].
 - AWS permissions for the IAM user:
-  - s3:PutObject
+    - s3:PutObject
 
 ### Create the config file
 
@@ -54,10 +54,10 @@ EOF
 ```
 
 | Name                  | Required | Default | Description                                                                                                                                                                                                                                                                                                   |
-| :-------------------- | :------: | :------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
+|:----------------------|:--------:|:--------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | port                  |    NO    | 8080    | the port which S3 Sink listens on                                                                                                                                                                                                                                                                             |
-| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accesskey]                                                                                                                                                                                                                                                                           |     |
-| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accesskey]                                                                                                                                                                                                                                                                           |     |
+| aws.access_key_id     |   YES    |         | the AWS IAM [Access Key][accesskey]                                                                                                                                                                                                                                                                           |
+| aws.secret_access_key |   YES    |         | the AWS IAM [Secret Key][accesskey]                                                                                                                                                                                                                                                                           |
 | region                |   YES    |         | the S3 bucket region                                                                                                                                                                                                                                                                                          |
 | bucket                |   YES    |         | the S3 bucket name                                                                                                                                                                                                                                                                                            |
 | flush_size            |    NO    | 1000    | the number of CloudEvents cached to the local file before S3 Sink upload the file                                                                                                                                                                                                                             |
@@ -162,7 +162,7 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
-                name: http
+              name: http
           volumeMounts:
             - name: config
               mountPath: /vanus-connect/config
@@ -199,5 +199,7 @@ vsctl subscription create \
 ```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
+
 [accesskey]: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
+
 [ce-schema]: https://github.com/cloudevents/spec/blob/main/schemaregistry/spec.md
