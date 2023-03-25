@@ -57,7 +57,6 @@ document:
 cat << EOF > config.yml
 port: 8080
 insert_mode: "upsert"
-primary_key: "data.id"
 es:
   address: "http://localhost:9200"
   index_name: "vanus_test"
