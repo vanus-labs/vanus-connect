@@ -3,9 +3,10 @@
 ## Description
 The Facebook Source is used to pull data in form of events from a user's Facebook page. The events include:
 * Follow events: When a user's Facebook page is followed
-* Like events: When a user's Facebook page is liked
+* Like events: When a post on a Facebook page is liked
 * Message events: When a user's Facebook page receives a message
-* Share events: When a user's Facebook page is shared
+* Share events: When a post on a Facebook page is shared.
+* When a post on a Facebook page is commented on
 
 ## Programming Language
 - [ ] Golang
@@ -32,36 +33,32 @@ Also, your server must have a valid TLS or SSL certificate correctly configured 
 
 Most payloads will contain the following common properties, but the contents and structure of each payload varies depending on the object fields you are subscribed to.
 ### Connector Behavior
-If you successfully subscribe to the page object's field, here's a notification sent when a User posted to a Page.
+When a post on the Facebook page is commented on, you will receive the following notification.
 ```JSON
-[
-  {
-    "entry": [
-      {
-        "changes": [
-          {
-            "field": "feed",
-            "value": {
-              "from": {
-                "id": "{user-id}",
-                "name": "Cinderella Hoover"
-              },
-              "item": "post",
-              "post_id": "{page-post-id}",
-              "verb": "add",
-              "created_time": 1520544814,
-              "is_hidden": false,
-              "message": "It's Thursday and I want to eat cake."
-            }
+{
+  "object": "page",
+  "entry": [
+    {
+      "id": "PAGE_ID",
+      "time": 1458692752478,
+      "messaging": [
+        {
+          "sender": {
+            "id": "USER_ID"
+          },
+          "recipient": {
+            "id": "PAGE_ID"
+          },
+          "timestamp": 1458692752478,
+          "message": {
+            "mid": "mid.1457764197618:41d102a3e1ae206a38",
+            "text": "hello, world!"
           }
-        ],
-        "id": "{page-id}",
-        "time": 1520544816
-      }
-    ],
-    "object": "page"
-  }
-]
+        }
+      ]
+    }
+  ]
+}
 ```
 ### Used Libraries/APIs
 [FaceBook SDK](https://mvnrepository.com/artifact/com.facebook.business.sdk/facebook-java-business-sdk)
