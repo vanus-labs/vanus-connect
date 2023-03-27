@@ -6,9 +6,9 @@ title: Alibaba Cloud Billing
 
 ## Introduction
 
-The Alibaba Cloud Billing Source is a [Vanus Connector][vc] which aims to convert billing data
-to CloudEvents. The Alibaba Cloud Billing Source use [Alibaba Cloud Billing][alibill] api and pulls
-billing data from the previous day at a fixed time.
+The Alibaba Cloud Billing Source is a [Vanus Connector][vc] which aims to convert billing data to CloudEvents. The
+Alibaba Cloud Billing Source use [Alibaba Cloud Billing][alibill] api and pulls billing data from the previous day at a
+fixed time.
 
 The billing data is converted to:
 
@@ -16,8 +16,8 @@ The billing data is converted to:
 {
   "specversion": "1.0",
   "id": "bd64e9e0-cd46-43f1-95fa-2008b6b49e85",
-  "source": "cloud.alicloud.billing",
-  "type": "alicloud.account_billing.daily",
+  "source": "cloud.alibaba.billing",
+  "type": "alibaba.billing.daily",
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:01:55.277687Z",
   "data": {
@@ -68,15 +68,17 @@ secret:
 EOF
 ```
 
-| Name                  | Required | Default                             | Description                                               |
-|:----------------------|:--------:|:------------------------------------|:----------------------------------------------------------|
-| target                |   YES    |                                     | the target URL to send CloudEvents                        |
-| endpoint              |    NO    | business.aliyuncs.com               | the Alibaba Cloud business api endpoint                   |
-| pull_hour             |    NO    | 2                                   | specify the hour at which the billing data will be pulled |
-| access_key_id         |   YES    |                                     | the Alibaba Cloud [access Key][accessKey]                 |
-| secret_access_Key     |   YES    |                                     | the Alibaba Cloud [secret Key][accessKey]                 |
+| Name              | Required | Default               | Description                                                                |
+|:------------------|:--------:|:----------------------|:---------------------------------------------------------------------------|
+| target            |   YES    |                       | the target URL to send CloudEvents                                         |
+| endpoint          |    NO    | business.aliyuncs.com | the Alibaba Cloud business api endpoint                                    |
+| pull_hour         |    NO    | 2                     | specify the hour at which the billing data will be pulled, value is [1,23] |
+| pull_zone         |    NO    | UTC                   | pull billing data hour time zone                                           |
+| access_key_id     |   YES    |                       | the Alibaba Cloud [access Key][accessKey]                                  |
+| secret_access_Key |   YES    |                       | the Alibaba Cloud [secret Key][accessKey]                                  |
 
-The Alibaba Cloud Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Alibaba Cloud Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can
+specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -96,7 +98,8 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
-Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to
+our Display Sink.
 
 Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 
@@ -104,8 +107,8 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 {
   "specversion": "1.0",
   "id": "bd64e9e0-cd46-43f1-95fa-2008b6b49e85",
-  "source": "cloud.alicloud.billing",
-  "type": "alicloud.account_billing.daily",
+  "source": "cloud.alibaba.billing",
+  "type": "alibaba.billing.daily",
   "datacontenttype": "application/json",
   "time": "2022-06-14T07:01:55.277687Z",
   "data": {
@@ -192,29 +195,36 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/vanus-labs/vanus).
+This section shows how a source connector can send CloudEvents to a
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 ### Prerequisites
+
 - Have a running K8s cluster
 - Have a running Vanus cluster
 - Vsctl Installed
 
-1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway
+   service)
+
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
 ```
 
 2. Create an eventbus
+
 ```shell
 vsctl eventbus create --name quick-start
 ```
 
 3. Update the target config of the Alibaba Cloud Billing Source
+
 ```yaml
 target: http://192.168.49.2:30001/gateway/quick-start
 ```
 
 4. Run the Alibaba Cloud Billing Source
+
 ```shell
 kubectl apply -f source-alicloud-billing.yaml
 ```

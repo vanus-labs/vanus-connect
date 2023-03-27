@@ -22,6 +22,7 @@ type billingConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 	Endpoint           string `json:"endpoint" yaml:"endpoint"`
 	PullHour           int    `json:"pull_hour" yaml:"pull_hour"`
+	PullZone           string `json:"pull_zone" yaml:"pull_zone"`
 	Secret             Secret `json:"secret" yaml:"secret"`
 }
 
