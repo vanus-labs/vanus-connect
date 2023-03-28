@@ -25,9 +25,11 @@ which is converted to:
   "id": "0effe4cc-06c7-4fe9-9180-aa7c3b30777e",
   "source": "vanus-chatGPT-source",
   "type": "vanus-chatGPT-type",
-  "datacontenttype": "text/plain",
+  "datacontenttype": "application/json",
   "time": "2023-03-28T09:15:10.70413Z",
-  "data": "vanus is a message queue"
+  "data": {
+    "content": "vanus is a message queue"
+  }
 }
 ```
 
@@ -100,9 +102,11 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
   "id": "0effe4cc-06c7-4fe9-9180-aa7c3b30777e",
   "source": "vanus-chatGPT-source",
   "type": "vanus-chatGPT-type",
-  "datacontenttype": "text/plain",
+  "datacontenttype": "application/json",
   "time": "2023-03-28T09:15:10.70413Z",
-  "data": "vanus is a message queue"
+  "data": {
+    "content": "vanus is a message queue"
+  }
 }
 ```
 

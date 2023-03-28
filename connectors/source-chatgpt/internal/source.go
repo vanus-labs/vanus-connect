@@ -114,7 +114,9 @@ func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	event.SetTime(time.Now())
 	event.SetType(eventType)
 	event.SetSource(eventSource)
-	event.SetData(ce.TextPlain, content)
+	event.SetData(ce.ApplicationJSON, map[string]string{
+		"content": content,
+	})
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	s.events <- &cdkgo.Tuple{
