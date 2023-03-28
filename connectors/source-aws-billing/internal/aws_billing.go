@@ -30,17 +30,18 @@ import (
 )
 
 const (
-	EventType   = "aws.service.daily"
-	EventSource = "cloud.aws.billing"
+	EventSource = "cloud.amazon.billing"
+	EventType   = "amazon.billing.daily"
 )
 
 type awsBillingSource struct {
-	client *costexplorer.Client
-	config *billingConfig
-	events chan *cdkgo.Tuple
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	client   *costexplorer.Client
+	config   *billingConfig
+	events   chan *cdkgo.Tuple
+	ctx      context.Context
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup
+	timeZone *time.Location
 }
 
 func Source() cdkgo.Source {
@@ -76,6 +77,15 @@ func (s *awsBillingSource) Initialize(ctx context.Context, config cdkgo.ConfigAc
 	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
 		cfg.PullHour = 2
 	}
+	if cfg.PullZone == "" {
+		s.timeZone = time.UTC
+	} else {
+		loc, err := time.LoadLocation(cfg.PullZone)
+		if err != nil {
+			return err
+		}
+		s.timeZone = loc
+	}
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://ce.us-east-1.amazonaws.com"
 	}
@@ -101,16 +111,26 @@ func (s *awsBillingSource) start() {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		for {
+		s.getCost()
+		now := time.Now().In(s.timeZone)
+		next := now.Add(time.Hour)
+		next = time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), 0, 0, 0, next.Location())
+		t := time.NewTicker(next.Sub(now))
+		select {
+		case <-s.ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
 			s.getCost()
-			now := time.Now()
-			next := now.Add(time.Hour * 24)
-			next = time.Date(next.Year(), next.Month(), next.Day(), s.config.PullHour, 0, 0, 0, next.Location())
-			t := time.NewTimer(next.Sub(now))
+		}
+		t.Stop()
+		tk := time.NewTicker(time.Hour * 24)
+		for {
 			select {
 			case <-s.ctx.Done():
 				return
-			case <-t.C:
+			case <-tk.C:
+				s.getCost()
 			}
 		}
 	}()
@@ -141,7 +161,11 @@ func (s *awsBillingSource) getCostAndUsageInput(start, end, nextToken *string) (
 
 func (s *awsBillingSource) getCost() {
 	log.Info("get cost begin", nil)
-	now := time.Now()
+	now := time.Now().In(s.timeZone)
+	if now.Hour() != s.config.PullHour {
+		log.Info("get cost hour is not match", nil)
+		return
+	}
 	endDayFmt := FormatTimeDay(now)
 	dayFmt := FormatTimeDay(now.Add(time.Hour * 24 * -1))
 	var nextToken *string

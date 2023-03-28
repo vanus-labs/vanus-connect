@@ -26,23 +26,23 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
-
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
 
 const (
-	EventType   = "alicloud.account_billing.daily"
-	EventSource = "cloud.alicloud.billing"
+	EventSource = "cloud.alibaba.billing"
+	EventType   = "alibaba.billing.daily"
 )
 
 type alicloudBillingSource struct {
-	client *bssopenapi.Client
-	config *billingConfig
-	events chan *cdkgo.Tuple
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	client   *bssopenapi.Client
+	config   *billingConfig
+	events   chan *cdkgo.Tuple
+	ctx      context.Context
+	cancel   context.CancelFunc
+	wg       sync.WaitGroup
+	timeZone *time.Location
 }
 
 func Source() cdkgo.Source {
@@ -58,6 +58,15 @@ func (s *alicloudBillingSource) Initialize(ctx context.Context, config cdkgo.Con
 	if cfg.PullHour <= 0 || cfg.PullHour >= 24 {
 		cfg.PullHour = 2
 	}
+	if cfg.PullZone == "" {
+		s.timeZone = time.UTC
+	} else {
+		loc, err := time.LoadLocation(cfg.PullZone)
+		if err != nil {
+			return err
+		}
+		s.timeZone = loc
+	}
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "business.aliyuncs.com"
 	}
@@ -72,6 +81,15 @@ func (s *alicloudBillingSource) Initialize(ctx context.Context, config cdkgo.Con
 		return err
 	}
 	s.client = client
+	// check
+	now := time.Now()
+	lastDay := now.Add(time.Hour * 24 * -1)
+	dayFmt := FormatTimeDay(lastDay)
+	monthFmt := FormatTimeMonth(lastDay)
+	_, err = s.queryAccountBill(monthFmt, dayFmt, 1)
+	if err != nil {
+		return err
+	}
 	s.start()
 	return nil
 }
@@ -95,27 +113,37 @@ func (s *alicloudBillingSource) start() {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
+		s.getBilling()
+		now := time.Now().In(s.timeZone)
+		next := now.Add(time.Hour)
+		next = time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), 0, 0, 0, next.Location())
+		t := time.NewTicker(next.Sub(now))
+		select {
+		case <-s.ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			s.getBilling()
+		}
+		t.Stop()
+		tk := time.NewTicker(time.Hour)
 		for {
-			//先执行一次，之后每天2点执行一次
-			s.queryAccountBill()
-			now := time.Now()
-			next := now.Add(time.Hour * 24)
-			next = time.Date(next.Year(), next.Month(), next.Day(), s.config.PullHour, 0, 0, 0, next.Location())
-			t := time.NewTimer(next.Sub(now))
 			select {
 			case <-s.ctx.Done():
 				return
-			case <-t.C:
+			case <-tk.C:
+				s.getBilling()
 			}
 		}
 	}()
 }
 
-func (s *alicloudBillingSource) queryAccountBill() {
+func (s *alicloudBillingSource) getBilling() {
 	log.Info("query account bill begin", nil)
-	now := time.Now()
-	opt := &tutil.RuntimeOptions{}
-	opt.SetAutoretry(true)
+	now := time.Now().In(s.timeZone)
+	if now.Hour() != s.config.PullHour {
+		log.Info("query account bill hour is not match", nil)
+	}
 	lastDay := now.Add(time.Hour * 24 * -1)
 	dayFmt := FormatTimeDay(lastDay)
 	monthFmt := FormatTimeMonth(lastDay)
@@ -123,15 +151,7 @@ func (s *alicloudBillingSource) queryAccountBill() {
 	var pageNum, totalSize int32
 	for {
 		pageNum++
-		request := &bssopenapi.QueryAccountBillRequest{
-			BillingCycle:     tea.String(monthFmt),
-			Granularity:      tea.String("DAILY"),
-			BillingDate:      tea.String(dayFmt),
-			IsGroupByProduct: tea.Bool(true),
-			PageNum:          tea.Int32(pageNum),
-			PageSize:         tea.Int32(100),
-		}
-		resp, err := s.client.QueryAccountBillWithOptions(request, opt)
+		resp, err := s.queryAccountBill(monthFmt, dayFmt, pageNum)
 		if err != nil {
 			log.Error("query account bill error", map[string]interface{}{
 				log.KeyError: err,
@@ -163,8 +183,6 @@ func (s *alicloudBillingSource) queryAccountBill() {
 			event.SetTime(now)
 			event.SetID(uuid.New().String())
 			_ = event.SetData(ce.ApplicationJSON, BillingData{
-				VanceSource: EventSource,
-				VanceType:   EventType,
 				QueryAccountBillResponseBodyDataItemsItem: *item,
 			})
 			s.events <- &cdkgo.Tuple{
@@ -177,6 +195,20 @@ func (s *alicloudBillingSource) queryAccountBill() {
 		}
 	}
 	log.Info("get account bill end", nil)
+}
+
+func (s *alicloudBillingSource) queryAccountBill(monthFmt, dayFmt string, pageNum int32) (*bssopenapi.QueryAccountBillResponse, error) {
+	request := &bssopenapi.QueryAccountBillRequest{
+		BillingCycle:     tea.String(monthFmt),
+		Granularity:      tea.String("DAILY"),
+		BillingDate:      tea.String(dayFmt),
+		IsGroupByProduct: tea.Bool(true),
+		PageNum:          tea.Int32(pageNum),
+		PageSize:         tea.Int32(100),
+	}
+	opt := &tutil.RuntimeOptions{}
+	opt.SetAutoretry(true)
+	return s.client.QueryAccountBillWithOptions(request, opt)
 }
 
 func (s *alicloudBillingSource) getInstanceBill() {

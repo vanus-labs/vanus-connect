@@ -17,7 +17,5 @@ package internal
 import bssopenapi "github.com/alibabacloud-go/bssopenapi-20171214/v2/client"
 
 type BillingData struct {
-	VanceSource string `json:"VanceSource"`
-	VanceType   string `json:"VanceType"`
 	bssopenapi.QueryAccountBillResponseBodyDataItemsItem
 }

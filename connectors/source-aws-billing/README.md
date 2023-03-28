@@ -6,9 +6,8 @@ title: Amazon Billing
 
 ## Introduction
 
-The Amazon Billing Source is a [Vanus Connector][vc] which aims to convert billing data
-to a CloudEvent. The Amazon Billing Source uses [AWS Cost Explorer][awsbill] api and pulls
-billing data from the previous day at a fixed time.
+The Amazon Billing Source is a [Vanus Connector][vc] which aims to convert billing data to a CloudEvent. The Amazon
+Billing Source uses [AWS Cost Explorer][awsbill] api and pulls billing data from the previous day at a fixed time.
 
 The billing data is converted to:
 
@@ -16,8 +15,8 @@ The billing data is converted to:
 {
   "specversion": "1.0",
   "id": "026046e2-3cb0-4116-895e-c77877072dd2",
-  "source": "cloud.aws.billing",
-  "type": "aws.service.daily",
+  "source": "cloud.amazon.billing",
+  "type": "amazon.billing.daily",
   "datacontenttype": "application/json",
   "time": "2023-01-28T06:11:10.012579049Z",
   "data": {
@@ -68,15 +67,17 @@ secret:
 EOF
 ```
 
-| Name              | Required | Default                            | Description                                               |
-| :---------------- | :------- | :--------------------------------- | :-------------------------------------------------------- |
-| target            | YES      |                                    | the target URL to send CloudEvents                        |
-| endpoint          | NO       | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                        |
-| pull_hour         | NO       | 2                                  | specify the hour at which the billing data will be pulled |
-| access_key_id     | YES      |                                    | the AWS IAM [Access Key][accesskey]                       |
-| secret_access_key | YES      |                                    | the AWS IAM [Secret Key][accesskey]                       |
+| Name              | Required | Default                            | Description                                                                |
+|:------------------|:---------|:-----------------------------------|:---------------------------------------------------------------------------|
+| target            | YES      |                                    | the target URL to send CloudEvents                                         |
+| endpoint          | NO       | https://ce.us-east-1.amazonaws.com | the AWS cost explorer api endpoint                                         |
+| pull_hour         | NO       | 2                                  | specify the hour at which the billing data will be pulled, value is [1,23] |
+| pull_zone         | NO       | UTC                                | pull billing data hour time zone                                           |
+| access_key_id     | YES      |                                    | the AWS IAM [Access Key][accesskey]                                        |
+| secret_access_key | YES      |                                    | the AWS IAM [Secret Key][accesskey]                                        |
 
-The Amazon Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Amazon Billing Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can
+specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -88,7 +89,8 @@ docker run -it --rm --network=host \
 
 ### Test
 
-Before starting Amazon billing Source use the following command to run a Display sink, which will receive and prints the incoming CloudEvents.
+Before starting Amazon billing Source use the following command to run a Display sink, which will receive and prints the
+incoming CloudEvents.
 
 **To test the connector, run the Display Sink first before running AWS Billing source.**
 Open a terminal and use the following command to run a Display sink, which receives and prints CloudEvents.
@@ -99,7 +101,8 @@ docker run -it --rm \
   --name sink-display public.ecr.aws/vanus/connector/sink-display
 ```
 
-Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to our Display Sink.
+Make sure the `target` value in your config file is `http://localhost:31081` so that the Source can send CloudEvents to
+our Display Sink.
 
 Now run AWS Cloud Billing source to send CloudEvents
 
@@ -115,8 +118,8 @@ Here is the sort of CloudEvent you should expect to receive in the Display Sink:
 {
   "specversion": "1.0",
   "id": "026046e2-3cb0-4116-895e-c77877072dd2",
-  "source": "cloud.aws.billing",
-  "type": "aws.service.daily",
+  "source": "cloud.amazon.billing",
+  "type": "amazon.billing.daily",
   "datacontenttype": "application/json",
   "time": "2023-01-28T06:11:10.012579049Z",
   "data": {
@@ -209,7 +212,8 @@ spec:
 
 ## Integrate with Vanus
 
-This section shows how a source connector can send CloudEvents to a running [Vanus cluster](https://github.com/vanus-labs/vanus).
+This section shows how a source connector can send CloudEvents to a
+running [Vanus cluster](https://github.com/vanus-labs/vanus).
 
 ### Prerequisites
 
@@ -217,7 +221,8 @@ This section shows how a source connector can send CloudEvents to a running [Van
 - Have a running Vanus cluster
 - Vsctl Installed
 
-1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway service)
+1. Export the VANUS_GATEWAY environment variable (the ip should be a host-accessible address of the vanus-gateway
+   service)
 
 ```shell
 export VANUS_GATEWAY=192.168.49.2:30001
