@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"sync"
 	"time"
@@ -59,21 +58,18 @@ func (s *chatGPTSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 	s.config = cfg.(*chatGPTConfig)
 	s.config.Init()
 	s.service = newChatGPTService(s.config)
-	s.server = &http.Server{Handler: s}
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", s.config.Port))
-	if err != nil {
-		return err
+	s.server = &http.Server{
+		Addr:    fmt.Sprintf(":%d", s.config.Port),
+		Handler: s,
 	}
 	go func() {
-		log.Info("HTTP source is ready to serving", map[string]interface{}{
-			"listen": s.config.Port,
+		log.Info("http server is ready to start", map[string]interface{}{
+			"port": s.config.Port,
 		})
-		if err = s.server.Serve(ln); err != nil {
-			log.Error("failed to start http server", map[string]interface{}{
-				log.KeyError: err,
-			})
-			panic(err)
+		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			panic(fmt.Sprintf("cloud not listen on %d, error:%s", s.config.Port, err.Error()))
 		}
+		log.Info("http server stopped", nil)
 	}()
 	return nil
 }
