@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-chatgpt
+  namespace: vanus
+spec:
+  selector:
+    app: source-chatgpt
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-chatgpt
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-chatgpt
+  namespace: vanus
+data:
+  config.yml: |-
+    target: "http://localhost:18080"
+    token: "sk-k7UNuxZiZZVOYEU8xxxxxxxxxxxxxxxxx"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-chatgpt
+  namespace: vanus
+  labels:
+    app: source-chatgpt
+spec:
+  selector:
+    matchLabels:
+      app: source-chatgpt
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-chatgpt
+    spec:
+      containers:
+        - name: source-chatgpt
+          image: public.ecr.aws/vanus/connector/source-chatgpt:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-chatgpt
