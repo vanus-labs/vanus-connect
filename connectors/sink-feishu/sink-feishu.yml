@@ -18,9 +18,9 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    enable: ["bot"]
     bot:
       dynamic_route: false
+      defalult: "bot1"
       webhooks:
         - chat_group: "bot1"
           url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"

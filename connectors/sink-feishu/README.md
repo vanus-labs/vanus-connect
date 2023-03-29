@@ -41,7 +41,6 @@ Replace `chat_group`, `signature`, and `address` to yours. `chat_group` can be f
 
 ```shell
 cat << EOF > config.yml
-enable: ["bot"]
 bot:
   webhooks:
     - chat_group: "bot1"
@@ -53,10 +52,10 @@ EOF
 
 | Name                       | Required | Default | Description                                                                       |
 |:---------------------------|:--------:|:-------:|-----------------------------------------------------------------------------------|
-| enable                     | **YES**  |    -    | service list you want Feishu Sink is enabled                                      |
-| bot.webhooks               | **YES**  |    -    | list of chat-group's configuration                                                |
+| bot.default                |  **NO**  |    -    | default chat group, if not set it will use webhooks first element chat_group      |
+| bot.dynamic_route          |  **NO**  |  false  | open dynamic_route                                                                |
 | bot.webhooks.[].chat_group | **YES**  |    -    | the chat_group name, you can set any value to it                                  |
-| bot.webhooks.[].signature  |  **No**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
+| bot.webhooks.[].signature  |  **NO**  |    -    | the signature to sign request, you can get it when you create Chat Bot            |
 | bot.webhooks.[].url        | **YES**  |    -    | the webhook address that message sent to, you can get it when you create Chat Bot |
 
 The Feishu Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -84,7 +83,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "text",
     "data": "Hello Feishu"
@@ -107,13 +105,12 @@ docker stop sink-feishu
 Feishu Sink has defined a few [CloudEvents Extension Attribute](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
 to determine how to process event.
 
-| Attribute         | Required | Examples               | Description                                                                                                                                                  |
-|:------------------|:--------:|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| xvfeishuservice   | **YES**  | bot                    | which Feishu Service the event sent for                                                                                                                      |
-| xvfeishumsgtype   | **YES**  | text                   | which Message Type the event convert to                                                                                                                      |
-| xvfeishuchatgroup |    NO    | test_bot               | which Feishu chat-group the event sent for, the value should associate with you wrote in configuration, if `dynamic_route=false`, this attribute can't empty |
-| xvfeishuboturls   |    NO    | bot1,bot2,bot3         | dynamic webhook urls, use  `,` to separate multiple urls.                                                                                                    |
-| xvfeishubotsigns  |    NO    | signature1,,signature3 | dynamic webhook signatures, use  `,` to separate multiple signatures.                                                                                        |
+| Attribute         | Required | Examples               | Description                                                                                                                                          |
+|:------------------|:--------:|------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| xvfeishumsgtype   |    NO    | text                   | which Message Type the event convert to, default is text, support: text,post,interactive,share_chat,image                                            |
+| xvfeishuchatgroup |    NO    | test_bot               | which Feishu chat-group the event sent for, the default value is config default when associate with you wrote in configuration `dynamic_route=false` |
+| xvfeishuboturls   |    NO    | bot1,bot2,bot3         | dynamic webhook urls, use  `,` to separate multiple urls.                                                                                            |
+| xvfeishubotsigns  |    NO    | signature1,,signature3 | dynamic webhook signatures, use  `,` to separate multiple signatures.                                                                                |
 
 **the number of urls represented by `xvfeishuboturls` must equal to the number of signatures represented by `xvfeishuboturls`**
 
@@ -125,7 +122,6 @@ Feishu Bot Service, `Chat Bot Dynamic Webhook` helps users do that.
 in `config.yml`, set `dynamic_route=true` to enable this feature, otherwise `xvfeishuboturls` and `xvfeishubotsigns` will be ignored.
 
 ```yaml
-enable: ["bot"]
 bot:
   dynamic_route: true
   webhooks:
@@ -135,7 +131,7 @@ bot:
 ```
 
 ```shell
-curl --location --request POST 'localhost:31080' \
+curl --location --request POST 'localhost:8080' \
 --header 'Content-Type: application/cloudevents+json' \
 --data-raw '{
     "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
@@ -144,7 +140,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishumsgtype": "text",
     "xvfeishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
     "xvfeishubotsigns": "signature1,,signature3",
@@ -166,7 +161,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishumsgtype": "text",
     "xvfeishuchatgroup": "bot_predefined",
     "xvfeishuboturls": "https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx,https://open.feishu.cn/open-apis/bot/v2/hook/xxx",
@@ -197,7 +191,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "text",
     "data": "Hello Feishu"
@@ -216,7 +209,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "post",
     "data": {
@@ -255,7 +247,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "share_chat",
     "data": "oc_ad6c99f9"
@@ -274,7 +265,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "image",
     "data": {
@@ -295,7 +285,6 @@ curl --location --request POST 'localhost:31080' \
     "type": "quickstart",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvfeishuservice": "bot",
     "xvfeishuchatgroup": "bot1",
     "xvfeishumsgtype": "interactive",
     "data": {
@@ -360,9 +349,9 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    enable: ["bot"]
     bot:
       dynamic_route: false
+      default: "bot1"
       webhooks:
         - chat_group: "bot1"
           url: "https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxxxx"

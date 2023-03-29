@@ -25,7 +25,6 @@ import (
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/go-resty/resty/v2"
 	"github.com/tidwall/gjson"
 	"github.com/vanus-labs/cdk-go/log"
@@ -84,12 +83,25 @@ type WebHook struct {
 
 type BotConfig struct {
 	Webhooks     []WebHook `json:"webhooks" yaml:"webhooks" validate:"dive"`
+	Default      string    `json:"default" yaml:"default"`
 	DynamicRoute bool      `json:"dynamic_route" yaml:"dynamic_route"`
 }
 
 func (c *BotConfig) Validate() error {
 	if !c.DynamicRoute && len(c.Webhooks) == 0 {
 		return errors.New("the bot.webhooks can't be empty when dynamic_route is false")
+	}
+	if len(c.Webhooks) > 0 {
+		if c.Default == "" {
+			c.Default = c.Webhooks[0].ChatGroup
+		} else {
+			for _, webhook := range c.Webhooks {
+				if webhook.ChatGroup == c.Default {
+					return nil
+				}
+			}
+			return errors.New("the bot.default not exist in webhooks.chatGroup")
+		}
 	}
 	return nil
 }
@@ -109,31 +121,28 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 			})
 		}
 	}()
-	v := e.Extensions()[xChatGroupID]
-
-	groupID, err = types.ToString(v)
-	if err != nil && !b.cfg.DynamicRoute {
-		return errChatGroup
-	} else {
+	groupID, ok := e.Extensions()[xChatGroupID].(string)
+	if ok {
 		wh, exist := b.cm[groupID]
 		if !exist {
 			if !b.cfg.DynamicRoute {
-
 				return errChatGroup
 			}
 		} else {
 			whs = append(whs, wh)
 		}
+	} else {
+		if !b.cfg.DynamicRoute {
+			whs = append(whs, b.cm[b.cfg.Default])
+		}
 	}
 
 	if b.cfg.DynamicRoute {
-		v = e.Extensions()[xBotURL]
-		urlAttr, ok := v.(string)
+		urlAttr, ok := e.Extensions()[xBotURL].(string)
 		if !ok {
 			return errInvalidAttributes
 		}
-		v = e.Extensions()[xBotSignature]
-		signatureAttr, ok := v.(string)
+		signatureAttr, ok := e.Extensions()[xBotSignature].(string)
 		if !ok {
 			return errInvalidAttributes
 		}
@@ -149,15 +158,13 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 			})
 		}
 	}
-
 	if len(whs) == 0 {
 		return errNoBotWebhookFound
 	}
 
-	v = e.Extensions()[xMessageType]
-	t, ok := v.(string)
+	t, ok := e.Extensions()[xMessageType].(string)
 	if !ok {
-		return errMessageType
+		t = string(textMessage)
 	}
 	switch messageType(t) {
 	case textMessage:
