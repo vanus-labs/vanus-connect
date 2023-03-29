@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-facebook
+  namespace: vanus
+spec:
+  selector:
+    app: source-facebook
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-facebook
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-facebook
+  namespace: vanus
+data:
+  config.yml: |-
+    target: http://<url>:<port>/gateway/<eventbus>
+    verify_token: test
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-facebook
+  namespace: vanus
+  labels:
+    app: source-facebook
+spec:
+  selector:
+    matchLabels:
+      app: source-facebook
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-facebook
+    spec:
+      containers:
+        - name: source-facebook
+          image: public.ecr.aws/vanus/connector/source-facebook:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-facebook
