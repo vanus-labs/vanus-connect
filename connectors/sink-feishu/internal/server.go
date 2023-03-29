@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync/atomic"
 
@@ -24,7 +23,6 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -49,26 +47,14 @@ type Secret struct {
 
 type feishuConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	Enable           []string  `json:"enable" yaml:"enable"`
 	Bot              BotConfig `json:"bot" yaml:"bot"`
 }
 
 func (fc *feishuConfig) Validate() error {
-	if err := fc.SinkConfig.Validate(); err != nil {
+	if err := fc.Bot.Validate(); err != nil {
 		return err
 	}
-
-	for _, s := range fc.Enable {
-		switch s {
-		case botService:
-			if err := fc.Bot.Validate(); err != nil {
-				return err
-			}
-		default:
-			return fmt.Errorf("unsupported service %s in enable parameter", s)
-		}
-	}
-	return nil
+	return fc.SinkConfig.Validate()
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
@@ -100,26 +86,8 @@ func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Resul
 	atomic.AddInt64(&f.count, int64(len(events)))
 
 	e := events[0]
-	val, exist := e.Extensions()[vanceServiceNameAttribute]
-	if !exist {
-		return errFeishuSinkEventMissingServiceName
-	}
-
-	service, ok := val.(string)
-	if !ok {
-		return errFeishuSinkEventMissingServiceName
-	}
-	if !slices.Contains(f.cfg.Enable, service) {
-		return errFeishuSinkUnsupportedService
-	}
-
-	switch service {
-	case botService:
-		if err := f.b.sendMessage(e); err != nil {
-			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
-		}
-	default:
-		return errFeishuSinkUnsupportedService
+	if err := f.b.sendMessage(e); err != nil {
+		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 	}
 
 	return cdkgo.SuccessResult

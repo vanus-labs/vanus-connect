@@ -21,7 +21,7 @@ We provide CDK Java and CDK Go for you to quickly develop a connector.
 2. Import cdk java in the pom.xml.
 3. Implement the interface `com.linkall.cdk.connector.Source`.
 
-here is [example source](https://github.com/linkall-labs/cdk-java/tree/main/examples/source-example)
+here is [example source](https://github.com/vanus-labs/cdk-java/tree/main/examples/source-example)
 
 ### Sink
 
@@ -29,7 +29,7 @@ here is [example source](https://github.com/linkall-labs/cdk-java/tree/main/exam
 2. Import cdk java in the pom.xml.
 3. Implement the interface `com.linkall.cdk.connector.Sink`.
 
-here is [example sink](https://github.com/linkall-labs/cdk-java/tree/main/examples/sink-example)
+here is [example sink](https://github.com/vanus-labs/cdk-java/tree/main/examples/sink-example)
 
 ## CDK Go
 
@@ -37,14 +37,14 @@ here is [example sink](https://github.com/linkall-labs/cdk-java/tree/main/exampl
 
 1. Create a go module name like source-example.
 2. Import cdk go in the go.mod.
-3. Implement the interface [Source](https://github.com/linkall-labs/cdk-go/blob/main/connector/source.go).
+3. Implement the interface [Source](https://github.com/vanus-labs/cdk-go/blob/main/connector/source.go).
 
-here is [example source](https://github.com/linkall-labs/cdk-go/tree/main/examples/source-example)
+here is [example source](https://github.com/vanus-labs/cdk-go/tree/main/examples/source-example)
 
 ### Sink
 
 1. Create a go module name like sink-example.
 2. Import cdk java in the pom.xml.
-3. Implement the interface [Sink](https://github.com/linkall-labs/cdk-go/blob/main/connector/sink.go).
+3. Implement the interface [Sink](https://github.com/vanus-labs/cdk-go/blob/main/connector/sink.go).
 
-here is [example sink](https://github.com/linkall-labs/cdk-go/tree/main/examples/sink-example)
+here is [example sink](https://github.com/vanus-labs/cdk-go/tree/main/examples/sink-example)
