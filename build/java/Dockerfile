@@ -13,7 +13,7 @@ RUN mvn clean package -Dmaven.javadoc.skip=true
 # DON'T REMOVE SPACE BEHIND OF '/build/executable.jar'
 RUN ls -alh target/*jar-with-dependencies.jar | awk '{system("cp " $9 " /build/executable.jar") }'
 
-FROM openjdk:17
+FROM --platform=$BUILDPLATFORM openjdk:17
 
 ARG connector
 
