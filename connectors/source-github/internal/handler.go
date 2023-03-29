@@ -94,7 +94,7 @@ func (h *handler) handle(req *http.Request) error {
 	}
 	contentType := req.Header.Get(HeaderContentType)
 	if contentType != "application/json" {
-		return errMissingGithubEventHeader
+		return errInvalidContentTypeHeader
 	}
 	eventType := req.Header.Get(GHHeaderEvent)
 	if eventType == "" {
