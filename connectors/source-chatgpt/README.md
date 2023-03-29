@@ -54,7 +54,6 @@ EOF
 | port           |    NO    | 8080    | the port to receive HTTP request                   |
 | token          |   YES    |         | the ChatGPT auth token                             |
 | everyday_limit |    NO    | 100     | the ChatGPT Source call openapi api count everyday |
-| context_count  |    NO    | 100     | the ChatGPT Source context message length          |
 
 The ChatGPT Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.

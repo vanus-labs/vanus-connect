@@ -29,7 +29,6 @@ type chatGPTConfig struct {
 
 	Port          int    `json:"port" yaml:"port"`
 	Token         string `json:"token" yaml:"token" validate:"required"`
-	ContextCount  int    `json:"context_count" yaml:"context_count"`
 	EverydayLimit int    `json:"everyday_limit" yaml:"everyday_limit"`
 }
 
@@ -41,10 +40,6 @@ func (c *chatGPTConfig) Init() {
 	if c.Port <= 0 {
 		c.Port = 8080
 	}
-	if c.ContextCount <= 0 {
-		c.ContextCount = 100
-	}
-	c.ContextCount = 2 * c.ContextCount
 	if c.EverydayLimit <= 0 {
 		c.EverydayLimit = 100
 	}

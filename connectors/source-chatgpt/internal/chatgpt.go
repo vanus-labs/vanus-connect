@@ -36,7 +36,6 @@ type chatGPTService struct {
 	client       *openai.Client
 	config       *chatGPTConfig
 	lock         sync.Mutex
-	messages     []openai.ChatCompletionMessage
 	day          int
 	num          int
 	limitContent string
@@ -47,7 +46,6 @@ func newChatGPTService(config *chatGPTConfig) *chatGPTService {
 	return &chatGPTService{
 		config:       config,
 		client:       client,
-		messages:     make([]openai.ChatCompletionMessage, 0, config.ContextCount),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit(%d/day) of using ChatGPT Source. Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
@@ -56,10 +54,10 @@ func newChatGPTService(config *chatGPTConfig) *chatGPTService {
 func today() int {
 	return time.Now().UTC().Day()
 }
+
 func (s *chatGPTService) reset() {
 	s.day = today()
 	s.num = 0
-	s.messages = make([]openai.ChatCompletionMessage, 0, s.config.ContextCount)
 }
 
 func (s *chatGPTService) CreateChatCompletion(content string) (string, error) {
@@ -71,19 +69,16 @@ func (s *chatGPTService) CreateChatCompletion(content string) (string, error) {
 		}
 		s.reset()
 	}
-	if len(s.messages) >= s.config.ContextCount {
-		index := len(s.messages) - s.config.ContextCount + 2
-		s.messages = s.messages[index:]
-	}
-	s.messages = append(s.messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: content,
-	})
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:    openai.GPT3Dot5Turbo,
-			Messages: s.messages,
+			Model: openai.GPT3Dot5Turbo,
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:    openai.ChatMessageRoleUser,
+					Content: content,
+				},
+			},
 		},
 	)
 	if err != nil {
@@ -97,9 +92,5 @@ func (s *chatGPTService) CreateChatCompletion(content string) (string, error) {
 	if respContent == "" {
 		return responseEmpty, nil
 	}
-	s.messages = append(s.messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
-		Content: respContent,
-	})
 	return respContent, nil
 }
