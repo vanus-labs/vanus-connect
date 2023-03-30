@@ -53,6 +53,9 @@ func (s *facebookSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte("received"))
 			return
 		}
+		log.Info("event error", map[string]interface{}{
+			log.KeyError: err,
+		})
 		var code int
 		switch err {
 		case errInvalidContentTypeHeader, errMissingHubSignatureHeader, errReadPayload, errInvalidPayload:
