@@ -70,33 +70,32 @@ func (s *facebookSource) event(req *http.Request) error {
 	if err != nil || len(body) == 0 {
 		return errReadPayload
 	}
-	log.Info("body", map[string]interface{}{
-		"body": string(body),
-	})
+	log.Info("receive body:"+string(body), nil)
 	err = s.verifyRequestSignature(req, body)
 	if err != nil {
 		return err
 	}
-	var payload []PageEvent
+	var payload PageEvent
 	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		return err
 	}
-	for _, e := range payload {
-		switch e.Object {
-		case "page":
-			s.pageEvent(e.Object, e)
-		default:
-			log.Info("not support object type", map[string]interface{}{
-				"object": e.Object,
-			})
-			return nil
+	switch payload.Object {
+	case "page":
+		err := s.pageEvent(payload)
+		if err != nil {
+			return err
 		}
+	default:
+		log.Info("not support object type", map[string]interface{}{
+			"object": payload.Object,
+		})
+		return nil
 	}
 	return nil
 }
 
-func (s *facebookSource) pageEvent(object string, e PageEvent) error {
+func (s *facebookSource) pageEvent(e PageEvent) error {
 	for _, entry := range e.Entry {
 		pageID := entry.ID
 		if pageID == "" {
@@ -110,7 +109,7 @@ func (s *facebookSource) pageEvent(object string, e PageEvent) error {
 			event := ce.NewEvent()
 			event.SetID(uuid.New().String())
 			event.SetSource(eventSource)
-			event.SetType(object)
+			event.SetType(e.Object)
 			event.SetExtension("pageid", pageID)
 			event.SetExtension("fields", field)
 			event.SetData(ce.ApplicationJSON, change)
@@ -133,7 +132,7 @@ func (s *facebookSource) pageEvent(object string, e PageEvent) error {
 			event := ce.NewEvent()
 			event.SetID(uuid.New().String())
 			event.SetSource(eventSource)
-			event.SetType(object)
+			event.SetType(e.Object)
 			event.SetExtension("pageid", pageID)
 			event.SetExtension("fields", "messages")
 			event.SetData(ce.ApplicationJSON, message)
