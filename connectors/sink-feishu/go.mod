@@ -8,7 +8,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
 	github.com/vanus-labs/cdk-go v0.5.0
-	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
 require (

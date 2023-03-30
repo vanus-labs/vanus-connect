@@ -70,6 +70,9 @@ func (s *facebookSource) event(req *http.Request) error {
 	if err != nil || len(body) == 0 {
 		return errReadPayload
 	}
+	log.Info("body", map[string]interface{}{
+		"body": string(body),
+	})
 	err = s.verifyRequestSignature(req, body)
 	if err != nil {
 		return err
