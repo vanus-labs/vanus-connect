@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	ErrLimit = fmt.Errorf("reached the daily limit of using ChatGPT")
+	ErrLimit = fmt.Errorf("reached the daily limit")
 )
 
 type chatGPTService struct {
