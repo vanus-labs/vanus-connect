@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	responseEmpty = "Get ChatGPT response empty."
-	responseErr   = "Get ChatGPT response failed."
+	responseEmpty = "Get response empty."
+	responseErr   = "Get response failed."
 )
 
 var (
@@ -49,7 +49,7 @@ func newChatGPTService(config *chatGPTConfig) *chatGPTService {
 		config:       config,
 		client:       client,
 		day:          today(),
-		limitContent: fmt.Sprintf("You've reached the daily limit(%d/day) of using ChatGPT Source. Your quota will be restored tomorrow.", config.EverydayLimit),
+		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
 }
 
