@@ -126,6 +126,14 @@ func (s *facebookSource) pageEvent(e PageEvent) error {
 			}
 			s.ch <- &cdkgo.Tuple{
 				Event: &event,
+				Success: func() {
+					log.Info("send change event success", nil)
+				},
+				Failed: func(err error) {
+					log.Info("send change event failed", map[string]interface{}{
+						log.KeyError: err,
+					})
+				},
 			}
 		}
 		for _, message := range entry.Messaging {
@@ -136,6 +144,17 @@ func (s *facebookSource) pageEvent(e PageEvent) error {
 			event.SetExtension("pageid", pageID)
 			event.SetExtension("fields", "messages")
 			event.SetData(ce.ApplicationJSON, message)
+			s.ch <- &cdkgo.Tuple{
+				Event: &event,
+				Success: func() {
+					log.Info("send message event success", nil)
+				},
+				Failed: func(err error) {
+					log.Info("send message event failed", map[string]interface{}{
+						log.KeyError: err,
+					})
+				},
+			}
 		}
 	}
 	return nil
