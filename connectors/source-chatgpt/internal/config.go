@@ -30,6 +30,7 @@ type chatGPTConfig struct {
 	Port          int    `json:"port" yaml:"port"`
 	Token         string `json:"token" yaml:"token" validate:"required"`
 	EverydayLimit int    `json:"everyday_limit" yaml:"everyday_limit"`
+	MaxTokens     int    `json:"max_tokens" yaml:"max_tokens"`
 }
 
 func (c *chatGPTConfig) Validate() error {
@@ -42,5 +43,8 @@ func (c *chatGPTConfig) Init() {
 	}
 	if c.EverydayLimit <= 0 {
 		c.EverydayLimit = 100
+	}
+	if c.MaxTokens <= 0 {
+		c.MaxTokens = 3500
 	}
 }

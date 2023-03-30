@@ -20,6 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/vanus-labs/cdk-go/log"
+
 	"github.com/sashabaranov/go-openai"
 )
 
@@ -69,10 +71,12 @@ func (s *chatGPTService) CreateChatCompletion(content string) (string, error) {
 		}
 		s.reset()
 	}
+	log.Info("receive content:"+content, nil)
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
+			Model:     openai.GPT3Dot5Turbo,
+			MaxTokens: s.config.MaxTokens,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleUser,
