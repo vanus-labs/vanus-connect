@@ -27,6 +27,7 @@ import (
 	"sync/atomic"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/connector"
 	"github.com/vanus-labs/cdk-go/log"
@@ -142,6 +143,7 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 	if err != nil {
 		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("read http response error %s", err.Error()))
 	}
+	log.Info("response body:"+string(resp), nil)
 	if res.StatusCode >= 400 {
 		return cdkgo.NewResult(connector.Code(res.StatusCode), fmt.Sprintf("http response code %d resp %s", res.StatusCode, string(resp)))
 	}
