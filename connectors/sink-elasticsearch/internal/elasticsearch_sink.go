@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	es "github.com/elastic/go-elasticsearch/v7"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/pkg/errors"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
@@ -43,6 +45,7 @@ type elasticsearchSink struct {
 	timeout time.Duration
 	buf     *bytes.Buffer
 	action  action
+	lock    sync.Mutex
 }
 
 func Sink() cdkgo.Sink {
@@ -88,6 +91,8 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	if len(events) == 0 {
 		return cdkgo.SuccessResult
 	}
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	atomic.AddInt64(&s.count, int64(len(events)))
 	log.Info("receive event count", map[string]interface{}{
 		"total": s.count,
