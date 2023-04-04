@@ -25,6 +25,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/costexplorer/types"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
@@ -124,7 +125,8 @@ func (s *awsBillingSource) start() {
 			s.getCost()
 		}
 		t.Stop()
-		tk := time.NewTicker(time.Hour * 24)
+		tk := time.NewTicker(time.Hour)
+		defer tk.Stop()
 		for {
 			select {
 			case <-s.ctx.Done():

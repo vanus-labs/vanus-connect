@@ -18,8 +18,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
@@ -40,6 +42,7 @@ type GoogleSheetSink struct {
 	service          *GoogleSheetService
 	defaultSheetName string
 	summary          []*Summary
+	lock             sync.Mutex
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -84,6 +87,8 @@ func (s *GoogleSheetSink) Arrived(ctx context.Context, events ...*ce.Event) cdkg
 }
 
 func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.Event) cdkgo.Result {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	var sheetName string
 	// get sheetName
 	v, exist := event.Extensions()[xvSheetName]
