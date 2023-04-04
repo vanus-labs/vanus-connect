@@ -26,6 +26,7 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
@@ -127,6 +128,7 @@ func (s *alicloudBillingSource) start() {
 		}
 		t.Stop()
 		tk := time.NewTicker(time.Hour)
+		defer tk.Stop()
 		for {
 			select {
 			case <-s.ctx.Done():
