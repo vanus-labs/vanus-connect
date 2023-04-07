@@ -152,7 +152,7 @@ The PostgreSQL Source tries to find the config file at `/vanus-connect/config/co
 ```shell
 docker run -it --rm --network=host \
   -v ${PWD}:/vanus-connect/config \
-  --name source-postgres public.ecr.aws/vanus/connector/source-postgers
+  --name source-postgres public.ecr.aws/vanus/connector/source-postgres
 ```
 
 ### Test
