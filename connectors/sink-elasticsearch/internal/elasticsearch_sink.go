@@ -97,6 +97,8 @@ func (s *elasticsearchSink) Arrived(ctx context.Context, events ...*ce.Event) cd
 	log.Info("receive event count", map[string]interface{}{
 		"total": s.count,
 	})
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	for _, event := range events {
 		err := s.appendEvent(event)
 		if err != nil {
