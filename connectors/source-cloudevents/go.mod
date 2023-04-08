@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
-	github.com/vanus-labs/cdk-go v0.5.0
+	github.com/vanus-labs/cdk-go v0.5.1-0.20230408025342-39829e6c0599
 )
 
 require (
