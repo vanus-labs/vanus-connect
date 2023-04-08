@@ -3,12 +3,10 @@ package com.linkall.sink.mysql;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.linkall.cdk.config.SinkConfig;
 
-public class MySQLConfig extends SinkConfig {
-
+public class JdbcConfig extends SinkConfig {
 
     @JsonProperty("db")
     private DbConfig dbConfig;
-
     @JsonProperty("insert_mode")
     private InsertMode insertMode;
     @JsonProperty("commit_interval")

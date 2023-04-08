@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 public class MySqlDialect implements Dialect {
 
+    @Override
     public String generateInsertSql(String tableName, Collection<String> columnNames) {
         StringBuilder builder = new StringBuilder();
         builder.append("INSERT INTO ");
@@ -23,6 +24,7 @@ public class MySqlDialect implements Dialect {
         return builder.toString();
     }
 
+    @Override
     public String generateUpsertSql(String tableName, Collection<String> columnNames) {
         StringBuilder builder = new StringBuilder();
         builder.append(generateInsertSql(tableName, columnNames));
