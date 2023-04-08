@@ -159,8 +159,8 @@ github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PKk=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
-github.com/vanus-labs/cdk-go v0.5.0 h1:70R4W2OSH+Ot+OITzDJga1YjBwKYKFMZpKvdpBPFx0U=
-github.com/vanus-labs/cdk-go v0.5.0/go.mod h1:5FkmAfZlIEEsQBe4ZKu/qqlZjZRQ9+VgpaXIcPMKbxE=
+github.com/vanus-labs/cdk-go v0.5.1-0.20230408025342-39829e6c0599 h1:9ORD9hMtcJOT4M9FbIHEE18L0SKPFPdu3yX97rDMr5I=
+github.com/vanus-labs/cdk-go v0.5.1-0.20230408025342-39829e6c0599/go.mod h1:5FkmAfZlIEEsQBe4ZKu/qqlZjZRQ9+VgpaXIcPMKbxE=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
