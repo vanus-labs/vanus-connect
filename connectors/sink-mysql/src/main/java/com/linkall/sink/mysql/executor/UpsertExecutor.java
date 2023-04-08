@@ -31,7 +31,7 @@ public class UpsertExecutor<T> implements SqlExecutor<T> {
     @Override
     public void prepareStatement(Connection connection) throws SQLException {
         String sql = dialect.generateUpsertSql(metadata.getTableName(), metadata.getColumnNames());
-        LOGGER.info("upsert sql: {}", sql);
+        LOGGER.info("table {} upsert sql: {}", metadata.getTableName(), sql);
         preparedStatement = connection.prepareStatement(sql);
         this.binder = new PreparedStatementBinder(metadata, preparedStatement);
     }
@@ -51,6 +51,7 @@ public class UpsertExecutor<T> implements SqlExecutor<T> {
             preparedStatement.addBatch();
         }
         preparedStatement.executeBatch();
+        LOGGER.debug("table {} flush size {}", metadata.getTableName(), batch.size());
         batch.clear();
     }
 

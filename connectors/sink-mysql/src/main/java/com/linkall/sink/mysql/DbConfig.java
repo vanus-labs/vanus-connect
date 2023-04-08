@@ -2,6 +2,8 @@ package com.linkall.sink.mysql;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Properties;
+
 public class DbConfig {
     @JsonProperty("host")
     private String host;
@@ -16,6 +18,9 @@ public class DbConfig {
 
     @JsonProperty("table_name")
     private String tableName;
+
+    @JsonProperty("properties")
+    private Properties properties;
 
     public String getHost() {
         return host;
@@ -39,5 +44,9 @@ public class DbConfig {
 
     public String getTableName() {
         return tableName;
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 }
