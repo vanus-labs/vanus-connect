@@ -44,7 +44,6 @@ type cloudEventsSource struct {
 }
 
 func (s *cloudEventsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-	// TODO
 	s.config = cfg.(*cloudEventsConfig)
 	if s.config.Port <= 0 {
 		s.config.Port = 8080
