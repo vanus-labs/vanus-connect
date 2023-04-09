@@ -67,6 +67,9 @@ func (s *GitHubSource) Chan() <-chan *cdkgo.Tuple {
 
 func (s *GitHubSource) start() {
 	_handler := newHandler(s.events, s.config.GitHub)
+	if s.config.Port <= 0 {
+		s.config.Port = 8080
+	}
 	s.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.config.Port),
 		Handler: _handler,
