@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sink-dingtalk
+  namespace: vanus
+spec:
+  selector:
+    app: sink-dingtalk
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: sink-dingtalk
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sink-dingtalk
+  namespace: vanus
+data:
+  config.yml: |-
+    bot:
+      defalult: "bot1"
+      webhooks:
+        - chat_group: "bot1"
+          url: "https://oapi.dingtalk.com/robot/send?access_token=XXXXXX"
+          signature: "xxxxxxxxxx"
+        - chat_group: "bot2"
+          url: "https://oapi.dingtalk.com/robot/send?access_token=XXXXXX"
+          signature: "xxxxxxxxxx"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sink-dingtalk
+  namespace: vanus
+  labels:
+    app: sink-dingtalk
+spec:
+  selector:
+    matchLabels:
+      app: sink-dingtalk
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sink-dingtalk
+    spec:
+      containers:
+        - name: sink-dingtalk
+          image: public.ecr.aws/vanus/connector/sink-dingtalk:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: sink-dingtalk
