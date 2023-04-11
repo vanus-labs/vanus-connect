@@ -38,6 +38,7 @@ const (
 	headerType         = "Vanus-Type"
 	headerContentType  = "Content-Type"
 	headerChatMode     = "Chat_Mode"
+	headerProcessMode  = "Process_Mode"
 	applicationJSON    = "application/json"
 )
 
@@ -104,10 +105,10 @@ func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, erro
 	if contentType == applicationJSON {
 		err = json.Unmarshal(body, &message)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("invalid JSON body")
 		}
 		if _, ok := message["message"].(string); !ok {
-			return nil, errors.New("body message no exist")
+			return nil, errors.New("body message doesn't exist")
 		}
 	} else {
 		message["message"] = string(body)
@@ -115,11 +116,16 @@ func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, erro
 	return message, nil
 }
 
+func (s *chatSource) isSync(req *http.Request) bool {
+	processMode := req.Header.Get(headerProcessMode)
+	return processMode == "sync"
+}
+
 func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	data, err := s.getMessage(req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, err.Error())))
 		return
 	}
 	chatType := chatGPT
@@ -130,13 +136,28 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		case chatGPT, chatErnieBot:
 		default:
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("chat_mode invalid"))
+			w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, "chat_mode invalid")))
 			return
 		}
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(resp))
-	go func(data map[string]interface{}) {
+	eventSource := req.Header.Get(headerSource)
+	if eventSource == "" {
+		eventSource = defaultEventSource
+	}
+	eventType := req.Header.Get(headerType)
+	if eventType == "" {
+		eventType = defaultEventType
+	}
+	event := ce.NewEvent()
+	event.SetID(uuid.New().String())
+	event.SetTime(time.Now())
+	event.SetType(eventType)
+	event.SetSource(eventSource)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func(event *ce.Event, data map[string]interface{}) {
+		defer wg.Done()
 		content, err := s.service.ChatCompletion(chatType, data["message"].(string))
 		if err != nil {
 			log.Warning("failed to get content from Chat", map[string]interface{}{
@@ -144,41 +165,33 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				"chatType":   chatType,
 			})
 		}
-		eventSource := req.Header.Get(headerSource)
-		if eventSource == "" {
-			eventSource = defaultEventSource
-		}
-		eventType := req.Header.Get(headerType)
-		if eventType == "" {
-			eventType = defaultEventType
-		}
-		event := ce.NewEvent()
-		event.SetID(uuid.New().String())
-		event.SetTime(time.Now())
-		event.SetType(eventType)
-		event.SetSource(eventSource)
 		data["result"] = content
 		event.SetData(ce.ApplicationJSON, data)
-		wg := sync.WaitGroup{}
-		wg.Add(1)
 		s.events <- &cdkgo.Tuple{
-			Event: &event,
+			Event: event,
 			Success: func() {
-				defer wg.Done()
-				log.Info("send event to target success", nil)
+				log.Info("send event to target success", map[string]interface{}{
+					"event": event.ID(),
+				})
 			},
 			Failed: func(err2 error) {
-				defer wg.Done()
 				log.Warning("failed to send event to target", map[string]interface{}{
 					log.KeyError: err2,
+					"event":      event.ID(),
 				})
 			},
 		}
-		wg.Wait()
-	}(data)
-
+	}(&event, data)
+	if !s.isSync(req) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(respSuccess))
+		return
+	}
+	wg.Wait()
+	w.WriteHeader(http.StatusOK)
+	w.Write(event.Data())
 }
 
 var (
-	resp = fmt.Sprintf(`{"status":%d,"msg":"%s"}`, 200, "Get API data successfully.")
+	respSuccess = fmt.Sprintf(`{"status":%d,"msg":"%s"}`, 200, "Get API data successfully.")
 )
