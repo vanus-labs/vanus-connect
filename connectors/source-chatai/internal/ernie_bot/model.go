@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package wenxin
+package ernie_bot
 
 type ChatCompletionRequest struct {
 	Message []ChatCompletionMessage `json:"messages"`

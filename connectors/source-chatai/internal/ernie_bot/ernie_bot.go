@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package wenxin
+package ernie_bot
 
 import (
 	"bytes"
@@ -22,20 +22,20 @@ import (
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/oauth2"
 
-	"github.com/vanus-labs/connector/source/chatai/internal/wenxin/oauth"
+	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot/oauth"
 )
 
 const url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
 
-type wenxinService struct {
+type ernieBotService struct {
 	client      *resty.Client
 	tokenSource oauth2.TokenSource
 	config      Config
 	maxTokens   int
 }
 
-func NewWenxinService(config Config, maxTokens int) *wenxinService {
-	return &wenxinService{
+func NewErnieBotService(config Config, maxTokens int) *ernieBotService {
+	return &ernieBotService{
 		config:      config,
 		maxTokens:   maxTokens,
 		client:      resty.New(),
@@ -43,7 +43,7 @@ func NewWenxinService(config Config, maxTokens int) *wenxinService {
 	}
 }
 
-func (s *wenxinService) SendChatCompletion(content string) (string, error) {
+func (s *ernieBotService) SendChatCompletion(content string) (string, error) {
 	token, err := s.tokenSource.Token()
 	if err != nil {
 		return "", err

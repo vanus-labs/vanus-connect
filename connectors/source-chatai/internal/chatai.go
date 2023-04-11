@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
-	"github.com/vanus-labs/connector/source/chatai/internal/wenxin"
 )
 
 const (
@@ -58,7 +58,7 @@ func newChatService(config *chatConfig) *chatService {
 	return &chatService{
 		config:       config,
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens),
-		wenxin:       wenxin.NewWenxinService(config.Wenxin, config.MaxTokens),
+		wenxin:       ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}

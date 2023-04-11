@@ -21,7 +21,7 @@ data:
     target: "http://localhost:18080"
     gpt:
       token: "sk-xxxxxx"
-    wenxin:
+    ernie_bot:
       access_key: xxxxxxx
       secret_key: xxxxxx
 
