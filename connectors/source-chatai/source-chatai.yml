@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-chatai
+  namespace: vanus
+spec:
+  selector:
+    app: source-chatai
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-chatai
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-chatai
+  namespace: vanus
+data:
+  config.yml: |-
+    target: "http://localhost:18080"
+    gpt:
+      token: "sk-xxxxxx"
+    wenxin:
+      access_key: xxxxxxx
+      secret_key: xxxxxx
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-chatai
+  namespace: vanus
+  labels:
+    app: source-chatai
+spec:
+  selector:
+    matchLabels:
+      app: source-chatai
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-chatai
+    spec:
+      containers:
+        - name: source-chatai
+          image: public.ecr.aws/vanus/connector/source-chatai:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-chatai
