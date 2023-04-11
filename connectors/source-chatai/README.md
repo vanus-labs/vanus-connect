@@ -2,7 +2,7 @@
 title: ChatAi
 ---
 
-# ChatGPT Source
+# ChatAI Source
 
 ## Introduction
 
@@ -47,20 +47,20 @@ target: http://localhost:31081
 port: 8082
 gpt
   token: xxxxxx
-wenxin
+ernie_bot
   access_key: xxxxxx
   secret_key: xxxxxx
 EOF
 ```
 
-| Name               | Required | Default | Description                                         |
-|:-------------------|:--------:|:--------|:----------------------------------------------------|
-| target             |   YES    |         | the target URL to send CloudEvents                  |
-| port               |    NO    | 8080    | the port to receive HTTP request                    |
-| gpt.token          |   YES    |         | the ChatGPT auth token                              |
-| weinxin.access_key |   YES    |         | the baiduce accessKey                               |
-| weinxin.secret_key |   YES    |         | the baiduce secretKey                               |
-| everyday_limit     |    NO    | 100     | the ChatAI Source call openapi api count everyday   |
+| Name                  | Required | Default | Description                                  |
+|:----------------------|:--------:|:--------|:---------------------------------------------|
+| target                |   YES    |         | the target URL to send CloudEvents           |
+| port                  |    NO    | 8080    | the port to receive HTTP request             |
+| gpt.token             |   YES    |         | the ChatGPT auth token                       |
+| ernie_bot.access_key  |   YES    |         | the baidu ai [accessKey][ernie_bot]          |
+| ernie_bot.secret_key  |   YES    |         | the baidu ai [secretKey][ernie_bot]          |
+| everyday_limit        |    NO    | 100     | the ChatAI Source call ai api count everyday |
 
 The ChatAI Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
@@ -168,7 +168,7 @@ data:
     target: "http://localhost:18080"
     gpt:
       token: "sk-xxxxxx"
-    wenxin:
+    ernie_bot:
       access_key: xxxxxxx
       secret_key: xxxxxx
 
@@ -211,3 +211,4 @@ spec:
 ```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
+[ernie_bot]: https://ai.baidu.com/ai-doc/REFERENCE/Ck3dwjhhu

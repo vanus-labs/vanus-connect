@@ -16,8 +16,8 @@ package internal
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
-	"github.com/vanus-labs/connector/source/chatai/internal/wenxin"
 )
 
 var _ cdkgo.SourceConfigAccessor = &chatConfig{}
@@ -29,11 +29,11 @@ func NewChatConfig() cdkgo.SourceConfigAccessor {
 type chatConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	Port          int           `json:"port" yaml:"port"`
-	GPT           gpt.Config    `json:"gpt" yaml:"gpt"`
-	Wenxin        wenxin.Config `json:"wenxin" yaml:"wenxin"`
-	EverydayLimit int           `json:"everyday_limit" yaml:"everyday_limit"`
-	MaxTokens     int           `json:"max_tokens" yaml:"max_tokens"`
+	Port          int              `json:"port" yaml:"port"`
+	GPT           gpt.Config       `json:"gpt" yaml:"gpt"`
+	ErnieBot      ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
+	EverydayLimit int              `json:"everyday_limit" yaml:"everyday_limit"`
+	MaxTokens     int              `json:"max_tokens" yaml:"max_tokens"`
 }
 
 func (c *chatConfig) Init() {
