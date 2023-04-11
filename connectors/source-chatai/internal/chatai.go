@@ -40,13 +40,13 @@ type ChatClient interface {
 type ChatType string
 
 const (
-	chatGPT    ChatType = "chatgpt"
-	chatWenxin ChatType = "wenxin"
+	chatGPT      ChatType = "chatgpt"
+	chatErnieBot ChatType = "wenxin"
 )
 
 type chatService struct {
 	chatGpt      ChatClient
-	wenxin       ChatClient
+	ernieBot     ChatClient
 	config       *chatConfig
 	lock         sync.Mutex
 	day          int
@@ -58,7 +58,7 @@ func newChatService(config *chatConfig) *chatService {
 	return &chatService{
 		config:       config,
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens),
-		wenxin:       ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
+		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
@@ -86,8 +86,8 @@ func (s *chatService) ChatCompletion(chatType ChatType, content string) (resp st
 		"chat": chatType,
 	})
 	switch chatType {
-	case chatWenxin:
-		resp, err = s.wenxin.SendChatCompletion(content)
+	case chatErnieBot:
+		resp, err = s.ernieBot.SendChatCompletion(content)
 	case chatGPT:
 		resp, err = s.chatGpt.SendChatCompletion(content)
 	}
