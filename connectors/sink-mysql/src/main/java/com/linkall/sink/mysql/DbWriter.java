@@ -3,14 +3,13 @@ package com.linkall.sink.mysql;
 import com.linkall.sink.mysql.connection.ConnectionProvider;
 import com.linkall.sink.mysql.connection.SimpleConnectionProvider;
 import com.linkall.sink.mysql.dialect.Dialect;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -57,7 +56,7 @@ public class DbWriter {
         executorService.scheduleAtFixedRate(
                 () -> {
                     try {
-                        flush();
+                        flush(false);
                     } catch (SQLException e) {
                         LOGGER.warn("sql writer flush has error", e);
                     }
@@ -67,19 +66,30 @@ public class DbWriter {
                 TimeUnit.MILLISECONDS);
     }
 
-    public synchronized void add(String tableName, JsonObject data) throws SQLException {
+    public synchronized void add(String tableName, String splitColumnName, JsonObject data) throws SQLException {
         TableWriter tableWriter = tableWriters.get(tableName);
         if (tableWriter==null) {
-            List<String> columnNames = new ArrayList<>(data.fieldNames());
-            TableMetadata metadata = new TableMetadata(tableName, columnNames);
-            tableWriter = new TableWriter(metadata, dialect, insertMode, commitSize);
-            tableWriter.updateConnection(connectionProvider.getConnection());
+            TableMetadata metadata = new TableMetadata(tableName, data.fieldNames());
+            tableWriter = new TableWriter(dialect, insertMode, commitSize, connectionProvider.getConnection(), metadata);
+            tableWriter.init();
             tableWriters.put(tableName, tableWriter);
+        } else if (!tableWriter.getTableMetadata().columnChange(data.fieldNames())) {
+            tableWriter.updateTableMetadata(new TableMetadata(tableName, data.fieldNames()));
         }
-        tableWriter.addToBatch(data);
+        if (splitColumnName==null) {
+            tableWriter.addToBatch(data);
+            return;
+        }
+        JsonArray array = data.getJsonArray(splitColumnName);
+        data.remove(splitColumnName);
+        for (int i = 0; i < array.size(); i++) {
+            JsonObject obj = data.copy();
+            obj.put(splitColumnName, array.getValue(i));
+            tableWriter.addToBatch(obj);
+        }
     }
 
-    public synchronized void flush() throws SQLException {
+    public synchronized void flush(boolean close) throws SQLException {
         if (tableWriters.size()==0) {
             return;
         }
@@ -91,13 +101,20 @@ public class DbWriter {
             }
         }
         for (TableWriter tableWriter : tableWriters.values()) {
-            tableWriter.flush();
+            try {
+                tableWriter.flush();
+            } catch (Exception e) {
+                if (!close) {
+                    throw e;
+                }
+                LOGGER.error("close table {} flush failed", tableWriter.getTableMetadata().getTableName(), e);
+            }
         }
     }
 
     public synchronized void close() throws Exception {
         executorService.shutdown();
-        flush();
+        flush(true);
 
         connectionProvider.close();
     }
