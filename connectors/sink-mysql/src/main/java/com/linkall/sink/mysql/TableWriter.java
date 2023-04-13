@@ -90,7 +90,7 @@ public class TableWriter {
             flush();
             sqlExecutor.close();
         } catch (Throwable t) {
-            LOGGER.warn("table {} change flush buffer data error", metadata.getTableName(), t);
+            LOGGER.error("table {} change flush error", metadata.getTableName(), t);
         }
         this.metadata = tableMetadata;
         init();

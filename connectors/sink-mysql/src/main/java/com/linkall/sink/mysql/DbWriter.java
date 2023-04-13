@@ -73,7 +73,7 @@ public class DbWriter {
             tableWriter = new TableWriter(dialect, insertMode, commitSize, connectionProvider.getConnection(), metadata);
             tableWriter.init();
             tableWriters.put(tableName, tableWriter);
-        } else if (!tableWriter.getTableMetadata().columnChange(data.fieldNames())) {
+        } else if (tableWriter.getTableMetadata().columnChange(data.fieldNames())) {
             tableWriter.updateTableMetadata(new TableMetadata(tableName, data.fieldNames()));
         }
         if (splitColumnName==null) {
@@ -115,7 +115,6 @@ public class DbWriter {
     public synchronized void close() throws Exception {
         executorService.shutdown();
         flush(true);
-
         connectionProvider.close();
     }
 }

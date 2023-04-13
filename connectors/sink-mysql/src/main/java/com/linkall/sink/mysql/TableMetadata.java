@@ -28,6 +28,6 @@ public class TableMetadata {
         if (columnNames==null || columnNames.isEmpty()) {
             return false;
         }
-        return Objects.equals(this.columnNames, columnNames);
+        return !Objects.equals(this.columnNames, columnNames);
     }
 }
