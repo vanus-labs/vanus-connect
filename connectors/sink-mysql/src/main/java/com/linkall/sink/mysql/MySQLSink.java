@@ -18,17 +18,31 @@ public class MySQLSink implements Sink {
     private JdbcConfig config;
     private AtomicLong total = new AtomicLong();
 
+    public String getTableName(CloudEvent event) {
+        Object obj = event.getExtension(Constants.ATTRIBUTE_TABLE_NAME);
+        String tableName = config.getDbConfig().getTableName();
+        if (obj!=null) {
+            tableName = obj.toString();
+        }
+        return tableName;
+    }
+
+    public String getSplitColumnName(CloudEvent event) {
+        Object obj = event.getExtension(Constants.ATTRIBUTE_SPLIT_COLUMN_NAME);
+        if (obj==null) {
+            return null;
+        }
+        return obj.toString();
+    }
+
     @Override
     public Result Arrived(CloudEvent... events) {
         for (CloudEvent event : events) {
-            Object obj = event.getExtension(Constants.ATTRIBUTE_TABLE_NAME);
-            String tableName = config.getDbConfig().getTableName();
-            if (obj!=null) {
-                tableName = obj.toString();
-            }
+            String tableName = getTableName(event);
+            String splitColumnName = getSplitColumnName(event);
             JsonObject data = new JsonObject(new String(event.getData().toBytes()));
             try {
-                dbWriter.add(tableName, data);
+                dbWriter.add(tableName, splitColumnName, data);
                 LOGGER.info("total receive event:{}", total.incrementAndGet());
             } catch (SQLException e) {
                 LOGGER.error("table {} write data has error", tableName, e);
@@ -43,7 +57,7 @@ public class MySQLSink implements Sink {
     }
 
     @Override
-    public void initialize(Config config) throws Exception {
+    public void initialize(Config config) {
         this.config = (JdbcConfig) config;
         this.dbWriter = new DbWriter(this.config, new MySqlDialect());
     }

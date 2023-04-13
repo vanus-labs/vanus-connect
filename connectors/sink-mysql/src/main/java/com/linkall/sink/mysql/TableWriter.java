@@ -5,28 +5,36 @@ import com.linkall.sink.mysql.executor.InsertExecutor;
 import com.linkall.sink.mysql.executor.SqlExecutor;
 import com.linkall.sink.mysql.executor.UpsertExecutor;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class TableWriter {
+    private Logger LOGGER = LoggerFactory.getLogger(TableWriter.class);
+
     private SqlExecutor<JsonObject> sqlExecutor;
     private TableMetadata metadata;
     private int batchSize;
     private int commitSize;
+    private Connection connection;
+    private Dialect dialect;
+    private JdbcConfig.InsertMode insertMode;
+    private int exceptionCount;
 
     public TableWriter(
-            TableMetadata metadata,
             Dialect dialect,
             JdbcConfig.InsertMode insertMode,
-            int commitSize) {
+            int commitSize, Connection connection, TableMetadata metadata) {
         this.commitSize = commitSize;
+        this.dialect = dialect;
+        this.insertMode = insertMode;
+        this.connection = connection;
         this.metadata = metadata;
-        this.sqlExecutor = getSqlExecutor(dialect, insertMode);
     }
 
-    private SqlExecutor<JsonObject> getSqlExecutor(
-            Dialect dialect, JdbcConfig.InsertMode insertMode) {
+    private SqlExecutor<JsonObject> getSqlExecutor() {
         switch (insertMode) {
             case INSERT:
                 return new InsertExecutor<>(metadata, dialect);
@@ -35,6 +43,12 @@ public class TableWriter {
             default:
                 throw new RuntimeException("invalid insert mode");
         }
+    }
+
+    public void init() throws SQLException {
+        exceptionCount = 0;
+        this.sqlExecutor = getSqlExecutor();
+        sqlExecutor.prepareStatement(connection);
     }
 
     public synchronized void addToBatch(JsonObject data) throws SQLException {
@@ -49,12 +63,36 @@ public class TableWriter {
         if (batchSize==0) {
             return;
         }
-        sqlExecutor.executeBatch();
+        try {
+            sqlExecutor.executeBatch();
+        } catch (SQLException e) {
+            if (++exceptionCount < 3) {
+                throw e;
+            }
+            exceptionCount = 0;
+            LOGGER.error("table {} flush failed max times, throw it", metadata.getTableName(), e);
+        }
         batchSize = 0;
     }
 
     public synchronized void updateConnection(Connection connection) throws SQLException {
+        this.connection = connection;
         sqlExecutor.close();
         sqlExecutor.prepareStatement(connection);
+    }
+
+    public TableMetadata getTableMetadata() {
+        return this.metadata;
+    }
+
+    public void updateTableMetadata(TableMetadata tableMetadata) throws SQLException {
+        try {
+            flush();
+            sqlExecutor.close();
+        } catch (Throwable t) {
+            LOGGER.error("table {} change flush error", metadata.getTableName(), t);
+        }
+        this.metadata = tableMetadata;
+        init();
     }
 }
