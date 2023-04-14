@@ -18,9 +18,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+	fb "github.com/huandu/facebook/v2"
 	cdkgo "github.com/vanus-labs/cdk-go"
+)
+
+var (
+	errFailedToCreate = cdkgo.NewRequest(http.StatusBadRequest, "facebook: failed to create form with data")
 )
 
 var _ cdkgo.Sink = &FacebookLeadAdsSink{}
@@ -39,40 +45,28 @@ func (s *FacebookLeadAdsSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAc
 
 func (s *FacebookLeadAdsSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
 	for _, event := range events {
-		r := s.createLeadAdsForm(ctx, event)
-		if r != cdkgo.SuccessResult {
-			return r
+		event := events[idx]
+
+		var form map[string]interface{}
+
+		err := json.Unmarshal([]byte(event.Data()), &form)
+		if err != nil {
+			return errFailedToCreate
 		}
+
+		access_token, pageId := s.cfg.AccessToken, s.cfg.PageId
+		name, follow_up_url, questions := form["name"], form["follow_up_url"], form["questions"]
+
+		res, err := fb.Get(pageId+"leadgen_forms", fb.Params{
+			"field":        name + follow_up_url + questions,
+			"access_token": access_token,
+		})
+		if err != nil {
+			return nil
+		}
+
 	}
 	return cdkgo.SuccessResult
-}
-
-func (f *FacebookLeadAdsSink) createLeadAdsForm(ctx context.Context, event ...*ce.Event) cdkgo.Result {
-	val, exist := event.Extensions()[xvFormName]
-	if exist {
-		str, ok := val.(string)
-		if !ok {
-			return errInvalidFormName
-		}
-		formName := str
-	}
-	val, exist := event.Extensions()[xvFollowUpUrl]
-	if exist {
-		str, ok := val.(string)
-		if !ok {
-			return errInvalidFollowUpUrl
-		}
-		followUpUrl := str
-	}
-	val, exist := event.Extensions()[xvQuestions]
-	var allQuestions map[string]interface{}
-	if exist {
-		err := json.Unmarshal([]byte(val, &allQuestions))
-		if err != nil {
-			return nil, err
-		}
-	}
-	// TODO
 }
 
 func (s *FacebookLeadAdsSink) Name() string {

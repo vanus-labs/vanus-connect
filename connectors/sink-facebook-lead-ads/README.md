@@ -1,12 +1,12 @@
 ---
-title: <name>
+title: Facebook Lead Ads
 ---
 
-# <name> Sink
+# Facebook Lead Ads Sink
 
 ## Introduction
 
-The <name> Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the `data`
+The Facebook Lead Ads Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents in a way that extracts the `data`
 part of the original event and <must: description...>
 
 For example, the incoming CloudEvent looks like this:

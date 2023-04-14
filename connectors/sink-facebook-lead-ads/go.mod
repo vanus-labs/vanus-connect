@@ -1,4 +1,4 @@
-module github.com/vanus-labs/connector/sink/example
+module github.com/vanus-labs/connector/sink/facebook-lead-ads/internal
 
 go 1.18
 
@@ -17,6 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
+	github.com/huandu/facebook/v2 v2.7.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

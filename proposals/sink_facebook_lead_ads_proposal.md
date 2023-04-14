@@ -14,7 +14,7 @@ This page describes the design of the Facebook Lead Ads Sink in detail.
 ## Prerequisites
 
 Before you start you will need the following:
-- A facebook app with 
+- A facebook app with
   - The ``ads management`` permission
   - The ``pages manage ads`` permission
   - The ``pages read engagement`` permission
@@ -32,6 +32,7 @@ The Facebook Lead Ads Sink needs following configurations to work properly.
 | Name        | Required | Default | Description                                                |
 |:------------|:--------:|:-------:|------------------------------------------------------------|
 | access_token |    YES  |          | This is the access token that is required to access the Facebook Graph API.
+| page_id   |       YES   |          | This is the page ID that is going to run the Facebook Ads.
 
 ### Required CloudEvents Data Format
 
@@ -73,9 +74,9 @@ If an incoming CloudEvents looks like:
   }
 }
 ```
-In order to create the Lead Ads form successfully, the JSON ``data`` field must contain the following JSON sub fields(``name``, ``follow_up_action`` and ``questions``). 
+In order to create the Lead Ads form successfully, the JSON ``data`` field must contain the following JSON sub fields(``name``, ``follow_up_action`` and ``questions``).
 
-The Facebook lead ads sink will create a form ``<FORM_NAME>`` with the following fields: ``FIRST_NAME``, ``LAST_NAME`` and ``EMAIL``. The redirection link after the user fill the form is ``<URL>``. 
+The Facebook lead ads sink will create a form ``<FORM_NAME>`` with the following fields: ``FIRST_NAME``, ``LAST_NAME`` and ``EMAIL``. The redirection link after the user fill the form is ``<URL>``.
 ### Used Libraries/APIs
 
 [Lead Ads from Meta Marketing API](https://developers.facebook.com/docs/marketing-api/guides/lead-ads/create).
