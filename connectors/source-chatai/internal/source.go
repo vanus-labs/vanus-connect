@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,7 +103,7 @@ func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, erro
 	}
 	message := make(map[string]interface{})
 	contentType := req.Header.Get(headerContentType)
-	if contentType == applicationJSON {
+	if contentType != "" && strings.HasPrefix(contentType, applicationJSON) {
 		err = json.Unmarshal(body, &message)
 		if err != nil {
 			return nil, errors.New("invalid JSON body")
