@@ -41,13 +41,21 @@ The Facebook Lead Ads Sink requires following JSON data format in CloudEvent's `
 ```json
 {
     "name": "<FORM_NAME>",
-    "follow_up_action": "<URL>",
+    "follow_up_action_url": "<URL>",
     "questions": {
-        "type": "FIRST_NAME",
-        "type": "LAST_NAME",
-        "type": "EMAIL",
+        {
+            "type": "FIRST_NAME"
+        },
+        {
+            "type": "LAST_NAME"
+        },
+        {
+            "type": "EMAIL"
+        },
         ...
     }
+    "context_card_id": "<CONTEXT_CARD_ID>",
+    "legal_content_id": "<LEGAL_CONTENT_ID>"
 }
 ```
 
@@ -65,16 +73,24 @@ If an incoming CloudEvents looks like:
   "datacontenttype": "application/json",
   "data": {
     "name": "<FORM_NAME>",
-    "follow_up_action": "<URL>",
+    "follow_up_action_url": "<URL>",
     "questions": {
-        "type": "FIRST_NAME",
-        "type": "LAST_NAME",
-        "type": "EMAIL"
+        {
+            "type": "FIRST_NAME"
+        },
+        {
+            "type": "LAST_NAME"
+        },
+        {
+            "type": "EMAIL"
+        },
     }
+    "context_card_id": "<CONTEXT_CARD_ID>",
+    "legal_content_id": "<LEGAL_CONTENT_ID>"
   }
 }
 ```
-In order to create the Lead Ads form successfully, the JSON ``data`` field must contain the following JSON sub fields(``name``, ``follow_up_action`` and ``questions``).
+In order to create the Lead Ads form successfully, the JSON ``data`` field must contain the following JSON sub fields(``name``, ``follow_up_action_url`` and ``questions``).
 
 The Facebook lead ads sink will create a form ``<FORM_NAME>`` with the following fields: ``FIRST_NAME``, ``LAST_NAME`` and ``EMAIL``. The redirection link after the user fill the form is ``<URL>``.
 ### Used Libraries/APIs

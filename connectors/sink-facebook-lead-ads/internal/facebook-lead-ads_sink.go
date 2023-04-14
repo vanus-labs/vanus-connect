@@ -55,15 +55,21 @@ func (s *FacebookLeadAdsSink) Arrived(ctx context.Context, events ...*ce.Event) 
 		}
 
 		access_token, pageId := s.cfg.AccessToken, s.cfg.PageId
-		name, follow_up_url, questions := form["name"], form["follow_up_url"], form["questions"]
+		name, follow_up_action_url, questions, context_card_id, legal_content_id := form["name"], form["follow_up_action_url"], form["questions"], form["context_card_id"], form["legal_content_id"]
 
-		res, err := fb.Get(pageId+"leadgen_forms", fb.Params{
-			"field":        name + follow_up_url + questions,
-			"access_token": access_token,
+		res, err := fb.Post(pageId+"leadgen_forms", fb.Params{
+			"name":                 name,
+			"follow_up_action_url": follow_up_action_url,
+			"questions":            questions,
+			"context_card_id":      context_card_id,
+			"legal_content_id":     legal_content_id,
+			"access_token":         access_token,
 		})
 		if err != nil {
 			return nil
 		}
+
+		return res["data"]
 
 	}
 	return cdkgo.SuccessResult
