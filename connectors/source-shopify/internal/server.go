@@ -32,6 +32,7 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
 	"github.com/valyala/fasthttp"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )

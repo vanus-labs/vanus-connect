@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: source-shopify-app
+  namespace: vanus
+spec:
+  selector:
+    app: source-shopify-app
+  type: ClusterIP
+  ports:
+    - port: 8080
+      name: source-shopify-app
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: source-shopify-app
+  namespace: vanus
+data:
+  config.yml: |-
+    target: http://<url>:<port>/gateway/<eventbus>
+    shop_name: shop_name
+    api_access_token: shpat_xxxxxx
+    sync_begin_date: 2023-04-01
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: source-shopify-app
+  namespace: vanus
+  labels:
+    app: source-shopify-app
+spec:
+  selector:
+    matchLabels:
+      app: source-shopify-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: source-shopify-app
+    spec:
+      containers:
+        - name: source-shopify-app
+          image: public.ecr.aws/vanus/connector/source-shopify-app:latest
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config
+              mountPath: /vanus-connect/config
+      volumes:
+        - name: config
+          configMap:
+            name: source-shopify-app

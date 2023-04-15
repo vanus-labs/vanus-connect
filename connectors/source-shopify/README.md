@@ -312,7 +312,7 @@ you will get a `Forwarding` URL like `https://xxxx.xxxx.ngrok.io` after ngrok st
 
 ### Create a Shopify webhook via cURL
 
-replace `<your_shop_name>, <your_shop_access_token>, <Forwarding URL>` to yours. 
+replace `<your_shop_name>, <your_shop_access_token>, <Forwarding URL>` to yours.
 ```shell
 curl --location --request POST 'https://<your_shop_name>.myshopify.com/admin/api/2023-01/webhooks.json' \
 --header 'X-Shopify-Access-Token: <your_shop_access_token>' \
