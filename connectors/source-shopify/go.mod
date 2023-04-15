@@ -1,12 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 module github.com/vanus-labs/connector/source/shopify
-=======
-module github.com/vanus-labs/connector/source/http
->>>>>>> d269259 (feat: add shopify source)
-=======
-module github.com/vanus-labs/connector/source/shopify
->>>>>>> 2f93b62 (feat: add shopify source)
 
 go 1.18
 

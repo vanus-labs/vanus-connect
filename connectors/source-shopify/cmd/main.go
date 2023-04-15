@@ -16,25 +16,9 @@ package main
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	"github.com/vanus-labs/connector/source/shopify/internal"
 )
 
 func main() {
 	cdkgo.RunSource(internal.NewConfig, internal.NewShopifySource)
-=======
-	"github.com/vanus-labs/connector/source/http/internal"
-)
-
-func main() {
-	cdkgo.RunSource(internal.NewConfig, internal.NewHTTPSource)
->>>>>>> d269259 (feat: add shopify source)
-=======
-	"github.com/vanus-labs/connector/source/shopify/internal"
-)
-
-func main() {
-	cdkgo.RunSource(internal.NewConfig, internal.NewShopifySource)
->>>>>>> 2f93b62 (feat: add shopify source)
 }

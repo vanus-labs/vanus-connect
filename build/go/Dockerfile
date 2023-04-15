@@ -9,11 +9,7 @@ WORKDIR /build/vanus-connect/connectors/${connector}
 RUN go mod tidy
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connect/bin/${connector} ./cmd/main.go
 
-<<<<<<< HEAD
 FROM ubuntu:22.10
-=======
-FROM --platform=$BUILDPLATFORM ubuntu:22.10
->>>>>>> 7a9eb27 (update readme)
 
 ARG connector
 
