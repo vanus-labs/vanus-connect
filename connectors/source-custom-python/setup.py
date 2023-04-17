@@ -21,7 +21,7 @@ if __name__ == "__main__":
         author="Linkall Inc.",
         url="https://github.com/vanus-labs/vanus-connect",
         license="Apache License 2.0",
-        packages=find_namespace_packages(include=["vanus.connect.*"]),
+        packages=find_namespace_packages(include=["vanus.connect.customsource"]),
         classifiers=[
             "Operating System :: OS Independent",
             "Programming Language :: Python :: 3",
@@ -32,11 +32,6 @@ if __name__ == "__main__":
             "hypercorn",
             "quart",
         ],
-        extras_require={
-            "cmd": [
-                "trio",
-            ],
-        },
         entry_points={
             "console_scripts": [
                 "vs-pycustomsource = vanus.connect.customsource.__main__:main",

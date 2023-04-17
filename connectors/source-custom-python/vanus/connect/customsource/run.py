@@ -19,24 +19,17 @@ from .source import CustomHTTPSource, CustomSource, EventHandler, MessageHandler
 
 
 def _run(app, config):
+    import asyncio
+    from hypercorn.asyncio import serve
+
     try:
-        import trio
-        from hypercorn.trio import serve
+        import uvloop
 
-        trio.run(serve, app, config)
+        uvloop.install()
     except ImportError:
-        import asyncio
+        pass
 
-        from hypercorn.asyncio import serve
-
-        try:
-            import uvloop
-
-            uvloop.install()
-        except ImportError:
-            pass
-
-        asyncio.run(serve(app, config))
+    asyncio.run(serve(app, config))
 
 
 def _run_source(port, source):

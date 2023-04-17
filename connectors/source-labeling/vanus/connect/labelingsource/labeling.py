@@ -53,7 +53,7 @@ class LabelMaker:
         labels = set()
         for match in self._matcher.finditer(text):
             labels.add(match[3])
-        return labels
+        return list(labels)
 
 
 class CloudEventLabelMaker:

@@ -17,7 +17,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 
 import httpx
 from cloudevents.abstract import AnyCloudEvent
-from cloudevents.conversion import to_binary
+from cloudevents.conversion import to_structured
 from cloudevents.http import from_http
 from quart import Quart, request
 from quart.views import View
@@ -26,16 +26,20 @@ from quart.views import View
 class Source:
     def __init__(self, sink_endpoint: str):
         self.sink_endpoint = sink_endpoint
-        self._client = httpx.AsyncClient(http2=True)
+        # self._client = httpx.AsyncClient(http2=True)
 
     async def on_event(self, event):
         # Creates the HTTP request representation of the CloudEvent in binary content mode
-        headers, body = to_binary(event)
+        headers, body = to_structured(event)
 
         # POST
-        resp = await self._client.post(self.sink_endpoint, content=body, headers=headers)
+        async with httpx.AsyncClient(http2=True) as client:
+            resp = await client.post(self.sink_endpoint, content=body, headers=headers)
 
-        if resp.status_code % 100 != 2:
+        # TODO: reuse http client
+        # resp = await self._client.post(self.sink_endpoint, content=body, headers=headers)
+
+        if resp.status_code / 100 != 2:
             raise RuntimeError(f"Failed to send event: {resp.status_code} {resp.text}")
 
         # TODO: return
@@ -47,7 +51,9 @@ EventListener = Callable[[AnyCloudEvent], Awaitable[Any]]
 
 class CloudEventHandler(View):
     methods = ["POST"]
-    init_every_request = False
+
+    # TODO: reuse handler after bug fixing of quart(>0.18.4)
+    # init_every_request = False
 
     def __init__(self, on_event: EventListener) -> None:
         super().__init__()

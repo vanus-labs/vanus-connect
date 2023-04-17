@@ -6,9 +6,10 @@ RUN python3 setup.py bdist_wheel
 
 FROM --platform=$TARGETPLATFORM public.ecr.aws/vanus/connector/source-custom-python:latest
 
-COPY --from=builder /build/vanus-connect/dist/vanus_connect_labeling-*whl .
-RUN python3 -m pip install vanus_connect_labeling-*whl && rm vanus_connect_labeling-*whl
+COPY --from=builder /build/vanus-connect/dist/vanus_connect_labelingsource-*.whl .
+RUN python3 -m pip install vanus_connect_labelingsource-*.whl && rm vanus_connect_labelingsource-*.whl
 
 EXPOSE 8080
 
 ENTRYPOINT ["vs-labeling"]
+CMD ["--config=/vanus-connect/config/config.yml"]
