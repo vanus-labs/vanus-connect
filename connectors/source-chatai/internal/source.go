@@ -38,8 +38,9 @@ const (
 	headerSource       = "Vanus-Source"
 	headerType         = "Vanus-Type"
 	headerContentType  = "Content-Type"
-	headerChatMode     = "Chat_Mode"
-	headerProcessMode  = "Process_Mode"
+	headerChatModeOld  = "Chat_Mode"
+	headerChatMode     = "Chat-Mode"
+	headerProcessMode  = "Process-Mode"
 	applicationJSON    = "application/json"
 )
 
@@ -131,6 +132,9 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	chatType := chatGPT
 	chatMode := req.Header.Get(headerChatMode)
+	if chatMode == "" {
+		chatMode = req.Header.Get(headerChatModeOld)
+	}
 	if chatMode != "" {
 		chatType = ChatType(chatMode)
 		switch chatType {
