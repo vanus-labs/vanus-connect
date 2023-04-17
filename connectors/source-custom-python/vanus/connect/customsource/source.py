@@ -59,7 +59,7 @@ class CloudEventHandler(View):
         super().__init__()
         self._on_event = on_event
 
-    async def dispatch_request(self):
+    async def dispatch_request(self, **kwargs):
         # Create a CloudEvent
         event = from_http(request.headers, await request.get_data())
 
@@ -86,7 +86,9 @@ class CloudEventsSource(Source):
         self.register_event_handler(self.on_event)
 
     def register_event_handler(self, on_event):
-        self.app.add_url_rule("/", view_func=CloudEventHandler.as_view("source", on_event))
+        view_func = CloudEventHandler.as_view("source", on_event)
+        self.app.add_url_rule("/", view_func=view_func)
+        self.app.add_url_rule("/<path:path>", view_func=view_func)
 
 
 EventHandler = Callable[[AnyCloudEvent], Optional[AnyCloudEvent]]
@@ -113,7 +115,9 @@ class CustomSource(CloudEventsSource):
         super().__init__(sink_endpoint, **kwargs)
 
     def register_event_handler(self, on_event: EventListener):
-        self.app.add_url_rule("/", view_func=CustomEventHandler.as_view("source", self._handler, on_event))
+        view_func = CustomEventHandler.as_view("source", self._handler, on_event)
+        self.app.add_url_rule("/", view_func=view_func)
+        self.app.add_url_rule("/<path:path>", view_func=view_func)
 
 
 Message = Dict[str, Any]
@@ -125,7 +129,7 @@ class CustomHTTPHandler(CloudEventHandler):
         super().__init__(on_event)
         self._handle = handler
 
-    async def dispatch_request(self):
+    async def dispatch_request(self, **kwargs):
         msg = await request.get_json()
 
         # Process the message
@@ -144,4 +148,6 @@ class CustomHTTPSource(CloudEventsSource):
         super().__init__(sink_endpoint, **kwargs)
 
     def register_event_handler(self, on_event):
-        self.app.add_url_rule("/", view_func=CustomHTTPHandler.as_view("source", self._handler, on_event))
+        view_func = CustomHTTPHandler.as_view("source", self._handler, on_event)
+        self.app.add_url_rule("/", view_func=view_func)
+        self.app.add_url_rule("/<path:path>", view_func=view_func)
