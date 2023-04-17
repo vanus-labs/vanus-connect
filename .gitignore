@@ -1,4 +1,3 @@
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -27,6 +26,9 @@ testbin/*
 # macOS
 .DS_Store
 
+# VSCode
+.vscode/
+
 # JetBrains
 .idea/
 *.iml
@@ -36,11 +38,14 @@ target/
 # dep
 cdk-go
 
-# jetbrains
-.idea
-
 # go test resources
 **/test/resources/*
+
+# python
+__pycache__/
+build/
+dist/
+*.egg-info/
 
 # generated proto file
 **/src/proto
