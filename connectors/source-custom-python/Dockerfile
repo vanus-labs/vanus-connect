@@ -8,7 +8,7 @@ FROM --platform=$TARGETPLATFORM python:3.11
 WORKDIR /vanus-connect
 
 COPY --from=builder /build/vanus-connect/dist/vanus_connect_customsource-*whl .
-RUN python3 -m pip install vanus_connect_customsource-*whl[cmd] && rm vanus_connect_customsource-*whl
+RUN python3 -m pip install vanus_connect_customsource-*whl && rm vanus_connect_customsource-*whl
 
 EXPOSE 8080
 

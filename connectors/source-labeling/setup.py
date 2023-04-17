@@ -21,12 +21,12 @@ if __name__ == "__main__":
         author="Linkall Inc.",
         url="https://github.com/vanus-labs/vanus-connect",
         license="Apache License 2.0",
-        packages=find_namespace_packages(include=["vanus.connect.*"]),
+        packages=find_namespace_packages(include=["vanus.connect.labelingsource"]),
         classifiers=[
             "Operating System :: OS Independent",
             "Programming Language :: Python :: 3",
         ],
-        install_requires=["vanus-connect-customsource"],
+        install_requires=["actrie", "jsonpath-ng", "pyyaml", "vanus-connect-customsource"],
         entry_points={
             "console_scripts": [
                 "vs-labeling = vanus.connect.labelingsource.__main__:main",

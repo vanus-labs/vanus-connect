@@ -33,7 +33,7 @@ def main():
         config = yaml.safe_load(f)
 
     labels = json.loads(config["label"])
-    label_maker = HttpLabelMaker(config["source_path"], config["target_path"], labels)
+    label_maker = HttpLabelMaker(config["source_path"], config["target_path"], config=labels)
 
     run_http_source(config["port"], config["target"], label_maker.label, name=config.get("name", __name__))
 
