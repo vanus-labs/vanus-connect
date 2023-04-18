@@ -5,7 +5,8 @@ go 1.18
 require (
 	github.com/bold-commerce/go-shopify/v3 v3.13.0
 	github.com/cloudevents/sdk-go/v2 v2.13.0
-	github.com/go-resty/resty/v2 v2.7.0
+	github.com/google/uuid v1.3.0
+	github.com/pkg/errors v0.9.1
 	github.com/vanus-labs/cdk-go v0.5.0
 )
 
@@ -18,13 +19,11 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/shopspring/decimal v0.0.0-20200105231215-408a2507e114 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
