@@ -88,31 +88,84 @@ func (s *shopifySource) start(ctx context.Context) {
 }
 
 func (s *shopifySource) sync(ctx context.Context) error {
-	beginTime, err := s.getSyncBeginTime(ctx)
+	var err error
+	err = s.syncOrders(ctx)
 	if err != nil {
-		return errors.Wrap(err, "get sync begin timer error")
+		log.Error("sync order failed", map[string]interface{}{
+			log.KeyError: err,
+		})
 	}
-	now := time.Now()
+	err = s.syncProducts(ctx)
+	if err != nil {
+		log.Error("sync product failed", map[string]interface{}{
+			log.KeyError: err,
+		})
+	}
+	return nil
+}
+
+func (s *shopifySource) syncOrders(ctx context.Context) error {
+	apiType := OrderApi
+	begin, err := s.getSyncBeginTime(ctx, apiType)
+	if err != nil {
+		return errors.Wrapf(err, "get %v sync begin timer error", apiType)
+	}
+	end := time.Now().UTC()
 	listOptions := &goshopify.ListOptions{
-		PageInfo:     fmt.Sprintf("%d", time.Now().Unix()),
-		Page:         1,
-		CreatedAtMin: beginTime,
-		CreatedAtMax: now,
+		CreatedAtMin: begin,
+		CreatedAtMax: end,
 	}
+	c := 0
 	for {
-		orders, pageOptions, err := s.client.Order.ListWithPagination(listOptions)
+		list, pageOptions, err := s.client.Order.ListWithPagination(listOptions)
 		if err != nil {
-			return errors.Wrap(err, "list order failed")
+			return errors.Wrapf(err, "list %v failed", apiType)
 		}
-		if len(orders) == 0 {
+		if len(list) == 0 {
 			break
 		}
-		s.orderEvent(orders)
+		c += len(list)
+		s.orderEvent(list)
 		if pageOptions == nil || pageOptions.NextPageOptions == nil {
 			break
 		}
 		listOptions = pageOptions.NextPageOptions
 	}
-	s.setSyncTime(ctx, now)
-	return nil
+	log.Info(fmt.Sprintf("sync %v success", apiType), map[string]interface{}{
+		"count": c,
+	})
+	return s.setSyncTime(ctx, apiType, end)
+}
+
+func (s *shopifySource) syncProducts(ctx context.Context) error {
+	apiType := ProductApi
+	begin, err := s.getSyncBeginTime(ctx, apiType)
+	if err != nil {
+		return errors.Wrapf(err, "get %v sync begin timer error", apiType)
+	}
+	end := time.Now().UTC()
+	listOptions := &goshopify.ListOptions{
+		CreatedAtMin: begin,
+		CreatedAtMax: end,
+	}
+	c := 0
+	for {
+		list, pageOptions, err := s.client.Product.ListWithPagination(listOptions)
+		if err != nil {
+			return errors.Wrapf(err, "list %v failed", apiType)
+		}
+		if len(list) == 0 {
+			break
+		}
+		c += len(list)
+		s.productEvent(list)
+		if pageOptions == nil || pageOptions.NextPageOptions == nil {
+			break
+		}
+		listOptions = pageOptions.NextPageOptions
+	}
+	log.Info(fmt.Sprintf("sync %v success", apiType), map[string]interface{}{
+		"count": c,
+	})
+	return s.setSyncTime(ctx, apiType, end)
 }

@@ -16,6 +16,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
@@ -26,9 +27,20 @@ const (
 	storeKeySyncTime = "sync_time"
 )
 
-func (s *shopifySource) getSyncBeginTime(ctx context.Context) (time.Time, error) {
+type apiType string
+
+const (
+	OrderApi   apiType = "orders"
+	ProductApi apiType = "products"
+)
+
+func syncTimeKey(apiType apiType) string {
+	return fmt.Sprintf("sync_time_%s", apiType)
+}
+
+func (s *shopifySource) getSyncBeginTime(ctx context.Context, apiType apiType) (time.Time, error) {
 	kvStore := cdkgo.GetKVStore()
-	v, err := kvStore.Get(ctx, storeKeySyncTime)
+	v, err := kvStore.Get(ctx, syncTimeKey(apiType))
 	if err != nil {
 		if err == store.ErrKeyNotExist {
 			return s.syncBeginTime, nil
@@ -42,7 +54,7 @@ func (s *shopifySource) getSyncBeginTime(ctx context.Context) (time.Time, error)
 	return t, nil
 }
 
-func (s *shopifySource) setSyncTime(ctx context.Context, t time.Time) error {
+func (s *shopifySource) setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
 	kvStore := cdkgo.GetKVStore()
-	return kvStore.Set(ctx, storeKeySyncTime, []byte(t.Format(time.RFC3339)))
+	return kvStore.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
 }

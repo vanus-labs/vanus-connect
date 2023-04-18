@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"fmt"
+
 	goshopify "github.com/bold-commerce/go-shopify/v3"
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ import (
 func (s *shopifySource) newEvent() ce.Event {
 	event := ce.NewEvent()
 	event.SetID(uuid.NewString())
-	event.SetSource("shopify-source-" + s.config.ShopName)
+	event.SetSource(fmt.Sprintf("https://%s.myshopify.com", s.config.ShopName))
 	return event
 }
 
@@ -33,6 +35,17 @@ func (s *shopifySource) orderEvent(orders []goshopify.Order) {
 	for _, order := range orders {
 		event := s.newEvent()
 		event.SetType("orders")
+		event.SetData(ce.ApplicationJSON, order)
+		s.events <- &cdkgo.Tuple{
+			Event: &event,
+		}
+	}
+}
+
+func (s *shopifySource) productEvent(orders []goshopify.Product) {
+	for _, order := range orders {
+		event := s.newEvent()
+		event.SetType("products")
 		event.SetData(ce.ApplicationJSON, order)
 		s.events <- &cdkgo.Tuple{
 			Event: &event,
