@@ -1,0 +1,40 @@
+// const { CloudEvent } = require("cloudevents");
+
+btn.addEventListener("click", function sendEvent() {
+  // Code to send the event to the target endpoint
+  // For example, using fetch to make an HTTP POST request with the event as the request body to the target endpoint
+
+// Create a CloudEvent
+const cloudEvent = {
+  type: "com.example.event",
+  source: "/example/source",
+  data: JSON.stringify({ message: "Hello, CloudEvent!" }),
+  dataContentType: "application/json",
+  time: new Date().toISOString(),
+};
+
+// Serialize the CloudEvent to a JSON string
+const eventJson = cloudEvent.toString();
+  console.log("CloudEvent is getting sent", cloudEvent );
+  fetch(
+    endpoint,
+	//replace endpoint with the link where you want to recieve the cloudevent
+    {
+      method: "POST",
+      body: cloudEvent ,
+      headers: { "Content-Type": "application/cloudevents+json" },
+    }
+  )
+    .then((response) => {
+      if (response.ok) {
+        console.log("CloudEvent sent successfully.");
+      } else {
+        console.error(
+          "Failed to send CloudEvent:",
+          response.status,
+          response.statusText
+        );
+      }
+    })
+    .catch((error) => console.error("Failed to send CloudEvent:", error));
+});
