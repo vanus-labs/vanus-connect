@@ -80,12 +80,16 @@ public class DbWriter {
             tableWriter.addToBatch(data);
             return;
         }
-        JsonArray array = data.getJsonArray(splitColumnName);
-        data.remove(splitColumnName);
-        for (int i = 0; i < array.size(); i++) {
-            JsonObject obj = data.copy();
-            obj.put(splitColumnName, array.getValue(i));
-            tableWriter.addToBatch(obj);
+        try {
+            JsonArray array = data.getJsonArray(splitColumnName);
+            data.remove(splitColumnName);
+            for (int i = 0; i < array.size(); i++) {
+                JsonObject obj = data.copy();
+                obj.put(splitColumnName, array.getValue(i));
+                tableWriter.addToBatch(obj);
+            }
+        } catch (ClassCastException e) {
+            LOGGER.warn("splitColumn {} is not array", splitColumnName, e);
         }
     }
 
