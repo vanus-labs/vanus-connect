@@ -23,6 +23,7 @@ type shopifyConfig struct {
 	ShopName           string `json:"shop_name" yaml:"shop_name" validate:"required"`
 	ApiAccessToken     string `json:"api_access_token" yaml:"api_access_token" validate:"required"`
 	SyncBeginDate      string `json:"sync_begin_date" yaml:"sync_begin_date" validate:"required"`
+	SyncInternalHour   int    `json:"sync_internal_hour" yaml:"sync_internal_hour"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {

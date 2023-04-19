@@ -39,6 +39,7 @@ type shopifySource struct {
 	config        *shopifyConfig
 	client        *goshopify.Client
 	syncBeginTime time.Time
+	syncInternal  time.Duration
 }
 
 func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -48,6 +49,10 @@ func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 		return err
 	}
 	s.syncBeginTime = t
+	if s.config.SyncInternalHour <= 0 || s.config.SyncInternalHour > 24 {
+		s.config.SyncInternalHour = 1
+	}
+	s.syncInternal = time.Duration(s.config.SyncInternalHour) * time.Hour
 	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-04"))
 	go s.start(ctx)
 	return nil
@@ -72,7 +77,7 @@ func (s *shopifySource) start(ctx context.Context) {
 			log.KeyError: err,
 		})
 	}
-	t := time.NewTicker(time.Hour * 24)
+	t := time.NewTicker(s.syncInternal)
 	defer t.Stop()
 	select {
 	case <-ctx.Done():
