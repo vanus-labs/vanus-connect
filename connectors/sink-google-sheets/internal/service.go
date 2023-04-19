@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vanus-labs/connector/sink/googlesheets/oauth"
 	"golang.org/x/oauth2/google"
 
 	"google.golang.org/api/option"
@@ -26,8 +25,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/pkg/errors"
-	"github.com/vanus-labs/cdk-go/log"
 	"google.golang.org/api/sheets/v4"
+
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 var (
@@ -74,13 +74,10 @@ func (s *GoogleSheetService) init(spreadSheetID, credentialsJSON string, oauthCf
 func (s *GoogleSheetService) initClient(credentialsJSON string, oauthCfg *OAuth) (*sheets.Service, error) {
 	var opts []option.ClientOption
 	if oauthCfg != nil {
-		config := oauth.Config{
-			Config: oauth2.Config{
-				ClientID:     oauthCfg.ClientID,
-				ClientSecret: oauthCfg.ClientSecret,
-				Endpoint:     google.Endpoint,
-			},
-			TokenChange: oauthCfg.TokenChange,
+		config := oauth2.Config{
+			ClientID:     oauthCfg.ClientID,
+			ClientSecret: oauthCfg.ClientSecret,
+			Endpoint:     google.Endpoint,
 		}
 		tokenSource := config.TokenSource(context.Background(), oauthCfg.GetToken())
 		opts = append(opts, option.WithTokenSource(tokenSource))

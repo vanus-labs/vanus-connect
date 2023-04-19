@@ -42,11 +42,11 @@ func (s *shopifySource) orderEvent(orders []goshopify.Order) {
 	}
 }
 
-func (s *shopifySource) productEvent(orders []goshopify.Product) {
-	for _, order := range orders {
+func (s *shopifySource) productEvent(products []goshopify.Product) {
+	for _, product := range products {
 		event := s.newEvent()
 		event.SetType("products")
-		event.SetData(ce.ApplicationJSON, order)
+		event.SetData(ce.ApplicationJSON, product)
 		s.events <- &cdkgo.Tuple{
 			Event: &event,
 		}

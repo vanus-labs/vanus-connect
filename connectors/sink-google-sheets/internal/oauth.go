@@ -15,15 +15,9 @@
 package internal
 
 import (
-	"context"
-	"encoding/json"
 	"time"
 
 	"golang.org/x/oauth2"
-
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
-	"github.com/vanus-labs/cdk-go/store"
 )
 
 type OAuth struct {
@@ -35,64 +29,7 @@ type OAuth struct {
 	Expiry       time.Time `json:"expiry,omitempty" yaml:"expiry"`
 }
 
-const storeKey = "google_sheet_oauth_token"
-
-func (a *OAuth) TokenChange(token *oauth2.Token) {
-	log.Info("receive a new oauth token", map[string]interface{}{
-		"refresh_token": token.RefreshToken,
-	})
-	kvStore := cdkgo.GetKVStore()
-	if kvStore == nil {
-		log.Info("receive a new oauth token, but no store config", map[string]interface{}{
-			"refresh_token": token.RefreshToken,
-		})
-		return
-	}
-	v, err := json.Marshal(token)
-	if err != nil {
-		log.Error("kv store save oauth token marshal error", map[string]interface{}{
-			log.KeyError:    err,
-			"refresh_token": token.RefreshToken,
-		})
-		return
-	}
-	err = kvStore.Set(context.Background(), storeKey, v)
-	if err != nil {
-		log.Error("kv store save oauth token error", map[string]interface{}{
-			log.KeyError: err,
-			storeKey:     string(v),
-		})
-		return
-	}
-	log.Info("save oauth token to store success", map[string]interface{}{
-		"refresh_token": token.RefreshToken,
-	})
-}
-
 func (a *OAuth) GetToken() *oauth2.Token {
-	ctx := context.Background()
-	kvStore := cdkgo.GetKVStore()
-	if kvStore != nil {
-		tokenValue, err := kvStore.Get(ctx, storeKey)
-		if err == nil && len(tokenValue) > 0 {
-			var token oauth2.Token
-			err2 := json.Unmarshal(tokenValue, &token)
-			if err2 != nil {
-				log.Error("get token from store unmarshal error", map[string]interface{}{
-					log.KeyError: err2,
-					"token":      string(tokenValue),
-				})
-			}
-			return &token
-		}
-		if err != nil && err != store.ErrKeyNotExist {
-			log.Warning("get refresh token error", map[string]interface{}{
-				log.KeyError: err,
-			})
-		}
-	} else {
-		log.Warning("no store config, it will lost token", nil)
-	}
 	return &oauth2.Token{
 		AccessToken:  a.AccessToken,
 		RefreshToken: a.RefreshToken,
