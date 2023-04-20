@@ -34,17 +34,35 @@ const (
 	ProductApi apiType = "products"
 )
 
+func syncBeginDateKey() string {
+	return fmt.Sprintf("sync_begin_date")
+}
+
+func getSyncBeginDate(ctx context.Context) (string, error) {
+	kvStore := cdkgo.GetKVStore()
+	v, err := kvStore.Get(ctx, syncBeginDateKey())
+	if err != nil {
+		if err == store.ErrKeyNotExist {
+			return "", nil
+		}
+		return "", err
+	}
+	return string(v), nil
+}
+
+func setSyncBeginDate(ctx context.Context, t string) error {
+	kvStore := cdkgo.GetKVStore()
+	return kvStore.Set(ctx, syncBeginDateKey(), []byte(t))
+}
+
 func syncTimeKey(apiType apiType) string {
 	return fmt.Sprintf("sync_time_%s", apiType)
 }
 
-func (s *shopifySource) getSyncBeginTime(ctx context.Context, apiType apiType) (time.Time, error) {
+func getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
 	kvStore := cdkgo.GetKVStore()
 	v, err := kvStore.Get(ctx, syncTimeKey(apiType))
 	if err != nil {
-		if err == store.ErrKeyNotExist {
-			return s.syncBeginTime, nil
-		}
 		return time.Time{}, err
 	}
 	t, err := time.Parse(time.RFC3339, string(v))
@@ -54,7 +72,7 @@ func (s *shopifySource) getSyncBeginTime(ctx context.Context, apiType apiType) (
 	return t, nil
 }
 
-func (s *shopifySource) setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
+func setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
 	kvStore := cdkgo.GetKVStore()
 	return kvStore.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
 }
