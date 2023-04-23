@@ -35,7 +35,7 @@ EOF
 
 | Name   | Required | Default | Description                                                            |
 |:-------|:---------|:--------|:-----------------------------------------------------------------------|
-| target | YES      | ""      | the target URL which <name> Source will send CloudEvents to            |
+| target | YES      | ""      | the target URL which Schedule Source will send CloudEvents to          |
 | cron   | YES      | ""      | the schedule [cron], second,minute,hour,day of month,month,day of week |
 
 ...
