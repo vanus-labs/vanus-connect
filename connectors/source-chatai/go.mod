@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.1.2
-	github.com/sashabaranov/go-openai v1.5.7
+	github.com/sashabaranov/go-openai v1.9.0
 	github.com/vanus-labs/cdk-go v0.5.0
 	golang.org/x/oauth2 v0.6.0
 )

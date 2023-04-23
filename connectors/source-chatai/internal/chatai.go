@@ -35,6 +35,7 @@ var (
 
 type ChatClient interface {
 	SendChatCompletion(content string) (string, error)
+	Reset()
 }
 
 type ChatType string
@@ -57,7 +58,7 @@ type chatService struct {
 func newChatService(config *chatConfig) *chatService {
 	return &chatService{
 		config:       config,
-		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens),
+		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
 		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
@@ -71,6 +72,8 @@ func today() int {
 func (s *chatService) reset() {
 	s.day = today()
 	s.num = 0
+	s.chatGpt.Reset()
+	s.ernieBot.Reset()
 }
 
 func (s *chatService) ChatCompletion(chatType ChatType, content string) (resp string, err error) {

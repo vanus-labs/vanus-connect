@@ -130,7 +130,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, err.Error())))
 		return
 	}
-	chatType := chatGPT
+	var chatType ChatType
 	chatMode := req.Header.Get(headerChatMode)
 	if chatMode == "" {
 		chatMode = req.Header.Get(headerChatModeOld)
@@ -144,6 +144,8 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, "chat_mode invalid")))
 			return
 		}
+	} else {
+		chatType = s.config.DefaultChatMode
 	}
 	eventSource := req.Header.Get(headerSource)
 	if eventSource == "" {
