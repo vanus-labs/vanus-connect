@@ -53,6 +53,9 @@ func (s *scheduleSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor)
 		cron.WithLocation(time.UTC),
 		cron.WithChain(cron.Recover(cronLog{})))
 	c.Schedule(schedule, cron.FuncJob(s.makeEvent))
+	if s.config.Immediate {
+		s.makeEvent()
+	}
 	c.Start()
 	return nil
 }
