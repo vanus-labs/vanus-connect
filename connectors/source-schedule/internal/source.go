@@ -80,16 +80,16 @@ func (s *scheduleSource) makeEvent() {
 	event.SetType("schedule")
 	event.SetTime(time.Now())
 	_ = event.SetData(ce.ApplicationJSON, map[string]interface{}{})
-	atomic.AddUint64(&s.number, 1)
+	number := atomic.AddUint64(&s.number, 1)
 	s.events <- &cdkgo.Tuple{
 		Event: &event,
 		Success: func() {
 			log.Info("send new event success", map[string]interface{}{
-				"number": s.number,
+				"number": number,
 			})
 		}, Failed: func(err error) {
 			log.Info("send new event failed", map[string]interface{}{
-				"number": s.number,
+				"number": number,
 			})
 		},
 	}
