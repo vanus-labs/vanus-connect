@@ -21,30 +21,57 @@ import (
 )
 
 type chatGPTService struct {
-	client    *openai.Client
-	maxTokens int
+	client        *openai.Client
+	maxTokens     int
+	enableContext bool
+	messages      []openai.ChatCompletionMessage
+	tokens        []int
+	totalToken    int
 }
 
-func NewChatGPTService(config Config, maxTokens int) *chatGPTService {
+func NewChatGPTService(config Config, maxTokens int, enableContext bool) *chatGPTService {
 	client := openai.NewClient(config.Token)
 	return &chatGPTService{
-		client:    client,
-		maxTokens: maxTokens,
+		client:        client,
+		maxTokens:     maxTokens,
+		enableContext: enableContext,
 	}
 }
 
+func (s *chatGPTService) Reset() {
+	s.messages = nil
+	s.tokens = nil
+	s.totalToken = 0
+}
+
 func (s *chatGPTService) SendChatCompletion(content string) (string, error) {
+	currToken := s.totalToken + calTokens(content)
+	if s.enableContext && currToken > s.maxTokens {
+		var index, token int
+		for index = range s.tokens {
+			// question token
+			token += s.tokens[index]
+			index++
+			// answer token
+			token += s.tokens[index]
+			if currToken-token < s.maxTokens {
+				index = index + 1
+				break
+			}
+		}
+		s.totalToken -= token
+		s.messages = s.messages[index:]
+		s.tokens = s.tokens[index:]
+	}
+	messages := append(s.messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: content,
+	})
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model:     openai.GPT3Dot5Turbo,
-			MaxTokens: s.maxTokens,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: content,
-				},
-			},
+			Model:    openai.GPT3Dot5Turbo,
+			Messages: messages,
 		},
 	)
 	if err != nil {
@@ -54,5 +81,17 @@ func (s *chatGPTService) SendChatCompletion(content string) (string, error) {
 		return "", nil
 	}
 	respContent := resp.Choices[0].Message.Content
+	if s.enableContext {
+		s.messages = append(messages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleAssistant,
+			Content: respContent,
+		})
+		s.tokens = append(s.tokens, resp.Usage.PromptTokens-s.totalToken, resp.Usage.CompletionTokens)
+		s.totalToken = resp.Usage.TotalTokens
+	}
 	return respContent, nil
+}
+
+func calTokens(content string) int {
+	return len(content) / 4
 }

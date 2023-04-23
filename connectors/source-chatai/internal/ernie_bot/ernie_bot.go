@@ -42,6 +42,9 @@ func NewErnieBotService(config Config, maxTokens int) *ernieBotService {
 		tokenSource: oauth.NewTokenSource(config.AccessKey, config.SecretKey),
 	}
 }
+func (s *ernieBotService) Reset() {
+
+}
 
 func (s *ernieBotService) SendChatCompletion(content string) (string, error) {
 	token, err := s.tokenSource.Token()
