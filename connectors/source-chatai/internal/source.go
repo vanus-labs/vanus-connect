@@ -88,6 +88,9 @@ func (s *chatSource) Name() string {
 }
 
 func (s *chatSource) Destroy() error {
+	if s.service != nil {
+		s.service.Close()
+	}
 	if s.server != nil {
 		s.server.Shutdown(context.Background())
 	}
@@ -170,16 +173,24 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		eventType = defaultEventType
 	}
 	event := ce.NewEvent()
-	event.SetID(uuid.New().String())
+	event.SetID(uuid.NewString())
 	event.SetTime(time.Now())
 	event.SetType(eventType)
 	event.SetSource(eventSource)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func(event *ce.Event, data map[string]interface{}) {
+	var userIdentifier string
+	if s.config.UserIdentifierHeader != "" {
+		userIdentifier = req.Header.Get(s.config.UserIdentifierHeader)
+		if userIdentifier == "" {
+			s.writeError(w, http.StatusBadRequest, errors.New("header userIdentifier is empty"))
+			return
+		}
+	}
+	go func(event *ce.Event, userIdentifier string, data map[string]interface{}) {
 		defer wg.Done()
-		content, err := s.service.ChatCompletion(chatType, data["message"].(string))
+		content, err := s.service.ChatCompletion(chatType, userIdentifier, data["message"].(string))
 		if err != nil {
 			log.Warning("failed to get content from Chat", map[string]interface{}{
 				log.KeyError: err,
@@ -202,7 +213,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				})
 			},
 		}
-	}(&event, data)
+	}(&event, userIdentifier, data)
 	if !s.isSync(req) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(respSuccess))

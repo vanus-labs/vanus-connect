@@ -32,14 +32,15 @@ func NewChatConfig() cdkgo.SourceConfigAccessor {
 type chatConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	Port            int              `json:"port" yaml:"port"`
-	GPT             gpt.Config       `json:"gpt" yaml:"gpt"`
-	ErnieBot        ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
-	EverydayLimit   int              `json:"everyday_limit" yaml:"everyday_limit"`
-	MaxTokens       int              `json:"max_tokens" yaml:"max_tokens"`
-	EnableContext   bool             `json:"enable_context" yaml:"enable_context"`
-	DefaultChatMode ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
-	Auth            *auth.Config     `json:"auth" yaml:"auth"`
+	Port                 int              `json:"port" yaml:"port"`
+	GPT                  gpt.Config       `json:"gpt" yaml:"gpt"`
+	ErnieBot             ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
+	EverydayLimit        int              `json:"everyday_limit" yaml:"everyday_limit"`
+	MaxTokens            int              `json:"max_tokens" yaml:"max_tokens"`
+	EnableContext        bool             `json:"enable_context" yaml:"enable_context"`
+	DefaultChatMode      ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
+	UserIdentifierHeader string           `json:"user_identifier_header" yaml:"user_identifier_header"`
+	Auth                 *auth.Config     `json:"auth" yaml:"auth"`
 }
 
 func (c *chatConfig) Validate() error {
