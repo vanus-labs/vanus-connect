@@ -19,7 +19,7 @@ import cdkgo "github.com/vanus-labs/cdk-go"
 var _ cdkgo.SourceConfigAccessor = &shopifyConfig{}
 
 type shopifyConfig struct {
-	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 	ShopName           string `json:"shop_name" yaml:"shop_name" validate:"required"`
 	ApiAccessToken     string `json:"api_access_token" yaml:"api_access_token" validate:"required"`
 	SyncBeginDate      string `json:"sync_begin_date" yaml:"sync_begin_date" validate:"required"`

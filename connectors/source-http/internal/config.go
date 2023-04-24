@@ -1,4 +1,4 @@
-// Copyright 2023 Linkall Inc.
+// Copyright 2022 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@ package internal
 
 import cdkgo "github.com/vanus-labs/cdk-go"
 
-var _ cdkgo.SourceConfigAccessor = &facebookConfig{}
+var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
 
-type facebookConfig struct {
+type httpSourceConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	Port               int    `json:"port" yaml:"port"`
-	VerifyToken        string `json:"verify_token" yaml:"verify_token" validate:"required"`
-	AppSecret          string `json:"app_secret" yaml:"app_secret"`
+	Port               int `json:"port" yaml:"port"`
+}
+
+func (c *httpSourceConfig) GetSecret() cdkgo.SecretAccessor {
+	return nil
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {
-	return &facebookConfig{}
+	return &httpSourceConfig{}
 }

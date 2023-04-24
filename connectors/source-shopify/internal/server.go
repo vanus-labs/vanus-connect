@@ -59,7 +59,7 @@ const (
 var _ cdkgo.SourceConfigAccessor = &shopifySourceConfig{}
 
 type shopifySourceConfig struct {
-	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 	Port               int    `json:"port" yaml:"port"`
 	ClientSecret       string `json:"client_secret" yaml:"client_secret"`
 }
