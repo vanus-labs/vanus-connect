@@ -124,6 +124,7 @@ func (s *chatSource) isSync(req *http.Request) bool {
 }
 
 func (s *chatSource) writeError(w http.ResponseWriter, code int, err error) {
+	w.Header().Set(headerContentType, ce.ApplicationJSON)
 	w.WriteHeader(code)
 	w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, code, err.Error())))
 }
@@ -215,11 +216,13 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		}
 	}(&event, userIdentifier, data)
 	if !s.isSync(req) {
+		w.Header().Set(headerContentType, ce.ApplicationJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(respSuccess))
 		return
 	}
 	wg.Wait()
+	w.Header().Set(headerContentType, ce.ApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(event.Data())
 }

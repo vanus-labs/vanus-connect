@@ -61,6 +61,7 @@ type chatService struct {
 func newChatService(config *chatConfig) *chatService {
 	s := &chatService{
 		config:       config,
+		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
 		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
 		day:          today(),
