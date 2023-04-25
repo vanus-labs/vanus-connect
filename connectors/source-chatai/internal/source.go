@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
@@ -30,7 +30,6 @@ import (
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
-	"github.com/vanus-labs/connector/source/chatai/internal/auth"
 )
 
 const (
@@ -54,18 +53,20 @@ func NewChatSource() cdkgo.Source {
 }
 
 type chatSource struct {
-	config  *chatConfig
-	events  chan *cdkgo.Tuple
-	number  int
-	day     string
-	lock    sync.Mutex
-	server  *http.Server
-	service *chatService
+	config     *chatConfig
+	events     chan *cdkgo.Tuple
+	number     int
+	day        string
+	lock       sync.Mutex
+	server     *http.Server
+	service    *chatService
+	authEnable bool
 }
 
 func (s *chatSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*chatConfig)
 	s.config.Init()
+	s.authEnable = !s.config.Auth.IsEmpty()
 	s.service = newChatService(s.config)
 	s.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.config.Port),
@@ -101,7 +102,11 @@ func (s *chatSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *chatSource) getMessage(req *http.Request, body []byte) (map[string]interface{}, error) {
+func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, error) {
+	body, err := io.ReadAll(req.Body)
+	if err != nil || len(body) == 0 {
+		return nil, errors.New("read body error")
+	}
 	message := make(map[string]interface{})
 	contentType := req.Header.Get(headerContentType)
 	if contentType != "" && strings.HasPrefix(contentType, applicationJSON) {
@@ -133,21 +138,15 @@ func (s *chatSource) writeError(w http.ResponseWriter, code int, err error) {
 }
 
 func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	a, err := auth.NewAuth(s.config.Auth, req)
-	if err != nil {
-		s.writeError(w, http.StatusUnauthorized, err)
-		return
+	if s.authEnable {
+		username, password, ok := req.BasicAuth()
+		if !ok || s.config.Auth.Username != username || s.config.Auth.Password != password {
+			w.Header().Set("WWW-Authenticate", `Basic realm="vanus connector", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 	}
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil || len(body) == 0 {
-		s.writeError(w, http.StatusBadRequest, errors.New("read body error"))
-		return
-	}
-	if a != nil && !a.Auth(req.Header, body) {
-		a.Write(w)
-		return
-	}
-	data, err := s.getMessage(req, body)
+	data, err := s.getMessage(req)
 	if err != nil {
 		s.writeError(w, http.StatusBadRequest, err)
 		return

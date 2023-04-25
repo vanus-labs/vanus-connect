@@ -14,8 +14,6 @@
 
 package auth
 
-import "github.com/pkg/errors"
-
 type Type string
 
 const (
@@ -26,36 +24,6 @@ const (
 )
 
 type Config struct {
-	Type  Type      `json:"type" yaml:"type"`
-	Basic BasicAuth `json:"basic" yaml:"basic"`
-	HMAC  HMAC      `json:"hmac" yaml:"hmac"`
-}
-
-type HMAC struct {
-	Header string `json:"header" yaml:"header"`
-	Secret string `json:"secret" yaml:"secret" `
-}
-
-type BasicAuth struct {
 	Username string `json:"username" yaml:"username"`
 	Password string `json:"password" yaml:"password"`
-}
-
-func (c *Config) Validate() error {
-	if c == nil {
-		return nil
-	}
-	switch c.Type {
-	case Hmac:
-		if c.HMAC.Secret == "" {
-			return errors.New("auth hmac secret can not empty")
-		}
-	case Basic:
-		if c.Basic.Username == "" || c.Basic.Password == "" {
-			return errors.New("auth basic username and password can not empty")
-		}
-	default:
-		return errors.New("auth type invalid")
-	}
-	return nil
 }
