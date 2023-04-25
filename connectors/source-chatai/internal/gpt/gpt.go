@@ -16,6 +16,7 @@ package gpt
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -24,9 +25,36 @@ type chatGPTService struct {
 	client        *openai.Client
 	maxTokens     int
 	enableContext bool
-	messages      []openai.ChatCompletionMessage
-	tokens        []int
-	totalToken    int
+	userMap       map[string]*userMessage
+	lock          sync.Mutex
+}
+
+type userMessage struct {
+	messages   []openai.ChatCompletionMessage
+	tokens     []int
+	totalToken int
+}
+
+func (m *userMessage) cal(newToken, maxTokens int) {
+	currToken := m.totalToken + newToken
+	if currToken < maxTokens {
+		return
+	}
+	var index, token int
+	for index = range m.tokens {
+		// question token
+		token += m.tokens[index]
+		index++
+		// answer token
+		token += m.tokens[index]
+		if currToken-token < maxTokens {
+			index = index + 1
+			break
+		}
+	}
+	m.totalToken -= token
+	m.messages = m.messages[index:]
+	m.tokens = m.tokens[index:]
 }
 
 func NewChatGPTService(config Config, maxTokens int, enableContext bool) *chatGPTService {
@@ -35,35 +63,35 @@ func NewChatGPTService(config Config, maxTokens int, enableContext bool) *chatGP
 		client:        client,
 		maxTokens:     maxTokens,
 		enableContext: enableContext,
+		userMap:       map[string]*userMessage{},
 	}
+}
+
+func (s *chatGPTService) getUser(userIdentifier string) *userMessage {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	user, ok := s.userMap[userIdentifier]
+	if !ok {
+		user = &userMessage{}
+		s.userMap[userIdentifier] = user
+	}
+	return user
 }
 
 func (s *chatGPTService) Reset() {
-	s.messages = nil
-	s.tokens = nil
-	s.totalToken = 0
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.userMap = map[string]*userMessage{}
 }
 
-func (s *chatGPTService) SendChatCompletion(content string) (string, error) {
-	currToken := s.totalToken + calTokens(content)
-	if s.enableContext && currToken > s.maxTokens {
-		var index, token int
-		for index = range s.tokens {
-			// question token
-			token += s.tokens[index]
-			index++
-			// answer token
-			token += s.tokens[index]
-			if currToken-token < s.maxTokens {
-				index = index + 1
-				break
-			}
-		}
-		s.totalToken -= token
-		s.messages = s.messages[index:]
-		s.tokens = s.tokens[index:]
+func (s *chatGPTService) SendChatCompletion(userIdentifier, content string) (string, error) {
+	user := s.getUser(userIdentifier)
+	if s.enableContext {
+		s.lock.Lock()
+		user.cal(calTokens(content), s.maxTokens)
+		s.lock.Unlock()
 	}
-	messages := append(s.messages, openai.ChatCompletionMessage{
+	messages := append(user.messages, openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: content,
 	})
@@ -82,12 +110,14 @@ func (s *chatGPTService) SendChatCompletion(content string) (string, error) {
 	}
 	respContent := resp.Choices[0].Message.Content
 	if s.enableContext {
-		s.messages = append(messages, openai.ChatCompletionMessage{
+		s.lock.Lock()
+		defer s.lock.Unlock()
+		user.messages = append(messages, openai.ChatCompletionMessage{
 			Role:    openai.ChatMessageRoleAssistant,
 			Content: respContent,
 		})
-		s.tokens = append(s.tokens, resp.Usage.PromptTokens-s.totalToken, resp.Usage.CompletionTokens)
-		s.totalToken = resp.Usage.TotalTokens
+		user.tokens = append(user.tokens, resp.Usage.PromptTokens-user.totalToken, resp.Usage.CompletionTokens)
+		user.totalToken = resp.Usage.TotalTokens
 	}
 	return respContent, nil
 }

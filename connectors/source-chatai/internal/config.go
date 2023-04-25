@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/connector/source/chatai/internal/auth"
 	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
 )
@@ -31,13 +32,16 @@ func NewChatConfig() cdkgo.SourceConfigAccessor {
 type chatConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	Port            int              `json:"port" yaml:"port"`
-	GPT             gpt.Config       `json:"gpt" yaml:"gpt"`
-	ErnieBot        ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
-	EverydayLimit   int              `json:"everyday_limit" yaml:"everyday_limit"`
-	MaxTokens       int              `json:"max_tokens" yaml:"max_tokens"`
-	EnableContext   bool             `json:"enable_context" yaml:"enable_context"`
-	DefaultChatMode ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
+	Port                 int              `json:"port" yaml:"port"`
+	GPT                  gpt.Config       `json:"gpt" yaml:"gpt"`
+	ErnieBot             ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
+	EverydayLimit        int              `json:"everyday_limit" yaml:"everyday_limit"`
+	MaxTokens            int              `json:"max_tokens" yaml:"max_tokens"`
+	EnableContext        bool             `json:"enable_context" yaml:"enable_context"`
+	DefaultChatMode      ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
+	DefaultProcessMode   string           `json:"default_process_mode" yaml:"default_process_mode"`
+	UserIdentifierHeader string           `json:"user_identifier_header" yaml:"user_identifier_header"`
+	Auth                 *auth.Config     `json:"auth" yaml:"auth"`
 }
 
 func (c *chatConfig) Validate() error {
@@ -47,6 +51,10 @@ func (c *chatConfig) Validate() error {
 		default:
 			return fmt.Errorf("chat mode is invalid")
 		}
+	}
+	err := c.Auth.Validate()
+	if err != nil {
+		return err
 	}
 	return c.SourceConfig.Validate()
 }

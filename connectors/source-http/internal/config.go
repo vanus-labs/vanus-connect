@@ -1,4 +1,4 @@
-// Copyright 2023 Linkall Inc.
+// Copyright 2022 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,18 +14,19 @@
 
 package internal
 
-import (
-	cdkgo "github.com/vanus-labs/cdk-go"
-)
+import cdkgo "github.com/vanus-labs/cdk-go"
 
-var _ cdkgo.SourceConfigAccessor = &scheduleConfig{}
+var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
 
-func NewConfig() cdkgo.SourceConfigAccessor {
-	return &scheduleConfig{}
+type httpSourceConfig struct {
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
+	Port               int `json:"port" yaml:"port"`
 }
 
-type scheduleConfig struct {
-	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	Cron               string `json:"cron" yaml:"cron" validate:"required"`
-	TimeZone           string `json:"time_zone" yaml:"time_zone" `
+func (c *httpSourceConfig) GetSecret() cdkgo.SecretAccessor {
+	return nil
+}
+
+func NewConfig() cdkgo.SourceConfigAccessor {
+	return &httpSourceConfig{}
 }

@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -34,7 +35,7 @@ var (
 )
 
 type ChatClient interface {
-	SendChatCompletion(content string) (string, error)
+	SendChatCompletion(userIdentifier, content string) (string, error)
 	Reset()
 }
 
@@ -49,50 +50,108 @@ type chatService struct {
 	chatGpt      ChatClient
 	ernieBot     ChatClient
 	config       *chatConfig
-	lock         sync.Mutex
+	lock         sync.RWMutex
 	day          int
-	num          int
 	limitContent string
+	userNum      map[string]int
+	ctx          context.Context
+	cancel       context.CancelFunc
 }
 
 func newChatService(config *chatConfig) *chatService {
-	return &chatService{
+	s := &chatService{
 		config:       config,
+		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
 		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
+	s.ctx, s.cancel = context.WithCancel(context.Background())
+	go func() {
+		now := time.Now().UTC()
+		next := now.Add(time.Hour)
+		next = time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), 0, 0, 0, next.Location())
+		t := time.NewTicker(next.Sub(now))
+		select {
+		case <-s.ctx.Done():
+			t.Stop()
+			return
+		case <-t.C:
+			s.reset()
+		}
+		t.Stop()
+		tk := time.NewTicker(time.Hour)
+		defer tk.Stop()
+		for {
+			select {
+			case <-s.ctx.Done():
+				return
+			case <-tk.C:
+				s.reset()
+			}
+		}
+	}()
+	return s
 }
 
 func today() int {
 	return time.Now().UTC().Day()
 }
 
+func (s *chatService) Close() {
+	s.cancel()
+}
+
+func (s *chatService) addNum(userIdentifier string) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	num, ok := s.userNum[userIdentifier]
+	if !ok {
+		num = 0
+	}
+	num++
+	s.userNum[userIdentifier] = num
+}
+
+func (s *chatService) getNum(userIdentifier string) int {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	num, ok := s.userNum[userIdentifier]
+	if !ok {
+		return 0
+	}
+	return num
+}
+
 func (s *chatService) reset() {
-	s.day = today()
-	s.num = 0
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	time.Sleep(time.Second)
+	t := today()
+	if s.day == t {
+		return
+	}
+	s.day = t
+	s.userNum = map[string]int{}
 	s.chatGpt.Reset()
 	s.ernieBot.Reset()
 }
 
-func (s *chatService) ChatCompletion(chatType ChatType, content string) (resp string, err error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if s.num >= s.config.EverydayLimit {
-		if today() == s.day {
-			return s.limitContent, ErrLimit
-		}
-		s.reset()
+func (s *chatService) ChatCompletion(chatType ChatType, userIdentifier, content string) (resp string, err error) {
+	num := s.getNum(userIdentifier)
+	if num >= s.config.EverydayLimit {
+		return s.limitContent, ErrLimit
 	}
 	log.Info("receive content:"+content, map[string]interface{}{
 		"chat": chatType,
+		"user": userIdentifier,
 	})
 	switch chatType {
 	case chatErnieBot:
-		resp, err = s.ernieBot.SendChatCompletion(content)
+		resp, err = s.ernieBot.SendChatCompletion(userIdentifier, content)
 	case chatGPT:
-		resp, err = s.chatGpt.SendChatCompletion(content)
+		resp, err = s.chatGpt.SendChatCompletion(userIdentifier, content)
 	}
 	if err != nil {
 		return responseErr, err
@@ -100,6 +159,6 @@ func (s *chatService) ChatCompletion(chatType ChatType, content string) (resp st
 	if resp == "" {
 		return responseEmpty, nil
 	}
-	s.num++
+	s.addNum(userIdentifier)
 	return resp, nil
 }

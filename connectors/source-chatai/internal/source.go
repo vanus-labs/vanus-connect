@@ -30,6 +30,7 @@ import (
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/internal/auth"
 )
 
 const (
@@ -87,6 +88,9 @@ func (s *chatSource) Name() string {
 }
 
 func (s *chatSource) Destroy() error {
+	if s.service != nil {
+		s.service.Close()
+	}
 	if s.server != nil {
 		s.server.Shutdown(context.Background())
 	}
@@ -97,15 +101,11 @@ func (s *chatSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, error) {
-	body, err := ioutil.ReadAll(req.Body)
-	if err != nil || len(body) == 0 {
-		return nil, errors.New("read body error")
-	}
+func (s *chatSource) getMessage(req *http.Request, body []byte) (map[string]interface{}, error) {
 	message := make(map[string]interface{})
 	contentType := req.Header.Get(headerContentType)
 	if contentType != "" && strings.HasPrefix(contentType, applicationJSON) {
-		err = json.Unmarshal(body, &message)
+		err := json.Unmarshal(body, &message)
 		if err != nil {
 			return nil, errors.New("invalid JSON body")
 		}
@@ -120,14 +120,36 @@ func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, erro
 
 func (s *chatSource) isSync(req *http.Request) bool {
 	processMode := req.Header.Get(headerProcessMode)
+	if processMode == "" {
+		processMode = s.config.DefaultProcessMode
+	}
 	return processMode == "sync"
 }
 
+func (s *chatSource) writeError(w http.ResponseWriter, code int, err error) {
+	w.Header().Set(headerContentType, ce.ApplicationJSON)
+	w.WriteHeader(code)
+	w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, code, err.Error())))
+}
+
 func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	data, err := s.getMessage(req)
+	a, err := auth.NewAuth(s.config.Auth, req)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, err.Error())))
+		s.writeError(w, http.StatusUnauthorized, err)
+		return
+	}
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil || len(body) == 0 {
+		s.writeError(w, http.StatusBadRequest, errors.New("read body error"))
+		return
+	}
+	if a != nil && !a.Auth(req.Header, body) {
+		a.Write(w)
+		return
+	}
+	data, err := s.getMessage(req, body)
+	if err != nil {
+		s.writeError(w, http.StatusBadRequest, err)
 		return
 	}
 	var chatType ChatType
@@ -140,8 +162,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		switch chatType {
 		case chatGPT, chatErnieBot:
 		default:
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusBadRequest, "chat_mode invalid")))
+			s.writeError(w, http.StatusBadRequest, errors.New("chat_mode invalid"))
 			return
 		}
 	} else {
@@ -156,16 +177,24 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		eventType = defaultEventType
 	}
 	event := ce.NewEvent()
-	event.SetID(uuid.New().String())
+	event.SetID(uuid.NewString())
 	event.SetTime(time.Now())
 	event.SetType(eventType)
 	event.SetSource(eventSource)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func(event *ce.Event, data map[string]interface{}) {
+	var userIdentifier string
+	if s.config.UserIdentifierHeader != "" {
+		userIdentifier = req.Header.Get(s.config.UserIdentifierHeader)
+		if userIdentifier == "" {
+			s.writeError(w, http.StatusBadRequest, errors.New("header userIdentifier is empty"))
+			return
+		}
+	}
+	go func(event *ce.Event, userIdentifier string, data map[string]interface{}) {
 		defer wg.Done()
-		content, err := s.service.ChatCompletion(chatType, data["message"].(string))
+		content, err := s.service.ChatCompletion(chatType, userIdentifier, data["message"].(string))
 		if err != nil {
 			log.Warning("failed to get content from Chat", map[string]interface{}{
 				log.KeyError: err,
@@ -188,13 +217,15 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				})
 			},
 		}
-	}(&event, data)
+	}(&event, userIdentifier, data)
 	if !s.isSync(req) {
+		w.Header().Set(headerContentType, ce.ApplicationJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(respSuccess))
 		return
 	}
 	wg.Wait()
+	w.Header().Set(headerContentType, ce.ApplicationJSON)
 	w.WriteHeader(http.StatusOK)
 	w.Write(event.Data())
 }

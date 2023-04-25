@@ -19,7 +19,7 @@ import cdkgo "github.com/vanus-labs/cdk-go"
 var _ cdkgo.SourceConfigAccessor = &facebookConfig{}
 
 type facebookConfig struct {
-	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
+	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 	Port               int    `json:"port" yaml:"port"`
 	VerifyToken        string `json:"verify_token" yaml:"verify_token" validate:"required"`
 	AppSecret          string `json:"app_secret" yaml:"app_secret"`

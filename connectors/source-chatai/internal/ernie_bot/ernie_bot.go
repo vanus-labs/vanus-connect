@@ -46,7 +46,7 @@ func (s *ernieBotService) Reset() {
 
 }
 
-func (s *ernieBotService) SendChatCompletion(content string) (string, error) {
+func (s *ernieBotService) SendChatCompletion(userIdentifier, content string) (string, error) {
 	token, err := s.tokenSource.Token()
 	if err != nil {
 		return "", err

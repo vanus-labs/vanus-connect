@@ -30,6 +30,7 @@ import (
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/valyala/fasthttp"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
@@ -49,8 +50,6 @@ const (
 	extendAttributesRemoteAddr = "xvhttpremoteaddr"
 )
 
-var _ cdkgo.SourceConfigAccessor = &httpSourceConfig{}
-
 type HTTPEvent struct {
 	Path      string            `json:"path"`
 	Method    string            `json:"method"`
@@ -67,19 +66,6 @@ func (he *HTTPEvent) toMap() map[string]interface{} {
 		"headers":    he.Headers,
 		"body":       he.Body,
 	}
-}
-
-type httpSourceConfig struct {
-	cdkgo.SourceConfig `json:"_,inline" yaml:",inline"`
-	Port               int `json:"port" yaml:"port"`
-}
-
-func (c *httpSourceConfig) GetSecret() cdkgo.SecretAccessor {
-	return nil
-}
-
-func NewConfig() cdkgo.SourceConfigAccessor {
-	return &httpSourceConfig{}
 }
 
 var _ cdkgo.Source = &httpSource{}

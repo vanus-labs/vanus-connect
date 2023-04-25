@@ -33,11 +33,11 @@ cron: "* * * * * *"
 EOF
 ```
 
-| Name       | Required | Default | Description                                                            |
-|:-----------|:---------|:--------|:-----------------------------------------------------------------------|
-| target     | YES      | ""      | the target URL which Schedule Source will send CloudEvents to          |
-| cron       | YES      | ""      | the schedule [cron], second,minute,hour,day of month,month,day of week |
-| immediate  | NO       | false   | is immediate make a CloudEvent                                         |
+| Name      | Required | Default | Description                                                            |
+|:----------|:---------|:--------|:-----------------------------------------------------------------------|
+| target    | YES      |         | the target URL which Schedule Source will send CloudEvents to          |
+| cron      | YES      |         | the schedule [cron], second,minute,hour,day of month,month,day of week |
+| time_zone | NO       |         | the schedule [time zone][tz], default is your server zone              |
 
 ...
 
@@ -86,5 +86,5 @@ docker stop source-schedule sink-display
 ```
 
 [vc]: https://www.vanus.dev/introduction/concepts#vanus-connect
-
 [cron]: https://en.wikipedia.org/wiki/Cron
+[tz]: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
