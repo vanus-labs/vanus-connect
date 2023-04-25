@@ -36,16 +36,20 @@ func NewSource() cdkgo.Source {
 }
 
 type scheduleSource struct {
-	config *scheduleConfig
 	events chan *cdkgo.Tuple
 	number uint64
 	cron   *cron.Cron
 }
 
 func (s *scheduleSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
-	s.config = cfg.(*scheduleConfig)
+	config := cfg.(*scheduleConfig)
 	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
-	schedule, err := parser.Parse(s.config.Cron)
+	spec := config.Cron
+	timeZone := config.TimeZone
+	if timeZone != "" {
+		spec = "TZ=" + timeZone + " " + spec
+	}
+	schedule, err := parser.Parse(spec)
 	if err != nil {
 		return err
 	}
@@ -53,9 +57,6 @@ func (s *scheduleSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor)
 		cron.WithLocation(time.UTC),
 		cron.WithChain(cron.Recover(cronLog{})))
 	c.Schedule(schedule, cron.FuncJob(s.makeEvent))
-	if s.config.Immediate {
-		s.makeEvent()
-	}
 	c.Start()
 	return nil
 }

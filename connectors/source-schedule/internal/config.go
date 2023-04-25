@@ -26,6 +26,6 @@ func NewConfig() cdkgo.SourceConfigAccessor {
 
 type scheduleConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	Immediate          bool   `json:"immediate" yaml:"immediate"`
 	Cron               string `json:"cron" yaml:"cron" validate:"required"`
+	TimeZone           string `json:"time_zone" yaml:"time_zone" `
 }
