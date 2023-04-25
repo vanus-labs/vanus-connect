@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/chatai/internal/auth"
 	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
 )
@@ -41,7 +40,16 @@ type chatConfig struct {
 	DefaultChatMode      ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
 	DefaultProcessMode   string           `json:"default_process_mode" yaml:"default_process_mode"`
 	UserIdentifierHeader string           `json:"user_identifier_header" yaml:"user_identifier_header"`
-	Auth                 *auth.Config     `json:"auth" yaml:"auth"`
+	Auth                 *Auth            `json:"auth" yaml:"auth"`
+}
+
+type Auth struct {
+	Username string `json:"username" yaml:"username"`
+	Password string `json:"password" yaml:"password"`
+}
+
+func (a *Auth) IsEmpty() bool {
+	return a == nil || a.Username == "" || a.Password == ""
 }
 
 func (c *chatConfig) Validate() error {
@@ -51,10 +59,6 @@ func (c *chatConfig) Validate() error {
 		default:
 			return fmt.Errorf("chat mode is invalid")
 		}
-	}
-	err := c.Auth.Validate()
-	if err != nil {
-		return err
 	}
 	return c.SourceConfig.Validate()
 }
