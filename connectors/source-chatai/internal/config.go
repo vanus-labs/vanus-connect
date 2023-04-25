@@ -39,6 +39,7 @@ type chatConfig struct {
 	MaxTokens            int              `json:"max_tokens" yaml:"max_tokens"`
 	EnableContext        bool             `json:"enable_context" yaml:"enable_context"`
 	DefaultChatMode      ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
+	DefaultProcessMode   string           `json:"default_process_mode" yaml:"default_process_mode"`
 	UserIdentifierHeader string           `json:"user_identifier_header" yaml:"user_identifier_header"`
 	Auth                 *auth.Config     `json:"auth" yaml:"auth"`
 }

@@ -120,6 +120,9 @@ func (s *chatSource) getMessage(req *http.Request, body []byte) (map[string]inte
 
 func (s *chatSource) isSync(req *http.Request) bool {
 	processMode := req.Header.Get(headerProcessMode)
+	if processMode == "" {
+		processMode = s.config.DefaultProcessMode
+	}
 	return processMode == "sync"
 }
 

@@ -127,6 +127,7 @@ func (s *chatService) getNum(userIdentifier string) int {
 func (s *chatService) reset() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
+	time.Sleep(time.Second)
 	t := today()
 	if s.day == t {
 		return
