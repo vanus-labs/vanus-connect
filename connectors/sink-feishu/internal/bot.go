@@ -27,6 +27,7 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
 	"github.com/tidwall/gjson"
+
 	"github.com/vanus-labs/cdk-go/log"
 )
 
@@ -183,8 +184,17 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 }
 
 func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
+	var text string
+	if e.DataContentType() == v2.ApplicationJSON {
+		err := json.Unmarshal(e.Data(), &text)
+		if err != nil {
+			return err
+		}
+	} else {
+		text = string(e.Data())
+	}
 	content := map[string]interface{}{
-		"text": string(e.Data()),
+		"text": text,
 	}
 
 	for _, wh := range whs {
