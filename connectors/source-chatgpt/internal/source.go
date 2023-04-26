@@ -16,8 +16,7 @@ package internal
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -50,7 +49,6 @@ type chatGPTSource struct {
 	number  int
 	day     string
 	lock    sync.Mutex
-	server  *http.Server
 	service *chatGPTService
 }
 
@@ -58,19 +56,6 @@ func (s *chatGPTSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 	s.config = cfg.(*chatGPTConfig)
 	s.config.Init()
 	s.service = newChatGPTService(s.config)
-	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.config.Port),
-		Handler: s,
-	}
-	go func() {
-		log.Info("http server is ready to start", map[string]interface{}{
-			"port": s.config.Port,
-		})
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(fmt.Sprintf("cloud not listen on %d, error:%s", s.config.Port, err.Error()))
-		}
-		log.Info("http server stopped", nil)
-	}()
 	return nil
 }
 
@@ -79,9 +64,6 @@ func (s *chatGPTSource) Name() string {
 }
 
 func (s *chatGPTSource) Destroy() error {
-	if s.server != nil {
-		s.server.Shutdown(context.Background())
-	}
 	return nil
 }
 
@@ -90,7 +72,7 @@ func (s *chatGPTSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil || len(body) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return
