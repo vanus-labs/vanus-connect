@@ -95,12 +95,7 @@ func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	content, err := s.service.CreateChatCompletion(string(body))
-	if err != nil {
-		log.Warning("failed to get content from ChatGPT", map[string]interface{}{
-			log.KeyError: err,
-		})
-	}
+
 	eventSource := req.Header.Get(headerSource)
 	if eventSource == "" {
 		eventSource = defaultEventSource
@@ -114,29 +109,26 @@ func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	event.SetTime(time.Now())
 	event.SetType(eventType)
 	event.SetSource(eventSource)
-	event.SetData(ce.ApplicationJSON, map[string]string{
-		"content": content,
-	})
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	s.events <- &cdkgo.Tuple{
-		Event: &event,
-		Success: func() {
-			defer wg.Done()
-			w.WriteHeader(http.StatusOK)
-			if err != nil {
-				w.Write([]byte(err.Error()))
-			}
-			log.Info("send event to target success", nil)
-		},
-		Failed: func(err2 error) {
-			defer wg.Done()
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("send event to target error: " + err2.Error()))
-			log.Warning("failed to send event to target", map[string]interface{}{
-				log.KeyError: err2,
+	go func(event ce.Event) {
+		content, err := s.service.CreateChatCompletion(string(body))
+		if err != nil {
+			log.Warning("failed to get content from ChatGPT", map[string]interface{}{
+				log.KeyError: err,
 			})
-		},
-	}
-	wg.Wait()
+		}
+		event.SetData(ce.ApplicationJSON, map[string]string{
+			"content": content,
+		})
+		s.events <- &cdkgo.Tuple{
+			Event: &event,
+			Success: func() {
+				log.Info("send event to target success", nil)
+			},
+			Failed: func(err2 error) {
+				log.Warning("failed to send event to target", map[string]interface{}{
+					log.KeyError: err2,
+				})
+			},
+		}
+	}(event)
 }
