@@ -33,8 +33,10 @@ type GoogleSheetConfig struct {
 	Credentials string `json:"credentials" yaml:"credentials"`
 	OAuth       *OAuth `json:"oauth" yaml:"oauth"`
 
-	SheetID   string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
-	SheetName string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
+	SheetID       string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
+	SheetName     string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
+	FlushInterval int    `json:"flush_interval" yaml:"flush_interval"`
+	FlushSize     int    `json:"flush_size" yaml:"flush_size"`
 
 	Summary []SummaryConfig `json:"summary" yaml:"summary"`
 }

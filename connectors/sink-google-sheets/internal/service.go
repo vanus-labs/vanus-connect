@@ -118,7 +118,7 @@ func (s *GoogleSheetService) insertHeader(ctx context.Context, sheetName string,
 	for key, index := range headers {
 		values[index] = key
 	}
-	err := s.appendData(ctx, sheetName, values)
+	err := s.appendData(ctx, sheetName, [][]interface{}{values})
 	if err != nil {
 		return errors.Wrap(err, "insert sheet header error")
 	}
@@ -205,10 +205,10 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 	return errors.New("create sheet failed")
 }
 
-func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, values []interface{}) error {
+func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, values [][]interface{}) error {
 	_, err := s.client.Spreadsheets.Values.Append(s.spreadsheetID, sheetName, &sheets.ValueRange{
-		Values: [][]interface{}{values},
-	}).ValueInputOption("USER_ENTERED").InsertDataOption("INSERT_ROWS").Context(ctx).Do()
+		Values: values,
+	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
 	if err != nil {
 		return err
 	}

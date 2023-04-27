@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/vanus-labs/cdk-go/log"
 )
 
@@ -216,7 +217,7 @@ func (s *Summary) insertData(ctx context.Context, sheetName string, headers map[
 			values[index] = sheetValue(v)
 		}
 	}
-	err := s.service.appendData(ctx, sheetName, values)
+	err := s.service.appendData(ctx, sheetName, [][]interface{}{values})
 	if err != nil {
 		return err
 	}
