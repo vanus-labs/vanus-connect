@@ -14,7 +14,12 @@
 
 package internal
 
-import cdkgo "github.com/vanus-labs/cdk-go"
+import (
+	"fmt"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/connector/source/chatai/chat"
+)
 
 var _ cdkgo.SourceConfigAccessor = &slackConfig{}
 
@@ -23,8 +28,24 @@ type slackConfig struct {
 	Port               int    `json:"port" yaml:"port"`
 	VerifyToken        string `json:"verify_token" yaml:"verify_token" validate:"required"`
 	SigningSecret      string `json:"signing_secret" yaml:"signing_secret" validate:"required"`
+
+	*chat.ChatConfig `json:",inline" yaml:",inline"`
+	EnableChatAi     bool `json:"enable_chatai" yaml:"enable_chatai"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {
 	return &slackConfig{}
+}
+
+func (c *slackConfig) Validate() error {
+	if c.EnableChatAi {
+		if c.ChatConfig == nil {
+			return fmt.Errorf("enable chat but chat config is empty")
+		}
+		err := c.ChatConfig.Validate()
+		if err != nil {
+			return err
+		}
+	}
+	return c.SourceConfig.Validate()
 }
