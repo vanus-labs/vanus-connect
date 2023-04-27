@@ -12,10 +12,35 @@ part of the original event and <must: description...>
 For example, the incoming CloudEvent looks like this:
 
 ```json
-<incoming event example>
+{
+  "id": "88767821-92c2-477d-9a6f-bfdfbed19c6a",
+  "source": "quickstart",
+  "specversion": "1.0",
+  "type": "test",
+  "time": "2022-07-08T03:17:03.139Z",
+  "datacontenttype": "application/json",
+  "data": {
+    "name": "Vanus Community",
+    "follow_up_action_url": "<Redirection_URL>",
+    "questions": {
+        {
+            "type": "FIRST_NAME"
+        },
+        {
+            "type": "LAST_NAME"
+        },
+        {
+            "type": "EMAIL"
+        },
+    }
+    "privacy_policy": {
+        "url": "<Policy_URL>"
+    }
+  }
+}
 ```
 
-The <name> Sink will ... (eg. send a message to the Slack channel)
+The Facebook Lead Ads Sink will create a form name ``Vanus Community`` with fields for ``first_name``, ``last_name`` and ``email address``.
 
 ## Quickstart
 

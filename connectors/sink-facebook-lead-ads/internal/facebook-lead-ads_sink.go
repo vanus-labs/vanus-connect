@@ -55,14 +55,13 @@ func (s *FacebookLeadAdsSink) Arrived(ctx context.Context, events ...*ce.Event) 
 		}
 
 		access_token, pageId := s.cfg.AccessToken, s.cfg.PageId
-		name, follow_up_action_url, questions, context_card_id, legal_content_id := form["name"], form["follow_up_action_url"], form["questions"], form["context_card_id"], form["legal_content_id"]
+		name, follow_up_action_url, questions, privacy_policy := form["name"], form["follow_up_action_url"], form["questions"], form["privacy_policy"]
 
 		res, err := fb.Post(pageId+"leadgen_forms", fb.Params{
 			"name":                 name,
 			"follow_up_action_url": follow_up_action_url,
 			"questions":            questions,
-			"context_card_id":      context_card_id,
-			"legal_content_id":     legal_content_id,
+			"privacy_policy":       privacy_policy,
 			"access_token":         access_token,
 		})
 		if err != nil {
