@@ -15,11 +15,8 @@
 package internal
 
 import (
-	"fmt"
-
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
-	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
+	"github.com/vanus-labs/connector/source/chatai/chat"
 )
 
 var _ cdkgo.SourceConfigAccessor = &chatConfig{}
@@ -31,16 +28,11 @@ func NewChatConfig() cdkgo.SourceConfigAccessor {
 type chatConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	Port                 int              `json:"port" yaml:"port"`
-	GPT                  gpt.Config       `json:"gpt" yaml:"gpt"`
-	ErnieBot             ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
-	EverydayLimit        int              `json:"everyday_limit" yaml:"everyday_limit"`
-	MaxTokens            int              `json:"max_tokens" yaml:"max_tokens"`
-	EnableContext        bool             `json:"enable_context" yaml:"enable_context"`
-	DefaultChatMode      ChatType         `json:"default_chat_mode" yaml:"default_chat_mode"`
-	DefaultProcessMode   string           `json:"default_process_mode" yaml:"default_process_mode"`
-	UserIdentifierHeader string           `json:"user_identifier_header" yaml:"user_identifier_header"`
-	Auth                 *Auth            `json:"auth" yaml:"auth"`
+	chat.ChatConfig      `json:",inline" yaml:",inline"`
+	Port                 int    `json:"port" yaml:"port"`
+	DefaultProcessMode   string `json:"default_process_mode" yaml:"default_process_mode"`
+	UserIdentifierHeader string `json:"user_identifier_header" yaml:"user_identifier_header"`
+	Auth                 *Auth  `json:"auth" yaml:"auth"`
 }
 
 type Auth struct {
@@ -53,27 +45,9 @@ func (a *Auth) IsEmpty() bool {
 }
 
 func (c *chatConfig) Validate() error {
-	if c.DefaultChatMode != "" {
-		switch c.DefaultChatMode {
-		case chatGPT, chatErnieBot:
-		default:
-			return fmt.Errorf("chat mode is invalid")
-		}
+	err := c.ChatConfig.Validate()
+	if err != nil {
+		return err
 	}
 	return c.SourceConfig.Validate()
-}
-
-func (c *chatConfig) Init() {
-	if c.Port <= 0 {
-		c.Port = 8080
-	}
-	if c.EverydayLimit <= 0 {
-		c.EverydayLimit = 100
-	}
-	if c.MaxTokens <= 0 {
-		c.MaxTokens = 3500
-	}
-	if c.DefaultChatMode == "" {
-		c.DefaultChatMode = chatGPT
-	}
 }
