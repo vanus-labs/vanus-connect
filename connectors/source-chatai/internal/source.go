@@ -30,6 +30,7 @@ import (
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/chat"
 )
 
 const (
@@ -59,15 +60,17 @@ type chatSource struct {
 	day        string
 	lock       sync.Mutex
 	server     *http.Server
-	service    *chatService
+	service    *chat.ChatService
 	authEnable bool
 }
 
-func (s *chatSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *chatSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*chatConfig)
-	s.config.Init()
+	if s.config.Port <= 0 {
+		s.config.Port = 8080
+	}
 	s.authEnable = !s.config.Auth.IsEmpty()
-	s.service = newChatService(s.config)
+	s.service = chat.NewChatService(s.config.ChatConfig)
 	s.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.config.Port),
 		Handler: s,
@@ -151,21 +154,19 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		s.writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	var chatType ChatType
+	var chatType chat.Type
 	chatMode := req.Header.Get(headerChatMode)
 	if chatMode == "" {
 		chatMode = req.Header.Get(headerChatModeOld)
 	}
 	if chatMode != "" {
-		chatType = ChatType(chatMode)
+		chatType = chat.Type(chatMode)
 		switch chatType {
-		case chatGPT, chatErnieBot:
+		case chat.ChatGPT, chat.ChatErnieBot:
 		default:
 			s.writeError(w, http.StatusBadRequest, errors.New("chat_mode invalid"))
 			return
 		}
-	} else {
-		chatType = s.config.DefaultChatMode
 	}
 	eventSource := req.Header.Get(headerSource)
 	if eventSource == "" {

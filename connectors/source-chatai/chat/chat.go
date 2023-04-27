@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package chat
 
 import (
 	"context"
@@ -21,8 +21,8 @@ import (
 	"time"
 
 	"github.com/vanus-labs/cdk-go/log"
-	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot"
-	"github.com/vanus-labs/connector/source/chatai/internal/gpt"
+	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot"
+	"github.com/vanus-labs/connector/source/chatai/chat/gpt"
 )
 
 const (
@@ -39,17 +39,17 @@ type ChatClient interface {
 	Reset()
 }
 
-type ChatType string
+type Type string
 
 const (
-	chatGPT      ChatType = "chatgpt"
-	chatErnieBot ChatType = "wenxin"
+	ChatGPT      Type = "chatgpt"
+	ChatErnieBot Type = "wenxin"
 )
 
-type chatService struct {
+type ChatService struct {
 	chatGpt      ChatClient
 	ernieBot     ChatClient
-	config       *chatConfig
+	config       ChatConfig
 	lock         sync.RWMutex
 	day          int
 	limitContent string
@@ -58,8 +58,9 @@ type chatService struct {
 	cancel       context.CancelFunc
 }
 
-func newChatService(config *chatConfig) *chatService {
-	s := &chatService{
+func NewChatService(config ChatConfig) *ChatService {
+	config.init()
+	s := &ChatService{
 		config:       config,
 		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
@@ -99,11 +100,11 @@ func today() int {
 	return time.Now().UTC().Day()
 }
 
-func (s *chatService) Close() {
+func (s *ChatService) Close() {
 	s.cancel()
 }
 
-func (s *chatService) addNum(userIdentifier string) {
+func (s *ChatService) addNum(userIdentifier string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	num, ok := s.userNum[userIdentifier]
@@ -114,7 +115,7 @@ func (s *chatService) addNum(userIdentifier string) {
 	s.userNum[userIdentifier] = num
 }
 
-func (s *chatService) getNum(userIdentifier string) int {
+func (s *ChatService) getNum(userIdentifier string) int {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 	num, ok := s.userNum[userIdentifier]
@@ -124,7 +125,7 @@ func (s *chatService) getNum(userIdentifier string) int {
 	return num
 }
 
-func (s *chatService) reset() {
+func (s *ChatService) reset() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	time.Sleep(time.Second)
@@ -138,7 +139,10 @@ func (s *chatService) reset() {
 	s.ernieBot.Reset()
 }
 
-func (s *chatService) ChatCompletion(chatType ChatType, userIdentifier, content string) (resp string, err error) {
+func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content string) (resp string, err error) {
+	if chatType == "" {
+		chatType = s.config.DefaultChatMode
+	}
 	num := s.getNum(userIdentifier)
 	if num >= s.config.EverydayLimit {
 		return s.limitContent, ErrLimit
@@ -148,9 +152,9 @@ func (s *chatService) ChatCompletion(chatType ChatType, userIdentifier, content 
 		"user": userIdentifier,
 	})
 	switch chatType {
-	case chatErnieBot:
+	case ChatErnieBot:
 		resp, err = s.ernieBot.SendChatCompletion(userIdentifier, content)
-	case chatGPT:
+	case ChatGPT:
 		resp, err = s.chatGpt.SendChatCompletion(userIdentifier, content)
 	}
 	if err != nil {

@@ -22,7 +22,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	"golang.org/x/oauth2"
 
-	"github.com/vanus-labs/connector/source/chatai/internal/ernie_bot/oauth"
+	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot/oauth"
 )
 
 const url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
