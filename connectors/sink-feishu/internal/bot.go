@@ -187,7 +187,6 @@ func isJSONString(e *v2.Event) bool {
 	if e.DataContentType() != v2.ApplicationJSON {
 		return false
 	}
-	fmt.Println(e.String())
 	for i := range e.Data() {
 		c := e.Data()[i]
 		switch c {
