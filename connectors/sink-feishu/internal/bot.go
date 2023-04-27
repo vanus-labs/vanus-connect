@@ -183,9 +183,28 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 	}
 }
 
+func isJSONString(e *v2.Event) bool {
+	if e.DataContentType() != v2.ApplicationJSON {
+		return false
+	}
+	fmt.Println(e.String())
+	for i := range e.Data() {
+		c := e.Data()[i]
+		switch c {
+		case '"':
+			return true
+		case '\t', ' ':
+			continue
+		default:
+			return false
+		}
+	}
+	return false
+}
+
 func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
 	var text string
-	if e.DataContentType() == v2.ApplicationJSON {
+	if isJSONString(e) {
 		err := json.Unmarshal(e.Data(), &text)
 		if err != nil {
 			return err
