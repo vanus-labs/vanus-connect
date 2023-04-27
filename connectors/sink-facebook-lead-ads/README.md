@@ -21,7 +21,7 @@ For example, the incoming CloudEvent looks like this:
   "datacontenttype": "application/json",
   "data": {
     "name": "Vanus Community",
-    "follow_up_action_url": "<Redirection_URL>",
+    "follow_up_action_url": "<follow_up_action_URL>",
     "questions": {
         {
             "type": "FIRST_NAME"
