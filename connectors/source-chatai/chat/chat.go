@@ -64,7 +64,7 @@ func NewChatService(config ChatConfig) *ChatService {
 		config:       config,
 		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
-		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
+		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens, config.EnableContext),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
