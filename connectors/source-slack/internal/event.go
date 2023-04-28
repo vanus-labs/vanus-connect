@@ -116,6 +116,15 @@ func getEventType(body map[string]interface{}) string {
 	return eventType
 }
 
+func getEventUser(body map[string]interface{}) string {
+	event, ok := body["event"].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	text, _ := getStringValue(event, "user")
+	return text
+}
+
 func getEventText(body map[string]interface{}) string {
 	event, ok := body["event"].(map[string]interface{})
 	if !ok {
@@ -142,7 +151,8 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 			if len(arr) == 2 {
 				content = arr[1]
 			}
-			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, "", content)
+			user := getEventUser(body)
+			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, user, content)
 			if err != nil {
 				log.Warning("failed to get content from Chat", map[string]interface{}{
 					log.KeyError: err,
