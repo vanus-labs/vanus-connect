@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -132,17 +133,24 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 	event.SetType("event_callback")
 	event.SetExtension("eventtype", eventType)
 	delete(body, "token")
-	if s.chatService != nil && eventType == "message" {
-		go func() {
-			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, "", getEventText(body))
+	if s.chatService != nil && eventType == "app_mention" {
+		go func(event *ce.Event, body map[string]interface{}) {
+			text := getEventText(body)
+			// <@U04M1L7L64U> msg
+			arr := strings.SplitN(text, " ", 2)
+			var content string
+			if len(arr) == 2 {
+				content = arr[1]
+			}
+			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, "", content)
 			if err != nil {
 				log.Warning("failed to get content from Chat", map[string]interface{}{
 					log.KeyError: err,
 				})
 			}
 			body["result"] = resp
-			s.pushEvent(&event, body)
-		}()
+			s.pushEvent(event, body)
+		}(&event, body)
 	} else {
 		s.pushEvent(&event, body)
 	}

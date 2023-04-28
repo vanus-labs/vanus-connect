@@ -140,6 +140,9 @@ func (s *ChatService) reset() {
 }
 
 func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content string) (resp string, err error) {
+	if content == "" {
+		return "", nil
+	}
 	if chatType == "" {
 		chatType = s.config.DefaultChatMode
 	}
