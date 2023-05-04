@@ -29,34 +29,6 @@ type chatGPTService struct {
 	lock          sync.Mutex
 }
 
-type userMessage struct {
-	messages   []openai.ChatCompletionMessage
-	tokens     []int
-	totalToken int
-}
-
-func (m *userMessage) cal(newToken, maxTokens int) {
-	currToken := m.totalToken + newToken
-	if currToken < maxTokens {
-		return
-	}
-	var index, token int
-	for index = range m.tokens {
-		// question token
-		token += m.tokens[index]
-		index++
-		// answer token
-		token += m.tokens[index]
-		if currToken-token < maxTokens {
-			index = index + 1
-			break
-		}
-	}
-	m.totalToken -= token
-	m.messages = m.messages[index:]
-	m.tokens = m.tokens[index:]
-}
-
 func NewChatGPTService(config Config, maxTokens int, enableContext bool) *chatGPTService {
 	client := openai.NewClient(config.Token)
 	return &chatGPTService{
@@ -100,6 +72,7 @@ func (s *chatGPTService) SendChatCompletion(userIdentifier, content string) (str
 		openai.ChatCompletionRequest{
 			Model:    openai.GPT3Dot5Turbo,
 			Messages: messages,
+			User:     userIdentifier,
 		},
 	)
 	if err != nil {

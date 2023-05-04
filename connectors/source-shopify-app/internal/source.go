@@ -55,10 +55,10 @@ func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 	if err != nil {
 		return err
 	}
-	if s.config.SyncInternalHour <= 0 || s.config.SyncInternalHour > 24 {
-		s.config.SyncInternalHour = 1
+	if s.config.SyncIntervalHour <= 0 || s.config.SyncIntervalHour > 24 {
+		s.config.SyncIntervalHour = 1
 	}
-	s.syncInternal = time.Duration(s.config.SyncInternalHour) * time.Hour
+	s.syncInternal = time.Duration(s.config.SyncIntervalHour) * time.Hour
 	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-04"))
 	go s.start(ctx)
 	return nil
@@ -104,28 +104,20 @@ func (s *shopifySource) initSyncTime(ctx context.Context) error {
 }
 
 func (s *shopifySource) start(ctx context.Context) {
-	err := s.sync(ctx)
-	if err != nil {
-		log.Info("sync failed", map[string]interface{}{
-			log.KeyError: err,
-		})
-	}
+	s.sync(ctx)
 	t := time.NewTicker(s.syncInternal)
 	defer t.Stop()
-	select {
-	case <-ctx.Done():
-		return
-	case <-t.C:
-		err = s.sync(ctx)
-		if err != nil {
-			log.Info("sync failed", map[string]interface{}{
-				log.KeyError: err,
-			})
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			s.sync(ctx)
 		}
 	}
 }
 
-func (s *shopifySource) sync(ctx context.Context) error {
+func (s *shopifySource) sync(ctx context.Context) {
 	for _, apiType := range syncApiArr {
 		begin, err := getSyncTime(ctx, apiType)
 		if err != nil {
@@ -163,7 +155,6 @@ func (s *shopifySource) sync(ctx context.Context) error {
 			})
 		}
 	}
-	return nil
 }
 
 func (s *shopifySource) syncOrders(ctx context.Context, begin, end time.Time) (int, error) {

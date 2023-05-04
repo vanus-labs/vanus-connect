@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 
-	"github.com/vanus-labs/cdk-go/log"
-
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
@@ -116,6 +116,24 @@ func getEventType(body map[string]interface{}) string {
 	return eventType
 }
 
+func getEventUser(body map[string]interface{}) string {
+	event, ok := body["event"].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	text, _ := getStringValue(event, "user")
+	return text
+}
+
+func getEventText(body map[string]interface{}) string {
+	event, ok := body["event"].(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	text, _ := getStringValue(event, "text")
+	return text
+}
+
 func (s *slackSource) makeEvent(body map[string]interface{}) error {
 	eventType := getEventType(body)
 	event := ce.NewEvent()
@@ -124,10 +142,35 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 	event.SetType("event_callback")
 	event.SetExtension("eventtype", eventType)
 	delete(body, "token")
-	event.SetData(ce.ApplicationJSON, body)
+	if s.chatService != nil && eventType == "app_mention" {
+		go func(event *ce.Event, body map[string]interface{}) {
+			text := getEventText(body)
+			// <@U04M1L7L64U> msg
+			arr := strings.SplitN(text, " ", 2)
+			var content string
+			if len(arr) == 2 {
+				content = arr[1]
+			}
+			user := getEventUser(body)
+			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, user, content)
+			if err != nil {
+				log.Warning("failed to get content from Chat", map[string]interface{}{
+					log.KeyError: err,
+				})
+			}
+			body["result"] = resp
+			s.pushEvent(event, body)
+		}(&event, body)
+	} else {
+		s.pushEvent(&event, body)
+	}
+	return nil
+}
 
+func (s *slackSource) pushEvent(event *ce.Event, body map[string]interface{}) {
+	event.SetData(ce.ApplicationJSON, body)
 	s.ch <- &cdkgo.Tuple{
-		Event: &event,
+		Event: event,
 		Success: func() {
 			log.Info("send event success", nil)
 		},
@@ -137,5 +180,4 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 			})
 		},
 	}
-	return nil
 }

@@ -23,6 +23,7 @@ import (
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/chat"
 )
 
 const (
@@ -43,6 +44,7 @@ type slackSource struct {
 	ch          chan *cdkgo.Tuple
 	server      *http.Server
 	verifyToken slackevents.TokenComparator
+	chatService *chat.ChatService
 }
 
 func (s *slackSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -81,6 +83,9 @@ func (s *slackSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) er
 	s.verifyToken = slackevents.TokenComparator{
 		VerificationToken: s.config.VerifyToken,
 	}
+	if s.config.EnableChatAi {
+		s.chatService = chat.NewChatService(*s.config.ChatConfig)
+	}
 	s.server = &http.Server{
 		Addr:    fmt.Sprintf(":%d", s.config.Port),
 		Handler: s,
@@ -104,6 +109,9 @@ func (s *slackSource) Name() string {
 func (s *slackSource) Destroy() error {
 	if s.server != nil {
 		return s.server.Shutdown(context.Background())
+	}
+	if s.chatService != nil {
+		s.chatService.Close()
 	}
 	return nil
 }

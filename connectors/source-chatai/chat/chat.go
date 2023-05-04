@@ -64,7 +64,7 @@ func NewChatService(config ChatConfig) *ChatService {
 		config:       config,
 		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
-		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens),
+		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens, config.EnableContext),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
@@ -140,6 +140,9 @@ func (s *ChatService) reset() {
 }
 
 func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content string) (resp string, err error) {
+	if content == "" {
+		return "", nil
+	}
 	if chatType == "" {
 		chatType = s.config.DefaultChatMode
 	}
