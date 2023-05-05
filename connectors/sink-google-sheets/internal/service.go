@@ -17,6 +17,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"golang.org/x/oauth2/google"
 
@@ -39,6 +40,7 @@ type GoogleSheetService struct {
 	spreadsheetID string
 	sheetIDs      map[string]int64          // key: sheetName, value: sheetID
 	sheetHeaders  map[string]map[string]int // key: sheetName, value: sheet headers
+	lock          sync.RWMutex
 }
 
 func newGoogleSheetService(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) (*GoogleSheetService, error) {
@@ -206,6 +208,8 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 }
 
 func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, values [][]interface{}) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	_, err := s.client.Spreadsheets.Values.Append(s.spreadsheetID, sheetName, &sheets.ValueRange{
 		Values: values,
 	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
@@ -216,6 +220,8 @@ func (s *GoogleSheetService) appendData(ctx context.Context, sheetName string, v
 }
 
 func (s *GoogleSheetService) getData(ctx context.Context, sheetName string, columnIndex int, value interface{}) (int, []interface{}, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 	resp, err := s.client.Spreadsheets.Values.Get(s.spreadsheetID, sheetName).Context(ctx).Do()
 	if err != nil {
 		return 0, nil, err
@@ -232,6 +238,8 @@ func (s *GoogleSheetService) getData(ctx context.Context, sheetName string, colu
 }
 
 func (s *GoogleSheetService) updateData(ctx context.Context, sheetName string, rowIndex int, value []interface{}) error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	_, err := s.client.Spreadsheets.Values.Update(s.spreadsheetID, fmt.Sprintf("%s!%d:%d", sheetName, rowIndex, rowIndex), &sheets.ValueRange{
 		Values: [][]interface{}{value},
 	}).ValueInputOption("USER_ENTERED").Context(ctx).Do()
