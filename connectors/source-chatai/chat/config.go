@@ -35,7 +35,7 @@ func (c *ChatConfig) init() {
 		c.DefaultChatMode = ChatGPT
 	}
 	if c.EverydayLimit <= 0 {
-		c.EverydayLimit = 100
+		c.EverydayLimit = 1000
 	}
 	if c.MaxTokens <= 0 {
 		c.MaxTokens = 3500

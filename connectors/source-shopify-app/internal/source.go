@@ -158,9 +158,14 @@ func (s *shopifySource) sync(ctx context.Context) {
 }
 
 func (s *shopifySource) syncOrders(ctx context.Context, begin, end time.Time) (int, error) {
-	listOptions := &goshopify.ListOptions{
-		CreatedAtMin: begin,
-		CreatedAtMax: end,
+	var listOptions interface{}
+	listOptions = &goshopify.OrderListOptions{
+		ListOptions: goshopify.ListOptions{
+			CreatedAtMin: begin,
+			CreatedAtMax: end,
+			Limit:        250,
+		},
+		Status: "any",
 	}
 	c := 0
 	for {
