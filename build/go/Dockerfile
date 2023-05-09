@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.18.5 as builder
+FROM --platform=$BUILDPLATFORM golang:1.19.9 as builder
 
 ARG connector
 
@@ -23,7 +23,7 @@ ENV CONNECTOR_SECRET=/vanus-connect/secret/secret.yml
 ENV LOG_LEVEL=INFO
 
 RUN echo '#!/bin/sh' >> /vanus-connect/run.sh
-RUN echo $EXECUTABLE_FILE >> /vanus-connect/run.sh
+RUN echo 'exec $EXECUTABLE_FILE' >> /vanus-connect/run.sh
 RUN chmod a+x /vanus-connect/bin/${connector}
 RUN chmod a+x /vanus-connect/run.sh
 RUN mkdir /vanus-connect/config
