@@ -45,9 +45,9 @@ const (
 	applicationJSON    = "application/json"
 )
 
-var _ cdkgo.Source = &chatSource{}
+var _ cdkgo.HTTPSource = &chatSource{}
 
-func NewChatSource() cdkgo.Source {
+func NewChatSource() cdkgo.HTTPSource {
 	return &chatSource{
 		events: make(chan *cdkgo.Tuple, 100),
 	}
@@ -59,31 +59,14 @@ type chatSource struct {
 	number     int
 	day        string
 	lock       sync.Mutex
-	server     *http.Server
 	service    *chat.ChatService
 	authEnable bool
 }
 
 func (s *chatSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*chatConfig)
-	if s.config.Port <= 0 {
-		s.config.Port = 8080
-	}
 	s.authEnable = !s.config.Auth.IsEmpty()
 	s.service = chat.NewChatService(s.config.ChatConfig)
-	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.config.Port),
-		Handler: s,
-	}
-	go func() {
-		log.Info("http server is ready to start", map[string]interface{}{
-			"port": s.config.Port,
-		})
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(fmt.Sprintf("cloud not listen on %d, error:%s", s.config.Port, err.Error()))
-		}
-		log.Info("http server stopped", nil)
-	}()
 	return nil
 }
 
@@ -94,9 +77,6 @@ func (s *chatSource) Name() string {
 func (s *chatSource) Destroy() error {
 	if s.service != nil {
 		s.service.Close()
-	}
-	if s.server != nil {
-		s.server.Shutdown(context.Background())
 	}
 	return nil
 }

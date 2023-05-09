@@ -16,7 +16,7 @@ package internal
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -72,7 +72,7 @@ func (s *chatGPTSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil || len(body) == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		return

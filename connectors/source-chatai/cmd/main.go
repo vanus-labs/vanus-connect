@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewChatConfig, internal.NewChatSource)
+	cdkgo.RunHttpSource(internal.NewChatConfig, internal.NewChatSource)
 }
