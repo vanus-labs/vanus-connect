@@ -16,21 +16,18 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"time"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 type GitHubSource struct {
-	config *GitHubConfig
-	events chan *cdkgo.Tuple
-	server *http.Server
+	config  *GitHubConfig
+	events  chan *cdkgo.Tuple
+	handler *handler
 }
 
-func Source() cdkgo.Source {
+func Source() cdkgo.HTTPSource {
 	return &GitHubSource{
 		events: make(chan *cdkgo.Tuple, 10),
 	}
@@ -38,7 +35,7 @@ func Source() cdkgo.Source {
 
 func (s *GitHubSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*GitHubConfig)
-	s.start()
+	s.handler = newHandler(s.events, s.config.GitHub)
 	return nil
 }
 
@@ -47,17 +44,6 @@ func (s *GitHubSource) Name() string {
 }
 
 func (s *GitHubSource) Destroy() error {
-	if s.server == nil {
-		return nil
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := s.server.Shutdown(ctx); err != nil {
-		log.Error("shutdown the server error", map[string]interface{}{
-			log.KeyError: err,
-		})
-	}
-	close(s.events)
 	return nil
 }
 
@@ -65,22 +51,24 @@ func (s *GitHubSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *GitHubSource) start() {
-	_handler := newHandler(s.events, s.config.GitHub)
-	if s.config.Port <= 0 {
-		s.config.Port = 8080
+func (s *GitHubSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	err := s.handler.handle(req)
+	if err == nil {
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = w.Write([]byte("accepted"))
+		return
 	}
-	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.config.Port),
-		Handler: _handler,
+	var code int
+	switch err {
+	case errPingEvent:
+		code = http.StatusOK
+	case errInvalidHTTPMethod, errInvalidContentTypeHeader, errMissingGithubEventHeader, errMissingHubDeliveryHeader, errMissingHubSignatureHeader, errReadPayload, errInvalidBody:
+		code = http.StatusBadRequest
+	case errVerificationFailed:
+		code = http.StatusForbidden
+	default:
+		code = http.StatusInternalServerError
 	}
-	go func() {
-		log.Info("server is ready to start", map[string]interface{}{
-			"port": s.config.Port,
-		})
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(fmt.Sprintf("cloud not listen on %d, error:%s", s.config.Port, err.Error()))
-		}
-		log.Info("server stopped", nil)
-	}()
+	w.WriteHeader(code)
+	_, _ = w.Write([]byte(err.Error()))
 }
