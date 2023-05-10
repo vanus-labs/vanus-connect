@@ -25,6 +25,7 @@ import (
 	"path"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 
@@ -57,7 +58,9 @@ func (s *httpSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error
 		s.method = "POST"
 	}
 	s.Auth = config.Auth
-	s.client = http.DefaultClient
+	s.client = &http.Client{
+		Timeout: 30 * time.Second,
+	}
 	return nil
 }
 
