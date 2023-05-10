@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/google/uuid v1.3.0
 	github.com/sashabaranov/go-openai v1.5.7
-	github.com/vanus-labs/cdk-go v0.5.1-0.20230509125157-5aba3d3a0d1b
+	github.com/vanus-labs/cdk-go v0.5.1-0.20230510065747-d28aa10c71de
 )
 
 require (
