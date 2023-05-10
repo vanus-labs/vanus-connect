@@ -7,7 +7,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/tidwall/gjson v1.14.4
-	github.com/vanus-labs/cdk-go v0.5.1-0.20230510065747-d28aa10c71de
+	github.com/vanus-labs/cdk-go v0.6.0
 )
 
 require (

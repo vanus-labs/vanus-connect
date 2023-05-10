@@ -7,7 +7,7 @@ require (
 	github.com/go-resty/resty/v2 v2.7.0
 	github.com/google/uuid v1.3.0
 	github.com/sashabaranov/go-openai v1.9.0
-	github.com/vanus-labs/cdk-go v0.5.1-0.20230510065747-d28aa10c71de
+	github.com/vanus-labs/cdk-go v0.6.0
 	golang.org/x/oauth2 v0.6.0
 )
 

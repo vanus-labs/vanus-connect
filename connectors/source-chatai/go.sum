@@ -202,8 +202,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
-github.com/vanus-labs/cdk-go v0.5.1-0.20230509125157-5aba3d3a0d1b h1:VQVcpa8QUKcym0VvZjpOTws9cOteUT6bQR3bebGHHyM=
-github.com/vanus-labs/cdk-go v0.5.1-0.20230509125157-5aba3d3a0d1b/go.mod h1:ynR3Gm7hKlqeoXgfzneWmGPkZHBmaliNQJeBZm44CIQ=
+github.com/vanus-labs/cdk-go v0.6.0 h1:y225p18UreiBeKmciuHtPPontuJe2wCzV2TskwjfjSM=
+github.com/vanus-labs/cdk-go v0.6.0/go.mod h1:ynR3Gm7hKlqeoXgfzneWmGPkZHBmaliNQJeBZm44CIQ=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0 h1:zxK8mhyzhPWW8daj3PC3zziMkd2Q9JjnN2yJGYS60yI=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0/go.mod h1:NDH8Jf6kZslANsLL5Bv5VzpWi+GsbZfg9vY/pHpd4ug=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
