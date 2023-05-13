@@ -7,6 +7,8 @@ public class ExampleConfig extends SourceConfig {
     @JsonProperty("secret")
     private SecretConfig secret;
 
+    pr
+
     @Override
     public Class secretClass() {
         // TODO
