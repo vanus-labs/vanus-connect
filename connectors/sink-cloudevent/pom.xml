@@ -36,7 +36,7 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        com.linkall.sink.example
+                                        com.linkall.sink.example.Entrance
                                     </mainClass>
                                 </manifest>
                             </archive>
