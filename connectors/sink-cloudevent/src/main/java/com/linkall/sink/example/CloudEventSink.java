@@ -71,9 +71,7 @@ public class CloudEventSink implements Sink  {
                 .createWriter(client.postAbs(config.getTarget()))
                 .writeBinary(event)
                 .onSuccess(response -> {
-                    CloudEvent responseEvent = VertxMessageFactory
-                            .createReader(response)
-                            .toEvent();
+                    System.out.println("send event success");
                 })
                 .onFailure(Throwable::printStackTrace);
     }
