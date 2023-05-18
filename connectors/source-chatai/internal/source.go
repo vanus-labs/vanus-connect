@@ -103,6 +103,9 @@ func (s *chatSource) getMessage(req *http.Request) (map[string]interface{}, erro
 	} else {
 		message["message"] = string(body)
 	}
+	if message["message"] == "" {
+		return nil, errors.New("message is empty")
+	}
 	return message, nil
 }
 
@@ -156,12 +159,6 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if eventType == "" {
 		eventType = defaultEventType
 	}
-	event := ce.NewEvent()
-	event.SetID(uuid.NewString())
-	event.SetTime(time.Now())
-	event.SetType(eventType)
-	event.SetSource(eventSource)
-
 	var wg sync.WaitGroup
 	wg.Add(1)
 	var userIdentifier string
@@ -172,32 +169,61 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	go func(event *ce.Event, userIdentifier string, data map[string]interface{}) {
+	go func() {
 		defer wg.Done()
-		content, err := s.service.ChatCompletion(chatType, userIdentifier, data["message"].(string))
-		if err != nil {
-			log.Warning("failed to get content from Chat", map[string]interface{}{
-				log.KeyError: err,
-				"chatType":   chatType,
-			})
-		}
-		data["result"] = content
-		event.SetData(ce.ApplicationJSON, data)
-		s.events <- &cdkgo.Tuple{
-			Event: event,
-			Success: func() {
-				log.Info("send event to target success", map[string]interface{}{
-					"event": event.ID(),
+		if !s.config.Stream {
+			content, err := s.service.ChatCompletion(context.Background(), chatType, userIdentifier, data["message"].(string))
+			if err != nil {
+				log.Warning("failed to get content from Chat", map[string]interface{}{
+					log.KeyError: err,
+					"chatType":   chatType,
 				})
-			},
-			Failed: func(err2 error) {
-				log.Warning("failed to send event to target", map[string]interface{}{
-					log.KeyError: err2,
-					"event":      event.ID(),
+			}
+			data["result"] = content
+			dataBytes := s.sendEvent(eventType, eventSource, data)
+			w.Header().Set(headerContentType, ce.ApplicationJSON)
+			w.WriteHeader(http.StatusOK)
+			w.Write(dataBytes)
+		} else {
+			stream, err := s.service.ChatCompletionStream(context.Background(), chatType, userIdentifier, data["message"].(string))
+			if err != nil {
+				log.Warning("failed to get chat with stream", map[string]interface{}{
+					log.KeyError: err,
+					"chatType":   chatType,
 				})
-			},
+				data["result"] = err.Error()
+				s.sendEvent(eventType, eventSource, data)
+				s.writeError(w, http.StatusInternalServerError, err)
+				return
+			}
+			defer stream.Close()
+			flusher, _ := w.(http.Flusher)
+			w.Header().Set(headerContentType, "text/event-stream;charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			for {
+				msg, err := stream.Recv()
+				if err != nil {
+					w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusInternalServerError, err.Error())))
+					data["result"] = err.Error()
+					s.sendEvent(eventType, eventSource, data)
+					return
+				}
+				if msg == nil {
+					return
+				}
+				data["is_end"] = msg.IsEnd
+				data["result"] = msg.Content
+				data["id"] = msg.ID
+				data["index"] = msg.Index
+				if s.config.UserIdentifierHeader != "" {
+					data[s.config.UserIdentifierHeader] = userIdentifier
+				}
+				dataBytes := s.sendEvent(eventType, eventSource, data)
+				w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(dataBytes))))
+				flusher.Flush()
+			}
 		}
-	}(&event, userIdentifier, data)
+	}()
 	if !s.isSync(req) {
 		w.Header().Set(headerContentType, ce.ApplicationJSON)
 		w.WriteHeader(http.StatusOK)
@@ -205,9 +231,31 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	wg.Wait()
-	w.Header().Set(headerContentType, ce.ApplicationJSON)
-	w.WriteHeader(http.StatusOK)
-	w.Write(event.Data())
+
+}
+
+func (s *chatSource) sendEvent(eventType, eventSource string, data map[string]interface{}) []byte {
+	event := ce.NewEvent()
+	event.SetID(uuid.NewString())
+	event.SetTime(time.Now())
+	event.SetType(eventType)
+	event.SetSource(eventSource)
+	event.SetData(ce.ApplicationJSON, data)
+	s.events <- &cdkgo.Tuple{
+		Event: &event,
+		Success: func() {
+			log.Info("send event to target success", map[string]interface{}{
+				"event": event.ID(),
+			})
+		},
+		Failed: func(err2 error) {
+			log.Warning("failed to send event to target", map[string]interface{}{
+				log.KeyError: err2,
+				"event":      event.ID(),
+			})
+		},
+	}
+	return event.Data()
 }
 
 var (

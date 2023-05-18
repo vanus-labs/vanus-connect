@@ -15,23 +15,22 @@
 package ernie_bot
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
+	"io"
+	"strings"
 	"sync"
 
-	"github.com/go-resty/resty/v2"
+	"github.com/pkg/errors"
 	"github.com/sashabaranov/go-openai"
-	"golang.org/x/oauth2"
 
-	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot/oauth"
+	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot/client"
+	"github.com/vanus-labs/connector/source/chatai/chat/model"
 )
 
 const url = "https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/completions"
 
 type ernieBotService struct {
-	client        *resty.Client
-	tokenSource   oauth2.TokenSource
-	config        Config
+	client        *client.Client
 	maxTokens     int
 	enableContext bool
 	userMap       map[string]*userMessage
@@ -40,12 +39,10 @@ type ernieBotService struct {
 
 func NewErnieBotService(config Config, maxTokens int, enableContext bool) *ernieBotService {
 	return &ernieBotService{
-		config:        config,
 		maxTokens:     1500,
 		enableContext: enableContext,
 		userMap:       map[string]*userMessage{},
-		client:        resty.New(),
-		tokenSource:   oauth.NewTokenSource(config.AccessKey, config.SecretKey),
+		client:        client.NewClient(config.AccessKey, config.SecretKey),
 	}
 }
 
@@ -66,50 +63,134 @@ func (s *ernieBotService) Reset() {
 	s.userMap = map[string]*userMessage{}
 }
 
-func (s *ernieBotService) SendChatCompletion(userIdentifier, content string) (string, error) {
-	token, err := s.tokenSource.Token()
-	if err != nil {
-		return "", err
-	}
+func (s *ernieBotService) SendChatCompletion(ctx context.Context, userIdentifier, content string) (string, error) {
 	user := s.getUser(userIdentifier)
 	if s.enableContext {
-		s.lock.Lock()
 		user.cal(calTokens(content), s.maxTokens)
-		s.lock.Unlock()
 	}
-	messages := append(user.messages, ChatCompletionMessage{
+	question := client.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleUser,
 		Content: content,
-	})
-	req := ChatCompletionRequest{
+	}
+	messages := append(user.messages, question)
+	req := client.ChatCompletionRequest{
 		Message: messages,
 		User:    userIdentifier,
 	}
-	res, err := s.client.R().SetQueryParam("access_token", token.AccessToken).
-		SetHeader("Content-Type", "application/json").SetBody(req).Post(url)
+	resp, err := s.client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
-	}
-	var resp ChatCompletionResponse
-	err = json.Unmarshal(res.Body(), &resp)
-	if err != nil {
-		return "", err
-	}
-	if resp.ErrorCode != 0 {
-		return "", fmt.Errorf("response error code:%d, msg:%s", resp.ErrorCode, resp.ErrorMsg)
 	}
 	respContent := resp.Result
 	if s.enableContext {
-		s.lock.Lock()
-		defer s.lock.Unlock()
-		user.messages = append(messages, ChatCompletionMessage{
+		if resp.NeedClearHistory {
+			user.reset()
+			return respContent, nil
+		}
+		user.set([]client.ChatCompletionMessage{question, {
 			Role:    openai.ChatMessageRoleAssistant,
 			Content: respContent,
-		})
-		user.tokens = append(user.tokens, resp.Usage.PromptTokens-user.totalToken, resp.Usage.CompletionTokens)
-		user.totalToken = resp.Usage.TotalTokens
+		}}, tokens{
+			prompt:     resp.Usage.PromptTokens,
+			completion: resp.Usage.CompletionTokens,
+			total:      resp.Usage.TotalTokens})
 	}
 	return respContent, nil
+}
+
+func (s *ernieBotService) SendChatCompletionStream(ctx context.Context, userIdentifier, content string) (model.ChatCompletionStream, error) {
+	user := s.getUser(userIdentifier)
+	if s.enableContext {
+		user.cal(calTokens(content), s.maxTokens)
+	}
+	question := client.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: content,
+	}
+	messages := append(user.messages, question)
+	req := client.ChatCompletionRequest{
+		Message: messages,
+		User:    userIdentifier,
+		Stream:  true,
+	}
+	stream, err := s.client.CreateChatCompletionStream(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return newChatCompletionStream(stream, question, user, s.enableContext), nil
+}
+
+type chatCompletionStream struct {
+	chat             *client.ChatCompletionStream
+	buffer           strings.Builder
+	question         client.ChatCompletionMessage
+	user             *userMessage
+	promptTokens     int
+	completionTokens int
+	totalTokens      int
+	isFinish         bool
+	needClearHistory bool
+	enableContext    bool
+}
+
+func newChatCompletionStream(chat *client.ChatCompletionStream, question client.ChatCompletionMessage, user *userMessage, enableContext bool) model.ChatCompletionStream {
+	return &chatCompletionStream{
+		chat:          chat,
+		user:          user,
+		question:      question,
+		enableContext: enableContext,
+	}
+}
+
+func (s *chatCompletionStream) Recv() (*model.StreamMessage, error) {
+	if s.isFinish {
+		return nil, nil
+	}
+	resp, err := s.chat.Recv()
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	s.isFinish = resp.IsEnd
+	if s.enableContext {
+		if !s.needClearHistory {
+			s.needClearHistory = resp.NeedClearHistory
+			s.promptTokens = resp.Usage.PromptTokens
+			s.totalTokens = resp.Usage.TotalTokens
+			s.completionTokens += resp.Usage.CompletionTokens
+			s.buffer.WriteString(resp.Result)
+		}
+		if s.isFinish {
+			s.doFinish()
+		}
+	}
+	return &model.StreamMessage{
+		ID:      resp.ID,
+		Index:   resp.SentenceID,
+		IsEnd:   resp.IsEnd,
+		Content: resp.Result,
+	}, nil
+}
+
+func (s *chatCompletionStream) Close() {
+	s.chat.Close()
+}
+
+func (s *chatCompletionStream) doFinish() {
+	if s.needClearHistory {
+		s.user.reset()
+		return
+	}
+	s.user.set([]client.ChatCompletionMessage{s.question, {
+		Role:    openai.ChatMessageRoleAssistant,
+		Content: s.buffer.String(),
+	}}, tokens{
+		prompt:     s.promptTokens,
+		completion: s.completionTokens,
+		total:      s.totalTokens,
+	})
 }
 
 func calTokens(content string) int {

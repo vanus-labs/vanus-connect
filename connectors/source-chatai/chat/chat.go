@@ -23,6 +23,7 @@ import (
 	"github.com/vanus-labs/cdk-go/log"
 	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/chat/gpt"
+	"github.com/vanus-labs/connector/source/chatai/chat/model"
 )
 
 const (
@@ -35,7 +36,8 @@ var (
 )
 
 type ChatClient interface {
-	SendChatCompletion(userIdentifier, content string) (string, error)
+	SendChatCompletion(ctx context.Context, userIdentifier, content string) (string, error)
+	SendChatCompletionStream(ctx context.Context, userIdentifier, content string) (model.ChatCompletionStream, error)
 	Reset()
 }
 
@@ -139,10 +141,7 @@ func (s *ChatService) reset() {
 	s.ernieBot.Reset()
 }
 
-func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content string) (resp string, err error) {
-	if content == "" {
-		return "", nil
-	}
+func (s *ChatService) ChatCompletion(ctx context.Context, chatType Type, userIdentifier, content string) (resp string, err error) {
 	if chatType == "" {
 		chatType = s.config.DefaultChatMode
 	}
@@ -156,9 +155,9 @@ func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content stri
 	})
 	switch chatType {
 	case ChatErnieBot:
-		resp, err = s.ernieBot.SendChatCompletion(userIdentifier, content)
+		resp, err = s.ernieBot.SendChatCompletion(ctx, userIdentifier, content)
 	case ChatGPT:
-		resp, err = s.chatGpt.SendChatCompletion(userIdentifier, content)
+		resp, err = s.chatGpt.SendChatCompletion(ctx, userIdentifier, content)
 	}
 	if err != nil {
 		return responseErr, err
@@ -168,4 +167,29 @@ func (s *ChatService) ChatCompletion(chatType Type, userIdentifier, content stri
 	}
 	s.addNum(userIdentifier)
 	return resp, nil
+}
+
+func (s *ChatService) ChatCompletionStream(ctx context.Context, chatType Type, userIdentifier, content string) (stream model.ChatCompletionStream, err error) {
+	if chatType == "" {
+		chatType = s.config.DefaultChatMode
+	}
+	num := s.getNum(userIdentifier)
+	if num >= s.config.EverydayLimit {
+		return nil, fmt.Errorf("you've reached the daily limit (%d/day). Your quota will be restored tomorrow", s.config.EverydayLimit)
+	}
+	log.Info("receive content:"+content, map[string]interface{}{
+		"chat": chatType,
+		"user": userIdentifier,
+	})
+	switch chatType {
+	case ChatErnieBot:
+		stream, err = s.ernieBot.SendChatCompletionStream(ctx, userIdentifier, content)
+	case ChatGPT:
+		stream, err = s.chatGpt.SendChatCompletionStream(ctx, userIdentifier, content)
+	}
+	if err != nil {
+		return nil, err
+	}
+	s.addNum(userIdentifier)
+	return stream, nil
 }

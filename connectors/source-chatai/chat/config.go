@@ -28,6 +28,7 @@ type ChatConfig struct {
 	MaxTokens       int              `json:"max_tokens" yaml:"max_tokens"`
 	EnableContext   bool             `json:"enable_context" yaml:"enable_context"`
 	DefaultChatMode Type             `json:"default_chat_mode" yaml:"default_chat_mode"`
+	Stream          bool             `json:"stream" yaml:"stream"`
 }
 
 func (c *ChatConfig) init() {
