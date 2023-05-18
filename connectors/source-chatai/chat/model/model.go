@@ -15,10 +15,10 @@
 package model
 
 type StreamMessage struct {
-	ID      string `json:"stream_id,omitempty"`
-	IsEnd   bool   `json:"is_end"`
-	Index   int    `json:"index"`
-	Content string `json:"result"`
+	ID      string
+	IsEnd   bool
+	Index   int
+	Content string
 }
 
 type ChatCompletionStream interface {
