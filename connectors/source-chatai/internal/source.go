@@ -169,6 +169,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+	sync := s.isSync(req)
 	go func() {
 		defer wg.Done()
 		if !s.config.Stream {
@@ -181,9 +182,11 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			}
 			data["result"] = content
 			dataBytes := s.sendEvent(eventType, eventSource, data)
-			w.Header().Set(headerContentType, ce.ApplicationJSON)
-			w.WriteHeader(http.StatusOK)
-			w.Write(dataBytes)
+			if sync {
+				w.Header().Set(headerContentType, ce.ApplicationJSON)
+				w.WriteHeader(http.StatusOK)
+				w.Write(dataBytes)
+			}
 		} else {
 			stream, err := s.service.ChatCompletionStream(context.Background(), chatType, userIdentifier, data["message"].(string))
 			if err != nil {
@@ -197,15 +200,20 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			defer stream.Close()
-			flusher, _ := w.(http.Flusher)
-			w.Header().Set(headerContentType, "text/event-stream;charset=utf-8")
-			w.WriteHeader(http.StatusOK)
+			var flusher http.Flusher
+			if sync {
+				flusher, _ = w.(http.Flusher)
+				w.Header().Set(headerContentType, "text/event-stream;charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+			}
 			for {
 				msg, err := stream.Recv()
 				if err != nil {
-					w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusInternalServerError, err.Error())))
 					data["result"] = err.Error()
 					s.sendEvent(eventType, eventSource, data)
+					if sync {
+						w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusInternalServerError, err.Error())))
+					}
 					return
 				}
 				if msg == nil {
@@ -219,12 +227,14 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 					data[s.config.UserIdentifierHeader] = userIdentifier
 				}
 				dataBytes := s.sendEvent(eventType, eventSource, data)
-				w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(dataBytes))))
-				flusher.Flush()
+				if sync {
+					w.Write([]byte(fmt.Sprintf("data: %s\n\n", string(dataBytes))))
+					flusher.Flush()
+				}
 			}
 		}
 	}()
-	if !s.isSync(req) {
+	if !sync {
 		w.Header().Set(headerContentType, ce.ApplicationJSON)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(respSuccess))
