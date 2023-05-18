@@ -222,7 +222,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				data["is_end"] = msg.IsEnd
 				data["result"] = msg.Content
 				data["stream_id"] = msg.ID
-				data["index"] = msg.Index
+				data["stream_index"] = msg.Index
 				if s.config.UserIdentifierHeader != "" {
 					data[s.config.UserIdentifierHeader] = userIdentifier
 				}
