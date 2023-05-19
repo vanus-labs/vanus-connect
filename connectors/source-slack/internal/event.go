@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -152,7 +153,7 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 				content = arr[1]
 			}
 			user := getEventUser(body)
-			resp, err := s.chatService.ChatCompletion(s.config.ChatConfig.DefaultChatMode, user, content)
+			resp, err := s.chatService.ChatCompletion(context.Background(), s.config.ChatConfig.DefaultChatMode, user, content)
 			if err != nil {
 				log.Warning("failed to get content from Chat", map[string]interface{}{
 					log.KeyError: err,

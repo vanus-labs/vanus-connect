@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ernie_bot
+package client
 
 type ChatCompletionRequest struct {
 	Message []ChatCompletionMessage `json:"messages"`
@@ -26,15 +26,22 @@ type ChatCompletionMessage struct {
 }
 
 type ChatCompletionResponse struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	Created int64  `json:"created"`
-	Result  string `json:"result"`
-	Usage   struct {
+	ID               string `json:"id"`
+	Object           string `json:"object"`
+	Created          int64  `json:"created"`
+	SentenceID       int    `json:"sentence_id"`
+	IsEnd            bool   `json:"is_end"`
+	Result           string `json:"result"`
+	NeedClearHistory bool   `json:"need_clear_history"`
+	Usage            struct {
 		PromptTokens     int `json:"prompt_tokens"`
 		CompletionTokens int `json:"completion_tokens"`
 		TotalTokens      int `json:"total_tokens"`
 	} `json:"usage"`
+	ErrResponse `json:",inline"`
+}
+
+type ErrResponse struct {
 	ErrorCode int    `json:"error_code"`
 	ErrorMsg  string `json:"error_msg"`
 }

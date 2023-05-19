@@ -14,13 +14,44 @@
 
 package ernie_bot
 
+import (
+	"sync"
+
+	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot/client"
+)
+
 type userMessage struct {
-	messages   []ChatCompletionMessage
+	messages   []client.ChatCompletionMessage
 	tokens     []int
 	totalToken int
+	lock       sync.Mutex
+}
+
+type tokens struct {
+	prompt     int
+	completion int
+	total      int
+}
+
+func (m *userMessage) reset() {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.tokens = nil
+	m.messages = nil
+	m.totalToken = 0
+}
+
+func (m *userMessage) set(message []client.ChatCompletionMessage, tokens tokens) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.messages = append(m.messages, message...)
+	m.tokens = append(m.tokens, tokens.prompt-m.totalToken, tokens.completion)
+	m.totalToken = tokens.total
 }
 
 func (m *userMessage) cal(newToken, maxTokens int) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
 	currToken := m.totalToken + newToken
 	if currToken < maxTokens {
 		return

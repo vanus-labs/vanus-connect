@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewChatGPTConfig, internal.NewChatGPTSource)
+	cdkgo.RunHttpSource(internal.NewChatGPTConfig, internal.NewChatGPTSource)
 }

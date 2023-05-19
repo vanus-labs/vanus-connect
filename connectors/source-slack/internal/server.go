@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/slack-go/slack/slackevents"
@@ -31,9 +30,9 @@ const (
 	defaultPort = 8080
 )
 
-var _ cdkgo.Source = &slackSource{}
+var _ cdkgo.HTTPSource = &slackSource{}
 
-func NewSource() cdkgo.Source {
+func NewSource() cdkgo.HTTPSource {
 	return &slackSource{
 		ch: make(chan *cdkgo.Tuple, 1024),
 	}
@@ -42,7 +41,6 @@ func NewSource() cdkgo.Source {
 type slackSource struct {
 	config      *slackConfig
 	ch          chan *cdkgo.Tuple
-	server      *http.Server
 	verifyToken slackevents.TokenComparator
 	chatService *chat.ChatService
 }
@@ -86,19 +84,6 @@ func (s *slackSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) er
 	if s.config.EnableChatAi {
 		s.chatService = chat.NewChatService(*s.config.ChatConfig)
 	}
-	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.config.Port),
-		Handler: s,
-	}
-	go func() {
-		log.Info("http server is ready to start", map[string]interface{}{
-			"port": s.config.Port,
-		})
-		if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			panic(fmt.Sprintf("cloud not listen on %d, error:%s", s.config.Port, err.Error()))
-		}
-		log.Info("http server stopped", nil)
-	}()
 	return nil
 }
 
@@ -107,9 +92,6 @@ func (s *slackSource) Name() string {
 }
 
 func (s *slackSource) Destroy() error {
-	if s.server != nil {
-		return s.server.Shutdown(context.Background())
-	}
 	if s.chatService != nil {
 		s.chatService.Close()
 	}

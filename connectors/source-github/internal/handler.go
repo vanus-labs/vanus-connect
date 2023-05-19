@@ -27,9 +27,10 @@ import (
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
-	"golang.org/x/oauth2"
 )
 
 var (
@@ -64,28 +65,6 @@ func newHandler(events chan *cdkgo.Tuple, config GitHubCfg) *handler {
 		h.client.Timeout = 5 * time.Second
 	}
 	return h
-}
-
-func (h *handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	err := h.handle(req)
-	if err == nil {
-		w.WriteHeader(http.StatusAccepted)
-		_, _ = w.Write([]byte("accepted"))
-		return
-	}
-	var code int
-	switch err {
-	case errPingEvent:
-		code = http.StatusOK
-	case errInvalidHTTPMethod, errInvalidContentTypeHeader, errMissingGithubEventHeader, errMissingHubDeliveryHeader, errMissingHubSignatureHeader, errReadPayload, errInvalidBody:
-		code = http.StatusBadRequest
-	case errVerificationFailed:
-		code = http.StatusForbidden
-	default:
-		code = http.StatusInternalServerError
-	}
-	w.WriteHeader(code)
-	_, _ = w.Write([]byte(err.Error()))
 }
 
 func (h *handler) handle(req *http.Request) error {

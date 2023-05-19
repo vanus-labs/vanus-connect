@@ -1,4 +1,4 @@
-// Copyright 2023 Linkall Inc.
+// Copyright 2022 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package model
 
-import (
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/chatai/internal"
-)
+type StreamMessage struct {
+	ID      string
+	IsEnd   bool
+	Index   int
+	Content string
+}
 
-func main() {
-	cdkgo.RunHttpSource(internal.NewChatConfig, internal.NewChatSource)
+type ChatCompletionStream interface {
+	Recv() (*StreamMessage, error)
+	Close()
 }
