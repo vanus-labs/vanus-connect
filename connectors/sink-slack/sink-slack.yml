@@ -18,14 +18,8 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    default: "test-app1"
-    slack:
-      - app_name: "test-app1"
-        token: "xoxb-xxxxxxxxxx"
-        default_channel: "#general"
-      - app_name: "test-app2"
-        token: "xoxb-xxxxxxxxxx"
-        default_channel: "#general"
+    token: "xoxp-422301774731343243235Example"
+    default_channel: "#general"
 
 ---
 apiVersion: apps/v1

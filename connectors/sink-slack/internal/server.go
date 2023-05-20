@@ -17,21 +17,21 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/nikoksr/notify/service/slack"
-	"github.com/pkg/errors"
+	"github.com/slack-go/slack"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
 
 const (
-	name            = "Slack Sink"
-	xvSlackApp      = "xvslackapp"
-	xvSlackChannels = "xvslackchannels"
+	name      = "Slack Sink"
+	xvChannel = "xvchannel"
+	xvMsgType = "xvmsgtype"
 )
 
 var (
@@ -47,32 +47,10 @@ var (
 
 var _ cdkgo.SinkConfigAccessor = &slackConfig{}
 
-type SlackConfig struct {
-	AppName        string `yaml:"app_name" json:"app_name" validate:"required"`
-	Token          string `yaml:"token" json:"token" validate:"required"`
-	DefaultChannel string `yaml:"default_channel" json:"default_channel"`
-}
-
 type slackConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	DefaultAppName   string        `json:"default" yaml:"default"`
-	Slacks           []SlackConfig `json:"slack" yaml:"slack" validate:"required,gt=0,dive"`
-}
-
-func (c *slackConfig) Validate() error {
-	if c.DefaultAppName != "" {
-		var exist bool
-		for _, email := range c.Slacks {
-			if email.AppName == c.DefaultAppName {
-				exist = true
-				break
-			}
-		}
-		if !exist {
-			return errors.New("slack: the default slack config isn't exist")
-		}
-	}
-	return c.SinkConfig.Validate()
+	DefaultChannel   string `json:"default_channel" yaml:"default_channel" validate:"required"`
+	Token            string `yaml:"token" json:"token" validate:"required"`
 }
 
 func NewConfig() cdkgo.SinkConfigAccessor {
@@ -80,79 +58,60 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 }
 
 func NewSlackSink() cdkgo.Sink {
-	return &slackSink{
-		apps: map[string]SlackConfig{},
-	}
+	return &slackSink{}
 }
 
 var _ cdkgo.Sink = &slackSink{}
 
 type slackSink struct {
 	count          int64
-	apps           map[string]SlackConfig
-	defaultAppName string
+	client         *slack.Client
+	defaultChannel string
+	defaultMsgType string
 }
 
 func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
 	for idx := range events {
 		event := events[idx]
 
-		var appName string
-		v, exist := event.Extensions()[xvSlackApp]
-		if exist {
-			str, ok := v.(string)
-			if !ok {
-				return errInvalidAppName
-			}
-			appName = str
-		} else {
-			appName = e.defaultAppName
-		}
-
-		c, ok := e.apps[appName]
+		channelID, ok := event.Extensions()[xvChannel].(string)
 		if !ok {
-			return errInvalidAppName
+			channelID = e.defaultChannel
 		}
-
-		var ids string
-		v, exist = event.Extensions()[xvSlackChannels]
-		if exist {
-			str, ok := v.(string)
-			if !ok {
-				return errInvalidChannels
-			}
-			ids = str
-		} else if c.DefaultChannel != "" {
-			ids = c.DefaultChannel
-		}
-
-		channels := strings.Split(ids, ",")
-		if len(channels) == 0 {
-			return errInvalidChannels
-		}
-
 		m := &Message{}
 		if err := json.Unmarshal(event.Data(), m); err != nil {
+			log.Error("json unmarshal failed", map[string]interface{}{
+				log.KeyError: err,
+				"channel":    channelID,
+				"event_id":   event.ID(),
+			})
 			return errInvalidMessage
 		}
-
+		if err := m.validate(); err != nil {
+			log.Error("message validate failed", map[string]interface{}{
+				log.KeyError: err,
+				"channel":    channelID,
+				"event_id":   event.ID(),
+			})
+			return errInvalidMessage
+		}
 		start := time.Now()
-		if err := e.send(ctx, c.Token, m, channels...); err != nil {
+		if err := e.send(ctx, channelID, m); err != nil {
 			log.Error("failed to send slack", map[string]interface{}{
 				log.KeyError: err,
-				"channels":   channels,
+				"channel":    channelID,
 				"event_id":   event.ID(),
 			})
 			return errFailedToSend
 		} else if time.Now().Sub(start) > time.Second {
-			log.Debug("success to send slack, but takes too long", map[string]interface{}{
-				"channels":  channels,
+			log.Info("success to send slack, but takes too long", map[string]interface{}{
+				"channel":   channelID,
 				"event_id":  event.ID(),
 				"used_time": time.Now().Sub(start),
 			})
 		} else {
-			log.Debug("success to send slack", map[string]interface{}{
-				"channels": channels,
+			log.Info("success to send slack", map[string]interface{}{
+				"channel":  channelID,
 				"event_id": event.ID(),
 			})
 		}
@@ -161,16 +120,12 @@ func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 }
 
 func (e *slackSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
-	config, ok := cfg.(*slackConfig)
-	if !ok {
-		return errors.New("slack: invalid configuration type")
-	}
-
-	for _, m := range config.Slacks {
-		e.apps[m.AppName] = m
-	}
-	e.defaultAppName = config.DefaultAppName
-	return nil
+	config := cfg.(*slackConfig)
+	e.defaultChannel = config.DefaultChannel
+	e.defaultMsgType = "plain_text"
+	e.client = slack.New(config.Token)
+	_, err := e.client.AuthTest()
+	return err
 }
 
 func (e *slackSink) Name() string {
@@ -182,13 +137,18 @@ func (e *slackSink) Destroy() error {
 	return nil
 }
 
-func (e *slackSink) send(ctx context.Context, token string, msg *Message, channels ...string) error {
-	slackService := slack.New(token)
-	slackService.AddReceivers(channels...)
-	return slackService.Send(ctx, msg.Subject, msg.Message)
+func (e *slackSink) send(ctx context.Context, channelID string, m *Message) (err error) {
+	_, _, err = e.client.PostMessageContext(ctx, channelID, slack.MsgOptionBlocks(m.Blocks.BlockSet...))
+	return err
 }
 
 type Message struct {
-	Subject string
-	Message string
+	Blocks *slack.Blocks `json:"blocks"`
+}
+
+func (m *Message) validate() error {
+	if m.Blocks != nil && len(m.Blocks.BlockSet) > 0 {
+		return nil
+	}
+	return fmt.Errorf("message is invalid")
 }
