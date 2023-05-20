@@ -6,7 +6,8 @@ title: Slack
 
 ## Introduction
 
-The Slack Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents by extracting the `data` part of the original event and delivering it to a Slack channel.
+The Slack Sink is a [Vanus Connector][vc] that aims to handle incoming CloudEvents by extracting the `data` part of the
+original event and delivering it to a Slack channel.
 
 For example, if an incoming CloudEvent looks like:
 
@@ -19,8 +20,23 @@ For example, if an incoming CloudEvent looks like:
   "datacontenttype": "application/json",
   "time": "2022-10-26T10:38:29.345Z",
   "data": {
-    "subject": "Test",
-    "message": "Hello Slack!:wave: This is Sink Slack!"
+    "blocks": [
+      {
+        "type": "section",
+        "text": {
+          "text": "A message italicized text_.",
+          "type": "mrkdwn"
+        }
+      },
+      {
+        "type": "section",
+        "text": {
+          "type": "plain_text",
+          "text": "This is a plain text section block.",
+          "emoji": true
+        }
+      }
+    ]
   }
 }
 ```
@@ -33,46 +49,42 @@ The Slack channel will receive a message like:
 In this section we will show you how to use Slack Sink to send a message to a Slack Channel.
 
 ### Prerequisites
+
 - Have a container runtime (i.e., docker).
 - Have a [Slack account](https://api.slack.com/apps).
 
 ### Create an App in Slack
 
-  1. Create an app on slack.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
-  2. Select `From scratch`.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
-  3. Set the bot name and Workspace.
-  4. Click on permissions in the central menu.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
-  5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
-  6. Install to workspace.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
-  7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
-![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
-  
+1. Create an app on slack.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/createApp.png?raw=true)
+2. Select `From scratch`.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/selectFromScratch.png?raw=true)
+3. Set the bot name and Workspace.
+4. Click on permissions in the central menu.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/clickPerm.png?raw=true)
+5. Scopes 'Add OAuth Scope' `chat:write` and `chat:write.public`.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/setPerm.png?raw=true)
+6. Install to workspace.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/installWorkspace.png?raw=true)
+7. Set your configurations with the `Bot User OAuth Token` in OAuth & Permissions.
+   ![message.png](https://github.com/vanus-labs/vanus-connect/blob/main/connectors/sink-slack/oath.png?raw=true)
+
 ### Create the config file
 
 ```shell
 cat << EOF > config.yml
-default: "test_app"
-slack:
-  - app_name: "test_app"
-    token: "xoxp-422301774731343243235Example"
-    default_channel: "#general"
-EOF
+token: "xoxp-422301774731343243235Example"
+default_channel: "#general"
 ```
 
-| Name                     | Required | Default | Description                                                                                         |
-|:-------------------------|:--------:|:--------|:----------------------------------------------------------------------------------------------------|
-| port                     |    NO    | 8080    | the port which Slack Sink listens on                                                                |
-| default                  |    NO    |         | the default app name if event attribute doesn't have `xvslackapp`                                   |
-| slack.[].app_name        |   YES    |         | custom slack app name as identifier                                                                 |
-| slack.[].token           |   YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth                             |
-| slack.[].default_channel |    NO    |         | set default channel the messages send to if attribute was not be set, use `,` to separate multiples |
+| Name            | Required | Default | Description                                                             |
+|:----------------|:--------:|:--------|:------------------------------------------------------------------------|
+| port            |    NO    | 8080    | the port which Slack Sink listens on                                    |
+| token           |   YES    |         | OAuth Token of this app, more visit: https://api.slack.com/legacy/oauth |
+| default_channel |   YES    |         | set default channel the messages send to if attribute was not be set    |
 
-The Slack Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
+The Slack Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
+position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
 
@@ -84,12 +96,11 @@ docker run -it --rm \
 ```
 
 ### Test
-  
-We have designed for you a sandbox environment, removing the need to use your local machine. 
+
+We have designed for you a sandbox environment, removing the need to use your local machine.
 You can run Connectors directly and safely on the Playground.
 
-  
- Open a terminal and use the following command to send a CloudEvent to the Sink.
+Open a terminal and use the following command to send a CloudEvent to the Sink.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -102,9 +113,24 @@ curl --location --request POST 'localhost:31080' \
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
     "data": {
-        "subject": "Test",
-        "message": "Hello Slack!:wave: This is Sink Slack!"
-    }
+       "blocks": [
+         {
+           "type": "section",
+           "text": {
+             "text": "A message italicized text_.",
+             "type": "mrkdwn"
+           }
+         },
+         {
+           "type": "section",
+           "text": {
+             "type": "plain_text",
+             "text": "This is a plain text section block.",
+             "emoji": true
+           }
+         }
+       ]
+  }
 }'
 ```
 
@@ -121,27 +147,21 @@ docker stop sink-slack
 
 ### Extension Attributes
 
-The Slack Sink has additional options if the incoming CloudEvent contains the following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes).
+The Slack Sink has additional options if the incoming CloudEvent contains the
+following[Extension Attributes](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes)
+.
 
-| Attribute       | Required  | Examples          | Description                                 |
-|:----------------|:---------:|:------------------|:--------------------------------------------|
-| xvslackapp      |    NO     | test_app          | Which slack app this event want to send to  |
-| xvslackchannels |    NO     | #general,#random  | use `,` to separate multiples               |
+| Attribute | Required  | Examples        | Description |
+|:----------|:---------:|:----------------|:------------|
+| xvchannel |    NO     | #general        | chanel      |
 
 ### Data format
 
-the event data must be `JSON` format, and only two key `subject` and `message` is valid for using, example:
-
-```json
-{
-  "subject": "Test",
-  "message": "Hello Slack!:wave: This is Sink Slack!"
-}
-```
+the event data must be `JSON` format, and only with key `blocks` , refer [doc](https://api.slack.com/reference/block-kit/blocks) 
 
 ### Examples
 
-#### Sending a message from the default app to the default channel.
+#### Sending a message to the default channel.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -154,13 +174,28 @@ curl --location --request POST 'localhost:31080' \
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
     "data": {
-        "subject": "Test",
-        "message": "Hello Slack!:wave: This is Sink Slack!"
+       "blocks": [
+         {
+           "type": "section",
+           "text": {
+             "text": "A message italicized text_.",
+             "type": "mrkdwn"
+           }
+         },
+         {
+           "type": "section",
+           "text": {
+             "type": "plain_text",
+             "text": "This is a plain text section block.",
+             "emoji": true
+           }
+         }
+       ]
     }
 }'
 ```
 
-#### Sending a message from a specific app to a specific channel.
+#### Sending a message to a specific channel.
 
 ```shell
 curl --location --request POST 'localhost:31080' \
@@ -172,32 +207,25 @@ curl --location --request POST 'localhost:31080' \
     "type": "quick-start",
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
-    "xvslackapp": "test",
-    "xvslackchannels": "#team-a",
+    "xvchannel": "#team-a",
     "data": {
-        "subject": "Test",
-        "message": "Hello Slack!:wave: This is Sink Slack!"
-    }
-}'
-```
-
-#### Sending a message from a specific app to multiple channels.
-
-```shell
-curl --location --request POST 'localhost:31080' \
---header 'Content-Type: application/cloudevents+json' \
---data-raw '{
-    "id": "53d1c340-551a-11ed-96c7-8b504d95037c",
-    "source": "quick-start",
-    "specversion": "1.0",
-    "type": "quick-start",
-    "datacontenttype": "application/json",
-    "time": "2022-10-26T10:38:29.345Z",
-    "xvslackapp": "test",
-    "xvslackchannels": "#team-a,#team-b,#team-c",
-    "data": {
-        "subject": "Test",
-        "message": "Hello Slack!:wave: This is Sink Slack!"
+       "blocks": [
+         {
+           "type": "section",
+           "text": {
+             "text": "A message italicized text_.",
+             "type": "mrkdwn"
+           }
+         },
+         {
+           "type": "section",
+           "text": {
+             "type": "plain_text",
+             "text": "This is a plain text section block.",
+             "emoji": true
+           }
+         }
+       ]
     }
 }'
 ```
@@ -225,14 +253,8 @@ metadata:
   namespace: vanus
 data:
   config.yml: |-
-    default: "test-app1"
-    slack:
-      - app_name: "test-app1"
-        token: "xoxb-xxxxxxxxxx"
-        default_channel: "#general"
-      - app_name: "test-app2"
-        token: "xoxb-xxxxxxxxxx"
-        default_channel: "#general"
+    token: "xoxp-422301774731343243235Example"
+    default_channel: "#general"
 
 ---
 apiVersion: apps/v1
@@ -273,28 +295,6 @@ spec:
         - name: config
           configMap:
             name: sink-slack
-```
-
-## Integrate with Vanus
-
-This section shows how a sink connector can receive CloudEvents from a running [Vanus cluster](https://github.com/vanus-labs/vanus).
-
-1. Run the sink-slack.yaml
-```shell
-kubectl apply -f sink-slack.yaml
-```
-
-2. Create an eventbus
-```shell
-vsctl eventbus create --name quick-start
-```
-
-3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
-```shell
-vsctl subscription create \
-  --name quick-start \
-  --eventbus quick-start \
-  --sink 'http://sink-slack:8080'
 ```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
