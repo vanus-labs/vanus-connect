@@ -142,7 +142,7 @@ func (s *whatsAppSource) makeEvent(str string, num string) *ce.Event {
 	event := ce.NewEvent()
 	event.SetID(fmt.Sprintf("id-%d", s.number))
 	event.SetSource("whatsAppSource")
-	event.SetType("testType")
+	event.SetType("simpleMessage")
 	event.SetExtension("t", time.Now())
 	event.SetData(ce.ApplicationJSON, map[string]interface{}{
 		"number":  fmt.Sprintf(num),
