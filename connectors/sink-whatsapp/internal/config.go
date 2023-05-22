@@ -14,34 +14,31 @@
 
 package internal
 
-import (
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/chatai/chat"
-)
+import cdkgo "github.com/vanus-labs/cdk-go"
 
-var _ cdkgo.SourceConfigAccessor = &whatsAppConfig{}
+var _ cdkgo.SinkConfigAccessor = &WhatsappConfig{}
 
-func NewExampleConfig() cdkgo.SourceConfigAccessor {
-	return &whatsAppConfig{}
+func NewExampleConfig() cdkgo.SinkConfigAccessor {
+	return &WhatsappConfig{}
 }
 
-type whatsAppConfig struct {
-	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
+type WhatsappConfig struct {
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
 	// TODO
 	Secret Secret `json:"secret" yaml:"secret"`
-
-	*chat.ChatConfig `json:",inline" yaml:",inline"`
-	EnableChatAi     bool `json:"enable_chatai" yaml:"enable_chatai"`
 }
 
-func (c *whatsAppConfig) GetSecret() cdkgo.SecretAccessor {
+func (c *WhatsappConfig) GetSecret() cdkgo.SecretAccessor {
 	return &c.Secret
 }
 
-func (c *whatsAppConfig) Validate() error {
+func (c *WhatsappConfig) Validate() error {
 	// TODO
-	return c.SourceConfig.Validate()
+	return c.SinkConfig.Validate()
 }
 
 type Secret struct {
+	Host     string `json:"host" yaml:"host" validate:"required"`
+	Username string `json:"username" yaml:"username" validate:"required"`
+	Password string `json:"password" yaml:"password" validate:"required"`
 }

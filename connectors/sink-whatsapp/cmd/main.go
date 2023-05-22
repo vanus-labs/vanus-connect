@@ -16,9 +16,9 @@ package main
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/example/internal"
+	"github.com/vanus-labs/connector/sink/example/internal"
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewExampleConfig, internal.NewExampleSource)
+	cdkgo.RunSink(internal.NewExampleConfig, internal.NewExampleSink)
 }
