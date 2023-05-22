@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"fmt"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/connector/source/chatai/chat"
 )
@@ -27,7 +28,7 @@ func NewExampleConfig() cdkgo.SourceConfigAccessor {
 
 type whatsAppConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	// TODO
+
 	Secret Secret `json:"secret" yaml:"secret"`
 
 	*chat.ChatConfig `json:",inline" yaml:",inline"`
@@ -39,7 +40,15 @@ func (c *whatsAppConfig) GetSecret() cdkgo.SecretAccessor {
 }
 
 func (c *whatsAppConfig) Validate() error {
-	// TODO
+	if c.EnableChatAi {
+		if c.ChatConfig == nil {
+			return fmt.Errorf("enable chat but chat config is empty")
+		}
+		err := c.ChatConfig.Validate()
+		if err != nil {
+			return err
+		}
+	}
 	return c.SourceConfig.Validate()
 }
 

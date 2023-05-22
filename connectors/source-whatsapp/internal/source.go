@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/chat"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
@@ -41,15 +43,20 @@ func NewWhatsAppSource() cdkgo.Source {
 }
 
 type whatsAppSource struct {
-	config *whatsAppConfig
-	events chan *cdkgo.Tuple
-	number int
-	client *whatsmeow.Client
+	config      *whatsAppConfig
+	events      chan *cdkgo.Tuple
+	number      int
+	client      *whatsmeow.Client
+	chatService *chat.ChatService
 }
 
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 
 	s.config = cfg.(*whatsAppConfig)
+
+	if s.config.EnableChatAi {
+		s.chatService = chat.NewChatService(*s.config.ChatConfig)
+	}
 
 	dbLog := waLog.Stdout("Database", "DEBUG", true)
 	container, err := sqlstore.New("sqlite3", "file:Store.db?_foreign_keys=on", dbLog)
@@ -130,6 +137,9 @@ func (s *whatsAppSource) Name() string {
 
 func (s *whatsAppSource) Destroy() error {
 	s.client.Disconnect()
+	if s.chatService != nil {
+		s.chatService.Close()
+	}
 	return nil
 }
 
@@ -145,9 +155,23 @@ func (s *whatsAppSource) makeEvent(info types.MessageInfo, message string) *ce.E
 	event.SetID(info.ID)
 	event.SetSource("whatsapp")
 	event.SetType(info.Type)
-	event.SetData(ce.ApplicationJSON, map[string]interface{}{
-		"info":    info,
-		"message": message,
-	})
+	if s.chatService != nil {
+		resp, err := s.chatService.ChatCompletion(context.Background(), s.config.ChatConfig.DefaultChatMode, info.Sender.User, message)
+		if err != nil {
+			log.Warning("failed to get content from Chat", map[string]interface{}{
+				log.KeyError: err,
+			})
+		}
+		event.SetData(ce.ApplicationJSON, map[string]interface{}{
+			"info":    info,
+			"message": resp,
+		})
+	} else {
+		event.SetData(ce.ApplicationJSON, map[string]interface{}{
+			"info":    info,
+			"message": message,
+		})
+	}
+
 	return &event
 }
