@@ -80,24 +80,44 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 
 			info := v.Info
 			message := v.Message.GetConversation()
-
 			if message != "" {
-				event := s.makeEvent(info, message)
-				s.events <- &cdkgo.Tuple{
-					Event: event,
-					Success: func() {
-						// TODO
-						b, _ := json.Marshal(event)
-						fmt.Println("send event success: " + string(b))
-					},
-					Failed: func(err error) {
-						// TODO
-						b, _ := json.Marshal(event)
-						fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
-					},
+				if v.Info.IsFromMe {
+					if v.Info.Sender.User == v.Info.Chat.User {
+						event := s.makeEvent(info, message)
+						s.events <- &cdkgo.Tuple{
+							Event: event,
+							Success: func() {
+								// TODO
+								b, _ := json.Marshal(event)
+								fmt.Println("send event success: " + string(b))
+							},
+							Failed: func(err error) {
+								// TODO
+								b, _ := json.Marshal(event)
+								fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
+							},
+						}
+					}
+
+				} else {
+					event := s.makeEvent(info, message)
+					s.events <- &cdkgo.Tuple{
+						Event: event,
+						Success: func() {
+							// TODO
+							b, _ := json.Marshal(event)
+							fmt.Println("send event success: " + string(b))
+						},
+						Failed: func(err error) {
+							// TODO
+							b, _ := json.Marshal(event)
+							fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
+						},
+					}
 				}
 			}
 		}
+
 	})
 
 	if s.client.Store.ID == nil {

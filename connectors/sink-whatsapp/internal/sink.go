@@ -80,7 +80,6 @@ func (s *whatsappSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.R
 		var data Data
 		_ = json.Unmarshal(event.Data(), &data)
 
-		ctx := context.Background()
 		message := &waProto.Message{
 			Conversation: proto.String(data.Message),
 		}
