@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewExampleConfig, internal.NewWhatsAppSource)
+	cdkgo.RunSource(internal.NewConfig, internal.NewWhatsAppSource)
 }

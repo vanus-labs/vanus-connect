@@ -24,6 +24,8 @@ import (
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"math/rand"
 	"time"
 
@@ -51,8 +53,36 @@ type whatsAppSource struct {
 }
 
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-
 	s.config = cfg.(*whatsAppConfig)
+	if s.config.VanusCloud {
+		yamlBytes, err := ioutil.ReadFile("data.yaml")
+		if err != nil {
+			panic(err)
+		}
+
+		// Define the struct to hold the YAML data
+		data := struct {
+			Bytes []byte `yaml:"bytes"`
+		}{}
+
+		// Unmarshal the YAML data into the struct
+		err = yaml.Unmarshal(yamlBytes, &data)
+		if err != nil {
+			panic(err)
+		}
+
+		// Retrieve the byte slice from the struct
+		dbBytes := data.Bytes
+
+		// Write the byte slice to a SQLite database file
+		outputFilePath := "store.db"
+		err = ioutil.WriteFile(outputFilePath, dbBytes, 0644)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Println("Database restored successfully.")
+	}
 
 	if s.config.EnableChatAi {
 		s.chatService = chat.NewChatService(*s.config.ChatConfig)
@@ -129,6 +159,7 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 		for evt := range qrChan {
 			if evt.Event == "code" {
 				err := qrcode.WriteFile(evt.Code, qrcode.Medium, 256, "qr.png")
+
 				if err != nil {
 					fmt.Println("Failed to generate QR code:", err)
 				} else {

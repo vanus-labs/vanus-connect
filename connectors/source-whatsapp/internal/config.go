@@ -22,21 +22,16 @@ import (
 
 var _ cdkgo.SourceConfigAccessor = &whatsAppConfig{}
 
-func NewExampleConfig() cdkgo.SourceConfigAccessor {
-	return &whatsAppConfig{}
-}
-
 type whatsAppConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-
-	Secret Secret `json:"secret" yaml:"secret"`
+	VanusCloud         bool `json:"vanus_cloud" yaml:"vanus_cloud"`
 
 	*chat.ChatConfig `json:",inline" yaml:",inline"`
 	EnableChatAi     bool `json:"enable_chatai" yaml:"enable_chatai"`
 }
 
-func (c *whatsAppConfig) GetSecret() cdkgo.SecretAccessor {
-	return &c.Secret
+func NewConfig() cdkgo.SourceConfigAccessor {
+	return &whatsAppConfig{}
 }
 
 func (c *whatsAppConfig) Validate() error {
@@ -52,5 +47,3 @@ func (c *whatsAppConfig) Validate() error {
 	return c.SourceConfig.Validate()
 }
 
-type Secret struct {
-}
