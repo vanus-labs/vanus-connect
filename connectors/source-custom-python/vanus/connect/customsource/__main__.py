@@ -22,8 +22,8 @@ import os.path
 import sys
 from typing import Any, Dict, List
 
-from .source import EventHandler
 from .run import run_source
+from .source import AsyncEventHandler, SyncEventHandler
 
 
 def _resolve_handle(symbol: str, base=None):
@@ -79,7 +79,13 @@ def resolve_handle(handle_spec: str):
     return _resolve_handle(symbol, module)
 
 
-def create_handler(handle_spec, *args, **kwargs) -> EventHandler:
+def create_handler(handle_spec, *args, **kwargs) -> SyncEventHandler:
+    factory = resolve_handle(handle_spec)
+    handle = factory(*args, **kwargs)
+    return handle
+
+
+def create_ahandler(handle_spec, *args, **kwargs) -> AsyncEventHandler:
     factory = resolve_handle(handle_spec)
     handle = factory(*args, **kwargs)
     return handle
@@ -93,6 +99,7 @@ def main():
     parser.add_argument("--name", help="the source name", required=False)
     parser.add_argument("--port", help="the source port", default=3000, type=int, required=False)
     parser.add_argument("--sink-endpoint", help="the sink endpoint")
+    parser.add_argument("--handle-async", help="the flag to indicate handle is async", required=False)
     parser.add_argument("--handle-args", help="the handle factory args", required=False)
     parser.add_argument("--handle-kwargs", help="the handle factory args", required=False)
     args = parser.parse_args()
@@ -105,9 +112,14 @@ def main():
     if args.handle_kwargs is not None:
         handle_kwargs = json.loads(args.handle_kwargs)
 
-    handler = create_handler(args.handle, *handle_args, **handle_kwargs)
+    kwargs = {"name": args.name}
 
-    run_source(args.port, args.sink_endpoint, handler, name=args.name)
+    if args.handle_async:
+        kwargs["async_handler"] = create_ahandler(args.handle, *handle_args, **handle_kwargs)
+    else:
+        kwargs["sync_handler"] = create_handler(args.handle, *handle_args, **handle_kwargs)
+
+    run_source(args.port, args.sink_endpoint, **kwargs)
 
 
 if __name__ == "__main__":

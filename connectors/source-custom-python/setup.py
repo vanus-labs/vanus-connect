@@ -32,10 +32,5 @@ if __name__ == "__main__":
             "hypercorn",
             "quart",
         ],
-        entry_points={
-            "console_scripts": [
-                "vs-pycustomsource = vanus.connect.customsource.__main__:main",
-            ]
-        },
         zip_safe=True,
     )

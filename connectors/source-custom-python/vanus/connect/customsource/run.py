@@ -12,14 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
 
 from hypercorn.config import Config
 
-from .source import CustomHTTPSource, CustomSource, EventHandler, MessageHandler
+from .source import (
+    AsyncEventHandler,
+    AsyncMessageHandler,
+    CustomHTTPSource,
+    CustomSource,
+    SyncEventHandler,
+    SyncMessageHandler,
+)
 
 
 def _run(app, config):
     import asyncio
+
     from hypercorn.asyncio import serve
 
     try:
@@ -38,11 +47,23 @@ def _run_source(port, source):
     _run(source.app, config)
 
 
-def run_source(port, sink_endpoint, handler: EventHandler, name=None):
-    source = CustomSource(sink_endpoint, handler, name=name)
+def run_source(
+    port,
+    sink_endpoint,
+    async_handler: Optional[AsyncEventHandler] = None,
+    sync_handler: Optional[SyncEventHandler] = None,
+    name=None,
+):
+    source = CustomSource(sink_endpoint, async_handler=async_handler, sync_handler=sync_handler, name=name)
     _run_source(port, source)
 
 
-def run_http_source(port, sink_endpoint, handler: MessageHandler, name=None):
-    source = CustomHTTPSource(sink_endpoint, handler, name=name)
+def run_http_source(
+    port,
+    sink_endpoint,
+    async_handler: Optional[AsyncMessageHandler] = None,
+    sync_handler: Optional[SyncMessageHandler] = None,
+    name=None,
+):
+    source = CustomHTTPSource(sink_endpoint, async_handler=async_handler, sync_handler=sync_handler, name=name)
     _run_source(port, source)
