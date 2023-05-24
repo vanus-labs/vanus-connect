@@ -13,14 +13,24 @@
 # limitations under the License.
 
 from .run import run_http_source, run_source
-from .source import CustomHTTPSource, CustomSource, EventHandler, Message, MessageHandler
+from .source import (
+    AsyncEventHandler,
+    AsyncMessageHandler,
+    CustomHTTPSource,
+    CustomSource,
+    Message,
+    SyncEventHandler,
+    SyncMessageHandler,
+)
 
 __all__ = [
+    "AsyncEventHandler",
+    "AsyncMessageHandler",
     "CustomHTTPSource",
     "CustomSource",
-    "EventHandler",
     "Message",
-    "MessageHandler",
+    "SyncEventHandler",
+    "SyncMessageHandler",
     "run_http_source",
     "run_source",
 ]

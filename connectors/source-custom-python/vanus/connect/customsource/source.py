@@ -33,7 +33,7 @@ class Source:
         headers, body = to_structured(event)
 
         # POST
-        async with httpx.AsyncClient(http2=True) as client:
+        async with httpx.AsyncClient(http2=True, timeout=httpx.Timeout(10.0)) as client:
             resp = await client.post(self.sink_endpoint, content=body, headers=headers)
 
         # TODO: reuse http client
@@ -91,17 +91,32 @@ class CloudEventsSource(Source):
         self.app.add_url_rule("/<path:path>", view_func=view_func)
 
 
-EventHandler = Callable[[AnyCloudEvent], Optional[AnyCloudEvent]]
+SyncEventHandler = Callable[[AnyCloudEvent], Optional[AnyCloudEvent]]
+AsyncEventHandler = Callable[[AnyCloudEvent], Awaitable[Optional[AnyCloudEvent]]]
 
 
 class CustomEventHandler(CloudEventHandler):
-    def __init__(self, handler: EventHandler, on_event: EventListener) -> None:
+    def __init__(
+        self,
+        on_event: EventListener,
+        async_handler: Optional[AsyncEventHandler] = None,
+        sync_handler: Optional[SyncEventHandler] = None,
+    ) -> None:
         super().__init__(on_event)
-        self._handle = handler
+        if async_handler is not None:
+            self._handle = async_handler
+        elif sync_handler is not None:
+
+            async def handler_impl(event: AnyCloudEvent) -> Optional[AnyCloudEvent]:
+                return sync_handler(event)
+
+            self._handle = handler_impl
+        else:
+            raise RuntimeError("no handler")
 
     async def on_event(self, event):
         # Handle CloudEvent and return a new CloudEvent
-        new_event = self._handle(event)
+        new_event = await self._handle(event)
 
         if new_event is None:
             new_event = event
@@ -110,24 +125,45 @@ class CustomEventHandler(CloudEventHandler):
 
 
 class CustomSource(CloudEventsSource):
-    def __init__(self, sink_endpoint: str, handler: EventHandler, **kwargs):
-        self._handler = handler
+    def __init__(
+        self,
+        sink_endpoint: str,
+        async_handler: Optional[AsyncEventHandler] = None,
+        sync_handler: Optional[SyncEventHandler] = None,
+        **kwargs,
+    ):
+        self._handler_kwargs = {"async_handler": async_handler, "sync_handler": sync_handler}
         super().__init__(sink_endpoint, **kwargs)
 
     def register_event_handler(self, on_event: EventListener):
-        view_func = CustomEventHandler.as_view("source", self._handler, on_event)
+        view_func = CustomEventHandler.as_view("source", on_event, **self._handler_kwargs)
         self.app.add_url_rule("/", view_func=view_func)
         self.app.add_url_rule("/<path:path>", view_func=view_func)
 
 
 Message = Dict[str, Any]
-MessageHandler = Callable[[Message], AnyCloudEvent]
+SyncMessageHandler = Callable[[Message], AnyCloudEvent]
+AsyncMessageHandler = Callable[[Message], Awaitable[AnyCloudEvent]]
 
 
 class CustomHTTPHandler(CloudEventHandler):
-    def __init__(self, handler: MessageHandler, on_event: EventListener) -> None:
+    def __init__(
+        self,
+        on_event: EventListener,
+        async_handler: Optional[AsyncMessageHandler] = None,
+        sync_handler: Optional[SyncMessageHandler] = None,
+    ) -> None:
         super().__init__(on_event)
-        self._handle = handler
+        if async_handler is not None:
+            self._handle = async_handler
+        elif sync_handler is not None:
+
+            async def handler_impl(msg: Message) -> AnyCloudEvent:
+                return sync_handler(msg)
+
+            self._handle = handler_impl
+        else:
+            raise RuntimeError("no handler")
 
     async def dispatch_request(self, **kwargs):
         msg = await request.get_json()
@@ -138,16 +174,22 @@ class CustomHTTPHandler(CloudEventHandler):
         return "", HTTPStatus.NO_CONTENT
 
     async def on_message(self, msg: Message):
-        event = self._handle(msg)
+        event = await self._handle(msg)
         return await super().on_event(event)
 
 
 class CustomHTTPSource(CloudEventsSource):
-    def __init__(self, sink_endpoint: str, handler: MessageHandler, **kwargs):
-        self._handler = handler
+    def __init__(
+        self,
+        sink_endpoint: str,
+        async_handler: Optional[AsyncMessageHandler] = None,
+        sync_handler: Optional[SyncMessageHandler] = None,
+        **kwargs,
+    ):
+        self._handler_kwargs = {"async_handler": async_handler, "sync_handler": sync_handler}
         super().__init__(sink_endpoint, **kwargs)
 
     def register_event_handler(self, on_event):
-        view_func = CustomHTTPHandler.as_view("source", self._handler, on_event)
+        view_func = CustomHTTPHandler.as_view("source", on_event, **self._handler_kwargs)
         self.app.add_url_rule("/", view_func=view_func)
         self.app.add_url_rule("/<path:path>", view_func=view_func)

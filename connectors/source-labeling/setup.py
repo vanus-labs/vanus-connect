@@ -27,10 +27,5 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3",
         ],
         install_requires=["actrie", "jsonpath-ng", "pyyaml", "vanus-connect-customsource"],
-        entry_points={
-            "console_scripts": [
-                "vs-labeling = vanus.connect.labelingsource.__main__:main",
-            ]
-        },
         zip_safe=True,
     )

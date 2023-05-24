@@ -12,4 +12,4 @@ RUN python3 -m pip install vanus_connect_customsource-*whl && rm vanus_connect_c
 
 EXPOSE 8080
 
-ENTRYPOINT ["vs-pycustomsource", "--port=8080"]
+ENTRYPOINT ["python3", "-m", "vanus.connect.customsource", "--port=8080"]
