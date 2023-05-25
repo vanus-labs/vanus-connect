@@ -16,6 +16,7 @@ package internal
 
 import (
 	"fmt"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/connector/source/chatai/chat"
 )
@@ -24,7 +25,7 @@ var _ cdkgo.SourceConfigAccessor = &whatsAppConfig{}
 
 type whatsAppConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	VanusCloud         bool `json:"vanus_cloud" yaml:"vanus_cloud"`
+	Data               string `json:"data" yaml:"data"`
 
 	*chat.ChatConfig `json:",inline" yaml:",inline"`
 	EnableChatAi     bool `json:"enable_chatai" yaml:"enable_chatai"`
@@ -46,4 +47,3 @@ func (c *whatsAppConfig) Validate() error {
 	}
 	return c.SourceConfig.Validate()
 }
-
