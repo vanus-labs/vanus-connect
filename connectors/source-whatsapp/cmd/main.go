@@ -16,7 +16,8 @@ package main
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/example/internal"
+
+	"github.com/vanus-labs/connector/source/whatsapp/internal"
 )
 
 func main() {

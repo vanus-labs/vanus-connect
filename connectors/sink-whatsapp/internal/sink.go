@@ -16,18 +16,24 @@ package internal
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+
 	ce "github.com/cloudevents/sdk-go/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/skip2/go-qrcode"
-	cdkgo "github.com/vanus-labs/cdk-go"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
 	"google.golang.org/protobuf/proto"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 var _ cdkgo.Sink = &whatsappSink{}
@@ -52,20 +58,19 @@ type JID struct {
 }
 
 func (s *whatsappSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-	// TODO\
 	s.config = cfg.(*WhatsappConfig)
 	s.whatsappConnect()
 	return nil
 }
 
 func (s *whatsappSink) Name() string {
-	// TODO
 	return "whatsappSink"
 }
 
 func (s *whatsappSink) Destroy() error {
-	// TODO
-	s.client.Disconnect()
+	if s.client != nil {
+		s.client.Disconnect()
+	}
 	return nil
 }
 
@@ -75,40 +80,71 @@ type Data struct {
 }
 
 func (s *whatsappSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Result {
-	// TODO
 	for _, event := range events {
-		var data Data
-		_ = json.Unmarshal(event.Data(), &data)
-
-		message := &waProto.Message{
-			Conversation: proto.String(data.Message),
+		result := s.processEvent(ctx, event)
+		if cdkgo.SuccessResult != result {
+			log.Info("event process failed", map[string]interface{}{
+				log.KeyError: result.Error(),
+			})
+			return result
 		}
-		s.client.SendMessage(ctx, data.Info.Sender, message)
-
 	}
 	return cdkgo.SuccessResult
 }
 
-func (s *whatsappSink) whatsappConnect() {
-	dbLog := waLog.Stdout("Database", "DEBUG", true)
-	container, err := sqlstore.New("sqlite3", "file:Store.db?_foreign_keys=on", dbLog)
+func (s *whatsappSink) processEvent(ctx context.Context, event *ce.Event) cdkgo.Result {
+	var data Data
+	err := json.Unmarshal(event.Data(), &data)
 	if err != nil {
-		panic(err)
+		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+	}
+
+	message := &waProto.Message{
+		Conversation: proto.String(data.Message),
+	}
+	_, err = s.client.SendMessage(ctx, data.Info.Sender, message)
+	if err != nil {
+		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+	}
+	return cdkgo.SuccessResult
+}
+
+func (s *whatsappSink) whatsappConnect() error {
+	dbFileName := "store.db"
+	if s.config.Data != "" {
+		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
+		if err != nil {
+			return err
+		}
+		err = os.WriteFile(dbFileName, dbBytes, 0644)
+		if err != nil {
+			return err
+		}
+		log.Info("Database restored successfully.", nil)
+	}
+
+	dbLog := waLog.Stdout("Database", "DEBUG", true)
+	container, err := sqlstore.New("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFileName), dbLog)
+	if err != nil {
+		return err
 	}
 
 	deviceStore, err := container.GetFirstDevice()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	clientLog := waLog.Stdout("Client", "DEBUG", true)
 	s.client = whatsmeow.NewClient(deviceStore, clientLog)
 
 	if s.client.Store.ID == nil {
+		if s.config.Data != "" {
+			return fmt.Errorf("data exist but store id is nil")
+		}
 		qrChan, _ := s.client.GetQRChannel(context.Background())
 		err = s.client.Connect()
 		if err != nil {
-			panic(err)
+			return err
 		}
 		for evt := range qrChan {
 			if evt.Event == "code" {
@@ -126,9 +162,8 @@ func (s *whatsappSink) whatsappConnect() {
 	} else {
 		err = s.client.Connect()
 		if err != nil {
-			panic(err)
+			return err
 		}
-
 	}
-
+	return nil
 }

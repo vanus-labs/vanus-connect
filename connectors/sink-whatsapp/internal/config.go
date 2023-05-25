@@ -24,13 +24,9 @@ func WhatsAppConfig() cdkgo.SinkConfigAccessor {
 
 type WhatsappConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
-	// TODO
-
+	Data             string `json:"data" yaml:"data"`
 }
 
 func (c *WhatsappConfig) Validate() error {
-	// TODO
 	return c.SinkConfig.Validate()
 }
-
-

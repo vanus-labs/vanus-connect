@@ -16,24 +16,23 @@ package internal
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/vanus-labs/cdk-go/log"
-	"github.com/vanus-labs/connector/source/chatai/chat"
-	"go.mau.fi/whatsmeow"
-	"go.mau.fi/whatsmeow/store/sqlstore"
-	"go.mau.fi/whatsmeow/types"
-	waLog "go.mau.fi/whatsmeow/util/log"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"math/rand"
-	"time"
+	"os"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/skip2/go-qrcode"
-	cdkgo "github.com/vanus-labs/cdk-go"
+	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	"go.mau.fi/whatsmeow/types/events"
+	waLog "go.mau.fi/whatsmeow/util/log"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
+	"github.com/vanus-labs/connector/source/chatai/chat"
 )
 
 var _ cdkgo.Source = &whatsAppSource{}
@@ -47,41 +46,23 @@ func NewWhatsAppSource() cdkgo.Source {
 type whatsAppSource struct {
 	config      *whatsAppConfig
 	events      chan *cdkgo.Tuple
-	number      int
 	client      *whatsmeow.Client
 	chatService *chat.ChatService
 }
 
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*whatsAppConfig)
-	if s.config.VanusCloud {
-		yamlBytes, err := ioutil.ReadFile("data.yaml")
+	dbFileName := "store.db"
+	if s.config.Data != "" {
+		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
 		if err != nil {
-			panic(err)
+			return err
 		}
-
-		// Define the struct to hold the YAML data
-		data := struct {
-			Bytes []byte `yaml:"bytes"`
-		}{}
-
-		// Unmarshal the YAML data into the struct
-		err = yaml.Unmarshal(yamlBytes, &data)
+		err = os.WriteFile(dbFileName, dbBytes, 0644)
 		if err != nil {
-			panic(err)
+			return err
 		}
-
-		// Retrieve the byte slice from the struct
-		dbBytes := data.Bytes
-
-		// Write the byte slice to a SQLite database file
-		outputFilePath := "store.db"
-		err = ioutil.WriteFile(outputFilePath, dbBytes, 0644)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Database restored successfully.")
+		log.Info("Database restored successfully.", nil)
 	}
 
 	if s.config.EnableChatAi {
@@ -89,14 +70,14 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 	}
 
 	dbLog := waLog.Stdout("Database", "DEBUG", true)
-	container, err := sqlstore.New("sqlite3", "file:Store.db?_foreign_keys=on", dbLog)
+	container, err := sqlstore.New("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFileName), dbLog)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	deviceStore, err := container.GetFirstDevice()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	clientLog := waLog.Stdout("Client", "DEBUG", true)
@@ -119,12 +100,14 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 							Success: func() {
 								// TODO
 								b, _ := json.Marshal(event)
-								fmt.Println("send event success: " + string(b))
+								log.Info("send event success: "+string(b), nil)
 							},
 							Failed: func(err error) {
 								// TODO
 								b, _ := json.Marshal(event)
-								fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
+								log.Info("send event failed: "+string(b), map[string]interface{}{
+									log.KeyError: err,
+								})
 							},
 						}
 					}
@@ -136,12 +119,14 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 						Success: func() {
 							// TODO
 							b, _ := json.Marshal(event)
-							fmt.Println("send event success: " + string(b))
+							log.Info("send event success: "+string(b), nil)
 						},
 						Failed: func(err error) {
 							// TODO
 							b, _ := json.Marshal(event)
-							fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
+							log.Info("send event failed: "+string(b), map[string]interface{}{
+								log.KeyError: err,
+							})
 						},
 					}
 				}
@@ -151,10 +136,13 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 	})
 
 	if s.client.Store.ID == nil {
+		if s.config.Data != "" {
+			return fmt.Errorf("data exist but store id is nil")
+		}
 		qrChan, _ := s.client.GetQRChannel(context.Background())
 		err = s.client.Connect()
 		if err != nil {
-			panic(err)
+			return err
 		}
 		for evt := range qrChan {
 			if evt.Event == "code" {
@@ -173,21 +161,20 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 	} else {
 		err = s.client.Connect()
 		if err != nil {
-			panic(err)
+			return err
 		}
-
 	}
-
 	return nil
 }
 
 func (s *whatsAppSource) Name() string {
-	// TODO
 	return "WhatsAppSource"
 }
 
 func (s *whatsAppSource) Destroy() error {
-	s.client.Disconnect()
+	if s.client != nil {
+		s.client.Disconnect()
+	}
 	if s.chatService != nil {
 		s.chatService.Close()
 	}
@@ -199,9 +186,6 @@ func (s *whatsAppSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *whatsAppSource) makeEvent(info types.MessageInfo, message string) *ce.Event {
-	rand.Seed(time.Now().UnixMilli())
-	time.Sleep(time.Millisecond * time.Duration(rand.Intn(2000)+100))
-	s.number++
 	event := ce.NewEvent()
 	event.SetID(info.ID)
 	event.SetSource("whatsapp")
@@ -223,6 +207,5 @@ func (s *whatsAppSource) makeEvent(info types.MessageInfo, message string) *ce.E
 			"message": message,
 		})
 	}
-
 	return &event
 }
