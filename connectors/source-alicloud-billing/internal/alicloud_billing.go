@@ -145,6 +145,7 @@ func (s *alicloudBillingSource) getBilling() {
 	now := time.Now().In(s.timeZone)
 	if now.Hour() != s.config.PullHour {
 		log.Info("query account bill hour is not match", nil)
+		return
 	}
 	lastDay := now.Add(time.Hour * 24 * -1)
 	dayFmt := FormatTimeDay(lastDay)
