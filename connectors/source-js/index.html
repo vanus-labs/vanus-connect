@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTTP Event Sender Test</title>
+</head>
+<body>
+<button id="sendButton">Send HTTP Request</button>
+
+<script type="module">
+    import sendHttpRequest from './cloudEventSender';
+
+    const sendButton = document.getElementById('sendButton');
+
+    sendButton.addEventListener('click', function() {
+        const requestDetails = {
+            method: 'POST',
+            body: { message: 'Hello Vanus!!' },
+            headers: { 'Content-Type': 'plain/text' },
+        };
+
+        const endpoint = '<your_endpoint_url>';
+
+        sendHttpRequest(requestDetails, endpoint);
+    });
+</script>
+</body>
+</html>

@@ -1,33 +1,23 @@
-const cloudEventSender = (eventDetails, endpoint) => {
-    // Create a CloudEvent
-    const cloudEvent = {
-        type: eventDetails.type,
-        source: eventDetails.source,
-        data: JSON.stringify(eventDetails.data),
-        dataContentType: "application/json",
-        time: new Date().toISOString(),
-    };
+import fetch from "node-fetch";
 
-    // Serialize the CloudEvent to a JSON string
-    const eventJson = JSON.stringify(cloudEvent);
-
+const sendHttpRequest = (requestDetails, endpoint) => {
     fetch(endpoint, {
-        method: "POST",
-        body: eventJson,
-        headers: { "Content-Type": "application/cloudevents+json" },
+        method: requestDetails.method,
+        body: JSON.stringify(requestDetails.body),
+        headers: requestDetails.headers,
     })
         .then((response) => {
             if (response.ok) {
-                console.log("CloudEvent sent successfully.");
+                console.log("HTTP request sent successfully.");
             } else {
                 console.error(
-                    "Failed to send CloudEvent:",
+                    "Failed to send HTTP request:",
                     response.status,
                     response.statusText
                 );
             }
         })
-        .catch((error) => console.error("Failed to send CloudEvent:", error));
+        .catch((error) => console.error("Failed to send HTTP request:", error));
 };
 
-module.exports = cloudEventSender;
+export default sendHttpRequest;
