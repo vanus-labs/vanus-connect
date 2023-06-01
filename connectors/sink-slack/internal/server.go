@@ -43,7 +43,7 @@ var (
 	errInvalidAppName = cdkgo.NewResult(http.StatusBadRequest,
 		"slack: invalid or empty AppName")
 	errFailedToSend = cdkgo.NewResult(http.StatusInternalServerError,
-		"slack: failed to sent message, please view e.loggers")
+		"slack: failed to sent message, please view logs")
 )
 
 var _ cdkgo.SinkConfigAccessor = &slackConfig{}
