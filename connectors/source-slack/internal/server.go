@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/rs/zerolog"
 	"github.com/slack-go/slack/slackevents"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
@@ -43,6 +44,7 @@ type slackSource struct {
 	ch          chan *cdkgo.Tuple
 	verifyToken slackevents.TokenComparator
 	chatService *chat.ChatService
+	logger      zerolog.Logger
 }
 
 func (s *slackSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -55,9 +57,7 @@ func (s *slackSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err == nil {
 		return
 	}
-	log.Info("event error", map[string]interface{}{
-		log.KeyError: err,
-	})
+	s.logger.Info().Err(err).Msg("event error")
 	var code int
 	switch err {
 	case errVerificationFailed, errVerificationTokenFailed:
@@ -73,7 +73,8 @@ func (s *slackSource) Chan() <-chan *cdkgo.Tuple {
 	return s.ch
 }
 
-func (s *slackSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *slackSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*slackConfig)
 	if s.config.Port == 0 {
 		s.config.Port = defaultPort
@@ -82,7 +83,7 @@ func (s *slackSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) er
 		VerificationToken: s.config.VerifyToken,
 	}
 	if s.config.EnableChatAi {
-		s.chatService = chat.NewChatService(*s.config.ChatConfig)
+		s.chatService = chat.NewChatService(*s.config.ChatConfig, s.logger)
 	}
 	return nil
 }

@@ -26,11 +26,10 @@ import (
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
-
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
 var (
@@ -48,9 +47,7 @@ func (s *slackSource) verifyRequestSignature(req *http.Request, body []byte) err
 		if err == slack.ErrMissingHeaders {
 			return errMissingHubSignatureHeader
 		}
-		log.Info("new secret verifier failed", map[string]interface{}{
-			log.KeyError: err,
-		})
+		s.logger.Info().Err(err).Msg("new secret verifier failed")
 		return errInvalidSignatureHeader
 	}
 	_, _ = sv.Write(body)
@@ -155,9 +152,7 @@ func (s *slackSource) makeEvent(body map[string]interface{}) error {
 			user := getEventUser(body)
 			resp, err := s.chatService.ChatCompletion(context.Background(), s.config.ChatConfig.DefaultChatMode, user, content)
 			if err != nil {
-				log.Warning("failed to get content from Chat", map[string]interface{}{
-					log.KeyError: err,
-				})
+				s.logger.Warn().Err(err).Msg("failed to get content from Chat")
 			}
 			body["result"] = resp
 			s.pushEvent(event, body)
@@ -173,12 +168,10 @@ func (s *slackSource) pushEvent(event *ce.Event, body map[string]interface{}) {
 	s.ch <- &cdkgo.Tuple{
 		Event: event,
 		Success: func() {
-			log.Info("send event success", nil)
+			s.logger.Info().Msg("send event success")
 		},
 		Failed: func(err error) {
-			log.Info("send event failed", map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Info().Err(err).Msg("send event failed")
 		},
 	}
 }

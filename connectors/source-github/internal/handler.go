@@ -20,17 +20,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"golang.org/x/oauth2"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 var (
@@ -49,12 +49,14 @@ type handler struct {
 	config GitHubCfg
 	events chan *cdkgo.Tuple
 	client *http.Client
+	logger zerolog.Logger
 }
 
-func newHandler(events chan *cdkgo.Tuple, config GitHubCfg) *handler {
+func newHandler(events chan *cdkgo.Tuple, config GitHubCfg, logger zerolog.Logger) *handler {
 	h := &handler{
 		config: config,
 		events: events,
+		logger: logger,
 	}
 	if config.AccessToken != "" {
 		h.client = oauth2.NewClient(context.Background(),
@@ -79,9 +81,7 @@ func (h *handler) handle(req *http.Request) error {
 	if eventType == "" {
 		return errMissingGithubEventHeader
 	}
-	log.Info("receive event", map[string]interface{}{
-		"eventType": eventType,
-	})
+	h.logger.Info().Str("eventType", eventType).Msg("receive event")
 	if eventType == "ping" {
 		return errPingEvent
 	}
@@ -89,7 +89,7 @@ func (h *handler) handle(req *http.Request) error {
 	if eventID == "" {
 		return errMissingHubDeliveryHeader
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil || len(body) == 0 {
 		return errReadPayload
 	}
@@ -150,11 +150,11 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		checkRun, ok := payload["check_run"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(checkRun["id"]))
-			time, ok := checkRun["completed_at"].(string)
+			t, ok := checkRun["completed_at"].(string)
 			if !ok {
-				time, _ = checkRun["started_at"].(string)
+				t, _ = checkRun["started_at"].(string)
 			}
-			event.SetTime(getTime(time))
+			event.SetTime(getTime(t))
 		}
 	case "check_suite":
 		checkSuit, ok := payload["check_suite"].(map[string]interface{})
@@ -183,11 +183,11 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		key, ok := payload["key"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(key["id"]))
-			time, ok := key["deleted_at"].(string)
+			t, ok := key["deleted_at"].(string)
 			if !ok {
-				time, _ = key["created_at"].(string)
+				t, _ = key["created_at"].(string)
 			}
-			event.SetTime(getTime(time))
+			event.SetTime(getTime(t))
 		}
 	case "deployment":
 		event.SetType(t)
@@ -376,11 +376,11 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 		release, ok := payload["release"].(map[string]interface{})
 		if ok {
 			event.SetSubject(getString(release["id"]))
-			time, ok := release["published_at"].(string)
+			t, ok := release["published_at"].(string)
 			if !ok {
-				time, _ = release["created_at"].(string)
+				t, _ = release["created_at"].(string)
 			}
-			event.SetTime(getTime(time))
+			event.SetTime(getTime(t))
 		}
 	case "repository_vulnerability_alert":
 		alert, ok := payload["alert"].(map[string]interface{})
@@ -406,9 +406,7 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 	case "watch":
 		event.SetTime(time.Now())
 	default:
-		log.Info("unknown event type", map[string]interface{}{
-			"eventType": eventType,
-		})
+		h.logger.Info().Str("eventType", eventType).Msg("unknown event type")
 		event.SetTime(time.Now())
 	}
 	if h.client != nil {
@@ -418,18 +416,13 @@ func (h *handler) setEvent(event *ce.Event, eventType string, body []byte) error
 			if ok && url != "" {
 				resp, err := h.client.Get(url)
 				if err != nil {
-					log.Error("get url error", map[string]interface{}{
-						log.KeyError: err,
-						"url":        url,
-					})
+					h.logger.Error().Err(err).Str("url", url).Msg("get url error")
 					return err
 				}
 				defer resp.Body.Close()
 				var res map[string]interface{}
 				if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-					log.Error("parse response error", map[string]interface{}{
-						log.KeyError: err,
-					})
+					h.logger.Error().Err(err).Msg("parse response error")
 					return err
 				}
 				sender["url_response"] = res

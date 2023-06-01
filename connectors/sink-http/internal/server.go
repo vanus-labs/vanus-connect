@@ -28,6 +28,7 @@ import (
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/connector"
@@ -46,10 +47,12 @@ type httpSink struct {
 	url     *url.URL
 	method  string
 	headers map[string]string
-	Auth    Auth
+	auth    Auth
+	logger  zerolog.Logger
 }
 
-func (s *httpSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *httpSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	config := cfg.(*httpConfig)
 	s.url, _ = url.Parse(config.Target)
 	s.headers = config.Headers
@@ -57,7 +60,7 @@ func (s *httpSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error
 	if s.method == "" {
 		s.method = "POST"
 	}
-	s.Auth = config.Auth
+	s.auth = config.Auth
 	s.client = &http.Client{
 		Timeout: 30 * time.Second,
 	}
@@ -75,16 +78,12 @@ func (s *httpSink) Destroy() error {
 func (s *httpSink) Arrived(_ context.Context, events ...*ce.Event) cdkgo.Result {
 	for _, event := range events {
 		atomic.AddInt64(&s.count, 1)
-		log.Info("receive a new event", map[string]interface{}{
-			"in_total": atomic.LoadInt64(&s.count),
-		})
+		s.logger.Info().Int64("in_total", atomic.LoadInt64(&s.count)).Msg("receive a new event")
 		r := s.sendEvent(event)
 		if r != cdkgo.SuccessResult {
 			return r
 		}
-		log.Info("send event success", map[string]interface{}{
-			"id": event.ID(),
-		})
+		s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
 	}
 	return cdkgo.SuccessResult
 }
@@ -122,8 +121,8 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("new http request error %s", err.Error()))
 	}
 
-	if s.Auth.Username != "" || s.Auth.Password != "" {
-		req.SetBasicAuth(s.Auth.Username, s.Auth.Password)
+	if s.auth.Username != "" || s.auth.Password != "" {
+		req.SetBasicAuth(s.auth.Username, s.auth.Password)
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
@@ -139,14 +138,14 @@ func (s *httpSink) sendEvent(event *ce.Event) cdkgo.Result {
 
 	res, err := s.client.Do(req)
 	if err != nil {
-		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("sned http request error %s", err.Error()))
+		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("send http request error %s", err.Error()))
 	}
 	defer res.Body.Close()
 	resp, err := io.ReadAll(res.Body)
 	if err != nil {
 		return cdkgo.NewResult(http.StatusInternalServerError, fmt.Sprintf("read http response error %s", err.Error()))
 	}
-	log.Info("response body:"+string(resp), nil)
+	s.logger.Info().Str("event_id", event.ID()).Msg("response body:" + string(resp))
 	if res.StatusCode >= 400 {
 		return cdkgo.NewResult(connector.Code(res.StatusCode), fmt.Sprintf("http response code %d resp %s", res.StatusCode, string(resp)))
 	}

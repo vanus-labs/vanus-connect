@@ -22,6 +22,7 @@ import (
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
+	"github.com/rs/zerolog"
 	"github.com/slack-go/slack"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
@@ -68,6 +69,7 @@ type slackSink struct {
 	client         *slack.Client
 	defaultChannel string
 	defaultMsgType string
+	logger         zerolog.Logger
 }
 
 func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
@@ -80,46 +82,29 @@ func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 		}
 		m := &Message{}
 		if err := json.Unmarshal(event.Data(), m); err != nil {
-			log.Error("json unmarshal failed", map[string]interface{}{
-				log.KeyError: err,
-				"channel":    channelID,
-				"event_id":   event.ID(),
-			})
+			log.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("json unmarshal failed")
 			return errInvalidMessage
 		}
 		if err := m.validate(); err != nil {
-			log.Error("message validate failed", map[string]interface{}{
-				log.KeyError: err,
-				"channel":    channelID,
-				"event_id":   event.ID(),
-			})
+			log.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("message validate failed")
 			return errInvalidMessage
 		}
 		start := time.Now()
 		if err := e.send(ctx, channelID, m); err != nil {
-			log.Error("failed to send slack", map[string]interface{}{
-				log.KeyError: err,
-				"channel":    channelID,
-				"event_id":   event.ID(),
-			})
+			log.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("failed to send slack")
 			return errFailedToSend
 		} else if time.Now().Sub(start) > time.Second {
-			log.Info("success to send slack, but takes too long", map[string]interface{}{
-				"channel":   channelID,
-				"event_id":  event.ID(),
-				"used_time": time.Now().Sub(start),
-			})
+			log.Info().Str("channel", channelID).Str("event_id", event.ID()).
+				Interface("used_time", time.Now().Sub(start)).Msg("success to send slack, but takes too long")
 		} else {
-			log.Info("success to send slack", map[string]interface{}{
-				"channel":  channelID,
-				"event_id": event.ID(),
-			})
+			log.Info().Str("channel", channelID).Str("event_id", event.ID()).Msg("success to send slack")
 		}
 	}
 	return cdkgo.SuccessResult
 }
 
-func (e *slackSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (e *slackSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	e.logger = log.FromContext(ctx)
 	config := cfg.(*slackConfig)
 	e.defaultChannel = config.DefaultChannel
 	e.defaultMsgType = "plain_text"

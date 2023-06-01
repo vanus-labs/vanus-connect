@@ -23,6 +23,7 @@ import (
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -50,12 +51,14 @@ type chatGPTSource struct {
 	day     string
 	lock    sync.Mutex
 	service *chatGPTService
+	logger  zerolog.Logger
 }
 
 func (s *chatGPTSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*chatGPTConfig)
 	s.config.Init()
-	s.service = newChatGPTService(s.config)
+	s.service = newChatGPTService(s.config, s.logger)
 	return nil
 }
 
@@ -94,9 +97,7 @@ func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	go func(event ce.Event) {
 		content, err := s.service.CreateChatCompletion(string(body))
 		if err != nil {
-			log.Warning("failed to get content from ChatGPT", map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Warn().Err(err).Msg("failed to get content from ChatGPT")
 		}
 		event.SetData(ce.ApplicationJSON, map[string]string{
 			"content": content,
@@ -104,12 +105,10 @@ func (s *chatGPTSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		s.events <- &cdkgo.Tuple{
 			Event: &event,
 			Success: func() {
-				log.Info("send event to target success", nil)
+				s.logger.Info().Msg("send event to target success")
 			},
 			Failed: func(err2 error) {
-				log.Warning("failed to send event to target", map[string]interface{}{
-					log.KeyError: err2,
-				})
+				s.logger.Warn().Err(err2).Msg("failed to send event to target")
 			},
 		}
 	}(event)
