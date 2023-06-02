@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.29.1
 	github.com/slack-go/slack v0.12.2
-	github.com/vanus-labs/cdk-go v0.7.1
+	github.com/vanus-labs/cdk-go v0.7.2
 	github.com/vanus-labs/connector/source/chatai v0.0.0
 )
 

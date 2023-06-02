@@ -212,8 +212,8 @@ github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JT
 github.com/tidwall/pretty v1.2.0 h1:RWIZEg2iJ8/g6fDDYzMpobmaoGh5OLl4AXtGUGPcqCs=
 github.com/tidwall/pretty v1.2.0/go.mod h1:ITEVvHYasfjBbM0u2Pg8T2nJnzm8xPwvNhhsoaGGjNU=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
-github.com/vanus-labs/cdk-go v0.7.1 h1:ZYR2ApadtWWOJFhgPwOGf5JeUELPcUM2z2Wi1+H39uQ=
-github.com/vanus-labs/cdk-go v0.7.1/go.mod h1:TFnL6lBmvxAtsa3b11SQWNxlCXBh7bnvNfS351pah28=
+github.com/vanus-labs/cdk-go v0.7.2 h1:SV9XmC+UB3c1PvcGla/4iWHU1PaZMA/Z8YDKPtAUnEU=
+github.com/vanus-labs/cdk-go v0.7.2/go.mod h1:TFnL6lBmvxAtsa3b11SQWNxlCXBh7bnvNfS351pah28=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0 h1:zxK8mhyzhPWW8daj3PC3zziMkd2Q9JjnN2yJGYS60yI=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0/go.mod h1:NDH8Jf6kZslANsLL5Bv5VzpWi+GsbZfg9vY/pHpd4ug=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

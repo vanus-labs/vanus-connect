@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.1
 	github.com/tidwall/gjson v1.14.4
-	github.com/vanus-labs/cdk-go v0.7.1
+	github.com/vanus-labs/cdk-go v0.7.2
 )
 
 require (

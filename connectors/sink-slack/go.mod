@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/rs/zerolog v1.29.1
 	github.com/slack-go/slack v0.12.2
-	github.com/vanus-labs/cdk-go v0.7.1
+	github.com/vanus-labs/cdk-go v0.7.2
 )
 
 require (
