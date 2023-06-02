@@ -26,9 +26,8 @@ import (
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog"
 	"github.com/tidwall/gjson"
-
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 type messageType string
@@ -61,9 +60,11 @@ type bot struct {
 	cfg        BotConfig
 	cm         map[string]WebHook
 	httpClient *resty.Client
+	logger     zerolog.Logger
 }
 
-func (b *bot) init(cfg BotConfig) error {
+func (b *bot) init(cfg BotConfig, logger zerolog.Logger) error {
+	b.logger = logger
 	b.cfg = cfg
 	b.cm = make(map[string]WebHook, len(cfg.Webhooks))
 	for _, wh := range cfg.Webhooks {
@@ -115,11 +116,7 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 	defer func() {
 		if err != nil {
 			d, _ := e.MarshalJSON()
-			log.Warning("failed to send message", map[string]interface{}{
-				log.KeyError: err,
-				"event":      string(d),
-				"webhooks":   whs,
-			})
+			b.logger.Warn().Str("event", string(d)).Interface("webhooks", whs).Err(err).Msg("failed to send message")
 		}
 	}()
 	groupID, ok := e.Extensions()[xChatGroupID].(string)
@@ -181,6 +178,7 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 	default:
 		return errMessageType
 	}
+
 }
 
 func isJSONString(e *v2.Event) bool {
@@ -357,9 +355,7 @@ func (b *bot) processResponse(e *v2.Event, res *resty.Response) error {
 	obj := gjson.ParseBytes(res.Body())
 	if obj.Get("StatusCode").Int() == 0 &&
 		obj.Get("StatusMessage").String() == "success" {
-		log.Debug("success send message to Feishu Bot", map[string]interface{}{
-			"id": e.ID(),
-		})
+		b.logger.Info().Str("event_id", e.ID()).Msg("success send message to feishu Bot")
 		return nil
 	}
 	return fmt.Errorf("failed to call feishu: %s", string(res.Body()))

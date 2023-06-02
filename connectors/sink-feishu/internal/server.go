@@ -22,7 +22,9 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 const (
@@ -93,14 +95,15 @@ func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Resul
 	return cdkgo.SuccessResult
 }
 
-func (f *feishuSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (f *feishuSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	logger := log.FromContext(ctx)
 	_cfg, ok := cfg.(*feishuConfig)
 	if !ok {
 		return errors.New("feishu: invalid configuration type")
 	}
 
 	f.cfg = _cfg
-	return f.b.init(_cfg.Bot)
+	return f.b.init(_cfg.Bot, logger)
 }
 
 func (f *feishuSink) Name() string {

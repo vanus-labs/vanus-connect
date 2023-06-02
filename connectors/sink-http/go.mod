@@ -5,12 +5,13 @@ go 1.18
 require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/pkg/errors v0.9.1
-	github.com/vanus-labs/cdk-go v0.6.0
+	github.com/rs/zerolog v1.29.1
+	github.com/vanus-labs/cdk-go v0.7.2
 )
 
 require (
 	github.com/coreos/go-semver v0.3.0 // indirect
-	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
+	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -31,10 +32,11 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.12 // indirect
+	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vanus-labs/vanus-connect-runtime v0.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect

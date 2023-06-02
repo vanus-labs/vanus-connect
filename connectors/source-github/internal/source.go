@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 type GitHubSource struct {
@@ -33,9 +34,10 @@ func Source() cdkgo.HTTPSource {
 	}
 }
 
-func (s *GitHubSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *GitHubSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	logger := log.FromContext(ctx)
 	s.config = cfg.(*GitHubConfig)
-	s.handler = newHandler(s.events, s.config.GitHub)
+	s.handler = newHandler(s.events, s.config.GitHub, logger)
 	return nil
 }
 

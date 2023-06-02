@@ -20,7 +20,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vanus-labs/cdk-go/log"
+	"github.com/rs/zerolog"
+
 	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/chat/gpt"
 	"github.com/vanus-labs/connector/source/chatai/chat/model"
@@ -58,11 +59,13 @@ type ChatService struct {
 	userNum      map[string]int
 	ctx          context.Context
 	cancel       context.CancelFunc
+	logger       zerolog.Logger
 }
 
-func NewChatService(config ChatConfig) *ChatService {
+func NewChatService(config ChatConfig, logger zerolog.Logger) *ChatService {
 	config.init()
 	s := &ChatService{
+		logger:       logger,
 		config:       config,
 		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
@@ -149,10 +152,7 @@ func (s *ChatService) ChatCompletion(ctx context.Context, chatType Type, userIde
 	if num >= s.config.EverydayLimit {
 		return s.limitContent, ErrLimit
 	}
-	log.Info("receive content:"+content, map[string]interface{}{
-		"chat": chatType,
-		"user": userIdentifier,
-	})
+	s.logger.Info().Interface("chat", chatType).Str("user", userIdentifier).Msg("receive content:" + content)
 	switch chatType {
 	case ChatErnieBot:
 		resp, err = s.ernieBot.SendChatCompletion(ctx, userIdentifier, content)
@@ -177,10 +177,7 @@ func (s *ChatService) ChatCompletionStream(ctx context.Context, chatType Type, u
 	if num >= s.config.EverydayLimit {
 		return nil, fmt.Errorf("you've reached the daily limit (%d/day). Your quota will be restored tomorrow", s.config.EverydayLimit)
 	}
-	log.Info("receive content:"+content, map[string]interface{}{
-		"chat": chatType,
-		"user": userIdentifier,
-	})
+	s.logger.Info().Str("user", userIdentifier).Msg("receive content:" + content)
 	switch chatType {
 	case ChatErnieBot:
 		stream, err = s.ernieBot.SendChatCompletionStream(ctx, userIdentifier, content)

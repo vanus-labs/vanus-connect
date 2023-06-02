@@ -27,6 +27,7 @@ import (
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -61,12 +62,14 @@ type chatSource struct {
 	lock       sync.Mutex
 	service    *chat.ChatService
 	authEnable bool
+	logger     zerolog.Logger
 }
 
-func (s *chatSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *chatSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*chatConfig)
 	s.authEnable = !s.config.Auth.IsEmpty()
-	s.service = chat.NewChatService(s.config.ChatConfig)
+	s.service = chat.NewChatService(s.config.ChatConfig, s.logger)
 	return nil
 }
 
@@ -175,10 +178,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if !s.config.Stream {
 			content, err := s.service.ChatCompletion(context.Background(), chatType, userIdentifier, data["message"].(string))
 			if err != nil {
-				log.Warning("failed to get content from Chat", map[string]interface{}{
-					log.KeyError: err,
-					"chatType":   chatType,
-				})
+				s.logger.Warn().Interface("chatType", chatType).Err(err).Msg("failed to get content from Chat")
 			}
 			data["result"] = content
 			dataBytes := s.sendEvent(eventType, eventSource, data)
@@ -190,10 +190,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		} else {
 			stream, err := s.service.ChatCompletionStream(context.Background(), chatType, userIdentifier, data["message"].(string))
 			if err != nil {
-				log.Warning("failed to get chat with stream", map[string]interface{}{
-					log.KeyError: err,
-					"chatType":   chatType,
-				})
+				s.logger.Warn().Interface("chatType", chatType).Err(err).Msg("failed to get chat with stream")
 				data["result"] = err.Error()
 				s.sendEvent(eventType, eventSource, data)
 				s.writeError(w, http.StatusInternalServerError, err)
@@ -254,15 +251,10 @@ func (s *chatSource) sendEvent(eventType, eventSource string, data map[string]in
 	s.events <- &cdkgo.Tuple{
 		Event: &event,
 		Success: func() {
-			log.Info("send event to target success", map[string]interface{}{
-				"event": event.ID(),
-			})
+			s.logger.Info().Str("event_id", event.ID()).Msg("send event to target success")
 		},
 		Failed: func(err2 error) {
-			log.Warning("failed to send event to target", map[string]interface{}{
-				log.KeyError: err2,
-				"event":      event.ID(),
-			})
+			s.logger.Warn().Interface("event_id", event.ID()).Err(err2).Msg("failed to send event to target")
 		},
 	}
 	return event.Data()

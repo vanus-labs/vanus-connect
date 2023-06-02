@@ -70,10 +70,7 @@ func (t *tokenSource) Token() (*oauth2.Token, error) {
 	var token tokenJSON
 	err = json.Unmarshal(res.Body(), &token)
 	if err != nil {
-		log.Info("get token unmarshal failed", map[string]interface{}{
-			"body":       res.String(),
-			log.KeyError: err,
-		})
+		log.Info().Str("body", res.String()).Msg("get token unmarshal failed")
 		return nil, err
 	}
 	return &oauth2.Token{

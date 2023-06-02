@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vanus-labs/cdk-go/log"
+	"github.com/rs/zerolog"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -41,11 +41,13 @@ type chatGPTService struct {
 	day          int
 	num          int
 	limitContent string
+	logger       zerolog.Logger
 }
 
-func newChatGPTService(config *chatGPTConfig) *chatGPTService {
+func newChatGPTService(config *chatGPTConfig, logger zerolog.Logger) *chatGPTService {
 	client := openai.NewClient(config.Token)
 	return &chatGPTService{
+		logger:       logger,
 		config:       config,
 		client:       client,
 		day:          today(),
@@ -71,7 +73,7 @@ func (s *chatGPTService) CreateChatCompletion(content string) (string, error) {
 		}
 		s.reset()
 	}
-	log.Info("receive content:"+content, nil)
+	s.logger.Info().Msg("receive content:" + content)
 	resp, err := s.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
