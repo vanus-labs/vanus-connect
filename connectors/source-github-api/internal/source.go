@@ -142,10 +142,6 @@ func (s *GitHubAPISource) userInfo(ctx context.Context, contributor *github.Cont
 		user = v.(*github.User)
 	}
 
-	log.Warning("userInfo", map[string]interface{}{
-		"user": *user,
-	})
-
 	data := make(map[string]interface{})
 	data["repo"] = lodash.TernaryF(repo.Name != nil, func() string { return *repo.Name }, func() string { return "" })
 	data["org"] = lodash.TernaryF(repo.Owner.Login != nil, func() string { return *repo.Owner.Login }, func() string { return "" })
