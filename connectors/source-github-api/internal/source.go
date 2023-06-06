@@ -30,10 +30,12 @@ import (
 var _ cdkgo.Source = &GitHubAPISource{}
 
 type GitHubAPISource struct {
-	config *GitHubAPIConfig
-	events chan *cdkgo.Tuple
-	client *github.Client
-	m      sync.Map
+	config     *GitHubAPIConfig
+	events     chan *cdkgo.Tuple
+	client     *github.Client
+	m          sync.Map
+	numRepos   int
+	numRecords int
 }
 
 func Source() cdkgo.Source {
@@ -70,20 +72,40 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 			PerPage: 250,
 		},
 	}
+	log.Info("start", map[string]interface{}{
+		"start-time": time.Now(),
+	})
 	for {
 		repos, resp, err := s.client.Repositories.ListByOrg(ctx, s.config.OrgName, listOption)
+		if s.needWait(resp.Rate) {
+			continue
+		}
 		if err != nil {
 			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
 				log.KeyError: err,
 			})
-			break
 		}
 		if len(repos) == 0 {
 			break
 		}
 
+		log.Info("ListByOrg", map[string]interface{}{
+			"listOption.Page": listOption.ListOptions.Page,
+			"resp.NextPage":   resp.NextPage,
+			"resp.Rate":       resp.Rate,
+		})
+
 		for _, repo := range repos {
 			s.listContributors(ctx, repo)
+
+			s.numRepos += 1
+			log.Info("numRecords", map[string]interface{}{
+				"numRecords": s.numRecords,
+			})
+			log.Info("numRepos", map[string]interface{}{
+				"numRepos": s.numRepos,
+				"page":     listOption.ListOptions.Page,
+			})
 		}
 
 		if resp.NextPage <= listOption.ListOptions.Page {
@@ -91,6 +113,9 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		}
 		listOption.ListOptions.Page = resp.NextPage
 	}
+	log.Info("end", map[string]interface{}{
+		"end-time": time.Now(),
+	})
 }
 
 func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Repository) {
@@ -103,16 +128,25 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 	}
 	for {
 		contributors, resp, err := s.client.Repositories.ListContributors(ctx, *repo.Owner.Login, *repo.Name, listOption)
+		if s.needWait(resp.Rate) {
+			continue
+		}
 		if err != nil {
 			log.Warning("Repositories.ListContributors error", map[string]interface{}{
 				log.KeyError: err,
 			})
-			break
 		}
 		if len(contributors) == 0 {
 			break
 		}
 
+		log.Info("ListContributors", map[string]interface{}{
+			"listOption.Page": listOption.ListOptions.Page,
+			"resp.NextPage":   resp.NextPage,
+			"resp.Rate":       resp.Rate,
+		})
+
+		s.numRecords += len(contributors)
 		for _, contributor := range contributors {
 			s.userInfo(ctx, contributor, repo)
 		}
@@ -126,17 +160,19 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 
 func (s *GitHubAPISource) userInfo(ctx context.Context, contributor *github.Contributor, repo *github.Repository) {
 	user := new(github.User)
-
-	var err error
 	v, ok := s.m.Load(*contributor.Login)
 	if !ok {
-		user, _, err = s.client.Users.Get(ctx, *contributor.Login)
+		user0, resp, err := s.client.Users.Get(ctx, *contributor.Login)
+		if s.needWait(resp.Rate) {
+			return
+		}
 		if err != nil {
 			log.Warning("Users.Get error", map[string]interface{}{
 				log.KeyError: err,
 			})
 			return
 		}
+		user = user0
 		s.m.Store(*contributor.Login, user)
 	} else {
 		user = v.(*github.User)
@@ -165,4 +201,20 @@ func (s *GitHubAPISource) sendEvent(eventType string, data map[string]interface{
 		Event: &event,
 	}
 	return event.Data()
+}
+
+func (s *GitHubAPISource) needWait(rate github.Rate) bool {
+	if rate.Remaining > 0 {
+		return false
+	}
+	log.Info("needWait", map[string]interface{}{
+		"start-time": time.Now(),
+	})
+	for time.Now().Before(rate.Reset.Time) {
+		time.Sleep(1 * time.Minute)
+	}
+	log.Info("needWait", map[string]interface{}{
+		"end-time": time.Now(),
+	})
+	return true
 }
