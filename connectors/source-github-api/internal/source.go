@@ -23,6 +23,7 @@ import (
 	lodash "github.com/samber/lo"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
+	"go.uber.org/ratelimit"
 	"sync"
 	"time"
 )
@@ -36,6 +37,7 @@ type GitHubAPISource struct {
 	m          sync.Map
 	numRepos   int
 	numRecords int
+	Limiter    ratelimit.Limiter
 }
 
 func Source() cdkgo.Source {
@@ -47,6 +49,11 @@ func Source() cdkgo.Source {
 func (s *GitHubAPISource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.config = cfg.(*GitHubAPIConfig)
 	s.client = github.NewTokenClient(ctx, s.config.GitHubAccessToken)
+	if s.config.GitHubHourLimit == 0 {
+		s.config.GitHubHourLimit = 5000
+	}
+	s.Limiter = ratelimit.New(s.config.GitHubHourLimit / 3600)
+
 	go s.start(ctx)
 	return nil
 }
@@ -73,13 +80,11 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		},
 	}
 	log.Info("start", map[string]interface{}{
-		"start-time": time.Now(),
+		"time": time.Now(),
 	})
 	for {
+		s.Limiter.Take()
 		repos, resp, err := s.client.Repositories.ListByOrg(ctx, s.config.OrgName, listOption)
-		if s.needWait(resp.Rate) {
-			continue
-		}
 		if err != nil {
 			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
 				log.KeyError: err,
@@ -90,23 +95,21 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		}
 
 		log.Info("ListByOrg", map[string]interface{}{
-			"listOption.Page": listOption.ListOptions.Page,
-			"resp.NextPage":   resp.NextPage,
-			"resp.Rate":       resp.Rate,
+			"Current Page": listOption.ListOptions.Page,
+			"Next Page":    resp.NextPage,
+			"GitHub Rate":  resp.Rate,
 		})
 
 		for _, repo := range repos {
 			s.listContributors(ctx, repo)
-
 			s.numRepos += 1
-			log.Info("numRecords", map[string]interface{}{
-				"numRecords": s.numRecords,
-			})
-			log.Info("numRepos", map[string]interface{}{
-				"numRepos": s.numRepos,
-				"page":     listOption.ListOptions.Page,
-			})
 		}
+
+		log.Info("stats", map[string]interface{}{
+			"numRecords": s.numRecords,
+			"numRepos":   s.numRepos,
+			"page":       listOption.ListOptions.Page,
+		})
 
 		if resp.NextPage <= listOption.ListOptions.Page {
 			break
@@ -114,7 +117,9 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		listOption.ListOptions.Page = resp.NextPage
 	}
 	log.Info("end", map[string]interface{}{
-		"end-time": time.Now(),
+		"time":       time.Now(),
+		"numRecords": s.numRecords,
+		"numRepos":   s.numRepos,
 	})
 }
 
@@ -127,10 +132,8 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 		},
 	}
 	for {
+		s.Limiter.Take()
 		contributors, resp, err := s.client.Repositories.ListContributors(ctx, *repo.Owner.Login, *repo.Name, listOption)
-		if s.needWait(resp.Rate) {
-			continue
-		}
 		if err != nil {
 			log.Warning("Repositories.ListContributors error", map[string]interface{}{
 				log.KeyError: err,
@@ -141,9 +144,9 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 		}
 
 		log.Info("ListContributors", map[string]interface{}{
-			"listOption.Page": listOption.ListOptions.Page,
-			"resp.NextPage":   resp.NextPage,
-			"resp.Rate":       resp.Rate,
+			"Current Page": listOption.ListOptions.Page,
+			"Next Page":    resp.NextPage,
+			"Project":      *repo.Name,
 		})
 
 		s.numRecords += len(contributors)
@@ -162,10 +165,8 @@ func (s *GitHubAPISource) userInfo(ctx context.Context, contributor *github.Cont
 	user := new(github.User)
 	v, ok := s.m.Load(*contributor.Login)
 	if !ok {
-		user0, resp, err := s.client.Users.Get(ctx, *contributor.Login)
-		if s.needWait(resp.Rate) {
-			return
-		}
+		s.Limiter.Take()
+		user0, _, err := s.client.Users.Get(ctx, *contributor.Login)
 		if err != nil {
 			log.Warning("Users.Get error", map[string]interface{}{
 				log.KeyError: err,

@@ -8,10 +8,12 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/samber/lo v1.37.0
 	github.com/vanus-labs/cdk-go v0.5.0
+	go.uber.org/ratelimit v0.2.0
 )
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
+	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect

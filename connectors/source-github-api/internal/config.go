@@ -22,6 +22,7 @@ type GitHubAPIConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 	OrgName            string `json:"org_name" yaml:"org_name" validate:"required"`
 	GitHubAccessToken  string `json:"github_access_token" yaml:"github_access_token" validate:"required"`
+	GitHubHourLimit    int    `json:"github_hour_limit" yaml:"github_hour_limit"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {
