@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewConfig, internal.NewHTTPSource)
+	cdkgo.RunHttpSource(internal.NewConfig, internal.NewHTTPSource)
 }

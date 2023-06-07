@@ -19,14 +19,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net"
+	"io"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/valyala/fasthttp"
@@ -37,7 +37,6 @@ import (
 
 const (
 	name                       = "HTTP Source"
-	defaultPort                = 8080
 	reqSource                  = "source"
 	reqType                    = "type"
 	reqID                      = "id"
@@ -70,50 +69,26 @@ func (he *HTTPEvent) toMap() map[string]interface{} {
 
 var _ cdkgo.Source = &httpSource{}
 
-func NewHTTPSource() cdkgo.Source {
+func NewHTTPSource() cdkgo.HTTPSource {
 	return &httpSource{
 		ch: make(chan *cdkgo.Tuple, 1024),
 	}
 }
 
 type httpSource struct {
-	cfg   *httpSourceConfig
-	mutex sync.Mutex
-	ch    chan *cdkgo.Tuple
-	ln    net.Listener
+	cfg    *httpSourceConfig
+	mutex  sync.Mutex
+	ch     chan *cdkgo.Tuple
+	logger zerolog.Logger
 }
 
 func (c *httpSource) Chan() <-chan *cdkgo.Tuple {
 	return c.ch
 }
 
-func (c *httpSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
-	_cfg, ok := cfg.(*httpSourceConfig)
-	if !ok {
-		return errors.New("invalid config")
-	}
-
-	if _cfg.Port == 0 {
-		_cfg.Port = defaultPort
-	}
-	c.cfg = _cfg
-
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", c.cfg.Port))
-	if err != nil {
-		return err
-	}
-	c.ln = ln
-	go func() {
-		log.Info("HTTP source is ready to serving", map[string]interface{}{
-			"listen": c.cfg.Port,
-		})
-		if err := fasthttp.Serve(ln, c.handleFastHTTP); err != nil {
-			log.Error("failed to start http server", map[string]interface{}{
-				log.KeyError: err,
-			})
-			panic(err)
-		}
-	}()
+func (c *httpSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	c.logger = log.FromContext(ctx)
+	c.cfg = cfg.(*httpSourceConfig)
 	return nil
 }
 
@@ -122,14 +97,107 @@ func (c *httpSource) Name() string {
 }
 
 func (c *httpSource) Destroy() error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	if err := c.ln.Close(); err != nil {
-		log.Warning("close listener error", map[string]interface{}{
-			log.KeyError: err,
-		})
-	}
 	return nil
+}
+
+func (c *httpSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	he := &HTTPEvent{
+		Path:      req.RequestURI,
+		Method:    req.Method,
+		QueryArgs: getQueryArgsNew(req),
+		Headers:   getHeadersNew(req),
+	}
+	e := v2.NewEvent()
+	mappingAttributesNew(req, he, &e)
+
+	// try to convert request.Body to json
+	m := map[string]interface{}{}
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	err = json.Unmarshal(body, &m)
+	if err == nil {
+		he.Body = m
+		e.SetExtension(extendAttributesBodyIsJSON, true)
+	} else {
+		he.Body = string(body)
+		e.SetExtension(extendAttributesBodyIsJSON, false)
+	}
+
+	if err = e.SetData(v2.ApplicationJSON, he); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
+		return
+	}
+	c.logger.Debug().Interface("event", e).Msg("received a HTTP Request, ready to send")
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	c.ch <- &cdkgo.Tuple{
+		Event: &e,
+		Success: func() {
+			w.WriteHeader(http.StatusOK)
+			wg.Done()
+		},
+		Failed: func(err2 error) {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(
+				fmt.Sprintf("failed to send event to remote server: %s", err2.Error())))
+			wg.Done()
+		},
+	}
+	wg.Wait()
+}
+
+func getQueryArgsNew(req *http.Request) map[string]string {
+	m := map[string]string{}
+	values := req.URL.Query()
+	for key, value := range values {
+		m[key] = value[0]
+	}
+	return m
+}
+
+func getHeadersNew(req *http.Request) map[string]string {
+	m := map[string]string{}
+	headers := req.Header
+	for key, header := range headers {
+		if key == "Authorization" {
+			continue
+		}
+		m[key] = header[0]
+	}
+	return m
+}
+
+func mappingAttributesNew(req *http.Request, he *HTTPEvent, e *v2.Event) {
+	args := he.QueryArgs
+	if v, ok := args[reqID]; ok && v != "" {
+		e.SetID(v)
+	} else {
+		e.SetID(uuid.NewString())
+	}
+	if v, ok := args[reqSource]; ok && v != "" {
+		e.SetSource(v)
+	} else {
+		e.SetSource(defaultSource)
+	}
+	if v, ok := args[reqType]; ok && v != "" {
+		e.SetType(v)
+	} else {
+		e.SetType(defaultType)
+	}
+	if v, ok := args[reqSubject]; ok && v != "" {
+		e.SetSubject(v)
+	}
+	if v, ok := args[reqSchema]; ok && v != "" {
+		e.SetDataSchema(reqSchema)
+	}
+	//e.SetExtension(extendAttributesRemoteIP, ctx.RemoteIP().String())
+	e.SetExtension(extendAttributesRemoteAddr, req.RemoteAddr)
 }
 
 func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
@@ -160,10 +228,6 @@ func (c *httpSource) handleFastHTTP(ctx *fasthttp.RequestCtx) {
 		ctx.Response.SetBody([]byte(fmt.Sprintf("failed to set data: %s", err.Error())))
 		return
 	}
-
-	log.Debug("received a HTTP Request, ready to send", map[string]interface{}{
-		"event": e.String(),
-	})
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
