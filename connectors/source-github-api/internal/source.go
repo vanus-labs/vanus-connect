@@ -80,7 +80,7 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		},
 	}
 	log.Info("start", map[string]interface{}{
-		"time": time.Now(),
+		"starting time": time.Now(),
 	})
 	for {
 		s.Limiter.Take()
@@ -101,25 +101,20 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		})
 
 		for _, repo := range repos {
-			s.listContributors(ctx, repo)
 			s.numRepos += 1
+			s.listContributors(ctx, repo)
 		}
-
-		log.Info("stats", map[string]interface{}{
-			"numRecords": s.numRecords,
-			"numRepos":   s.numRepos,
-			"page":       listOption.ListOptions.Page,
-		})
 
 		if resp.NextPage <= listOption.ListOptions.Page {
 			break
 		}
 		listOption.ListOptions.Page = resp.NextPage
 	}
+
 	log.Info("end", map[string]interface{}{
-		"time":       time.Now(),
-		"numRecords": s.numRecords,
-		"numRepos":   s.numRepos,
+		"ending time":  time.Now(),
+		"totalRecords": s.numRecords,
+		"totalRepos":   s.numRepos,
 	})
 }
 
@@ -131,6 +126,7 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 			PerPage: 250,
 		},
 	}
+	projectRecords := 0
 	for {
 		s.Limiter.Take()
 		contributors, resp, err := s.client.Repositories.ListContributors(ctx, *repo.Owner.Login, *repo.Name, listOption)
@@ -143,16 +139,20 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 			break
 		}
 
-		log.Info("ListContributors", map[string]interface{}{
-			"Current Page": listOption.ListOptions.Page,
-			"Next Page":    resp.NextPage,
-			"Project":      *repo.Name,
-		})
-
 		s.numRecords += len(contributors)
+		projectRecords += len(contributors)
 		for _, contributor := range contributors {
 			s.userInfo(ctx, contributor, repo)
 		}
+
+		log.Info("ListContributors", map[string]interface{}{
+			"Current Page":   listOption.ListOptions.Page,
+			"Next Page":      resp.NextPage,
+			"Project":        *repo.Name,
+			"totalRecords":   s.numRecords,
+			"totalRepos":     s.numRepos,
+			"projectRecords": projectRecords,
+		})
 
 		if resp.NextPage <= listOption.ListOptions.Page {
 			break
