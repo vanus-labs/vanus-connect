@@ -6,12 +6,10 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.29.1
-	github.com/valyala/fasthttp v1.43.0
-	github.com/vanus-labs/cdk-go v0.7.2
+	github.com/vanus-labs/cdk-go v0.7.3
 )
 
 require (
-	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -31,7 +29,6 @@ require (
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.12 // indirect
@@ -41,7 +38,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/vanus-labs/vanus-connect-runtime v0.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.6 // indirect

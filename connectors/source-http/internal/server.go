@@ -98,7 +98,7 @@ func (c *httpSource) Destroy() error {
 
 func (c *httpSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	he := &HTTPEvent{
-		Path:      req.RequestURI,
+		Path:      req.URL.Path,
 		Method:    req.Method,
 		QueryArgs: getQueryArgs(req),
 		Headers:   getHeaders(req),
