@@ -71,6 +71,23 @@ func (s *GitHubAPISource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *GitHubAPISource) start(ctx context.Context) {
+	log.Info("!!! starting !!!", map[string]interface{}{
+		"starting time": time.Now(),
+	})
+
+	for i := range s.config.Organizations {
+		orgName := s.config.Organizations[i]
+		s.listOrg(ctx, orgName)
+	}
+
+	log.Info("!!! ending !!!", map[string]interface{}{
+		"ending time":  time.Now(),
+		"totalRecords": s.numRecords,
+		"totalRepos":   s.numRepos,
+	})
+}
+
+func (s *GitHubAPISource) listOrg(ctx context.Context, orgName string) {
 	// Repository
 	listOption := &github.RepositoryListByOrgOptions{
 		Type: "sources",
@@ -79,12 +96,10 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 			PerPage: 250,
 		},
 	}
-	log.Info("start", map[string]interface{}{
-		"starting time": time.Now(),
-	})
+
 	for {
 		s.Limiter.Take()
-		repos, resp, err := s.client.Repositories.ListByOrg(ctx, s.config.OrgName, listOption)
+		repos, resp, err := s.client.Repositories.ListByOrg(ctx, orgName, listOption)
 		if err != nil {
 			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
 				log.KeyError: err,
@@ -93,14 +108,17 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		if len(repos) == 0 {
 			break
 		}
-
 		log.Info("ListByOrg", map[string]interface{}{
-			"Current Page": listOption.ListOptions.Page,
+			"Page":         listOption.ListOptions.Page,
 			"Next Page":    resp.NextPage,
 			"GitHub Rate":  resp.Rate,
+			"Organization": orgName,
 		})
 
 		for _, repo := range repos {
+			if *repo.StargazersCount < 1000 {
+				continue
+			}
 			s.numRepos += 1
 			s.listContributors(ctx, repo)
 		}
@@ -110,12 +128,6 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 		}
 		listOption.ListOptions.Page = resp.NextPage
 	}
-
-	log.Info("end", map[string]interface{}{
-		"ending time":  time.Now(),
-		"totalRecords": s.numRecords,
-		"totalRepos":   s.numRepos,
-	})
 }
 
 func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Repository) {
@@ -146,7 +158,7 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 		}
 
 		log.Info("ListContributors", map[string]interface{}{
-			"Current Page":   listOption.ListOptions.Page,
+			"Page":           listOption.ListOptions.Page,
 			"Next Page":      resp.NextPage,
 			"Project":        *repo.Name,
 			"totalRecords":   s.numRecords,

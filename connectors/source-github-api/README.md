@@ -29,14 +29,16 @@ The contributor's data is converted to:
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
-org_name: org_name
+organizations:
+  - apache
+  - google
 github_access_token: github_access_token
 EOF
 ```
 
-| Name                | Required | Default | Description                          |
-|:--------------------|:---------|:--------|:-------------------------------------|
-| target              | YES      |         | the target URL to send CloudEvents   |
-| org_name            | YES      |         | github organization name, ex: apache |
-| github_access_token | YES      |         | the github api access token          |
+| Name                    | Required | Default | Description                        |
+|:------------------------|:---------|:--------|:-----------------------------------|
+| target                  | YES      |         | the target URL to send CloudEvents |
+| organizations           | YES      |         | organization arrays                |
+| github_access_token     | YES      |         | the github api access token        |
 
