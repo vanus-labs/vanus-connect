@@ -193,6 +193,7 @@ func (s *GitHubAPISource) userInfo(ctx context.Context, contributor *github.Cont
 
 	data := make(map[string]interface{})
 	data["repo"] = lodash.TernaryF(repo.Name != nil, func() string { return *repo.Name }, func() string { return "" })
+	data["star"] = lodash.TernaryF(repo.StargazersCount != nil, func() int { return *repo.StargazersCount }, func() int { return 0 })
 	data["org"] = lodash.TernaryF(repo.Owner.Login != nil, func() string { return *repo.Owner.Login }, func() string { return "" })
 	data["url"] = lodash.TernaryF(repo.HTMLURL != nil, func() string { return *repo.HTMLURL }, func() string { return "" })
 	data["uid"] = lodash.TernaryF(user.Login != nil, func() string { return *user.Login }, func() string { return "" })
