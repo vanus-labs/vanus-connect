@@ -192,6 +192,10 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				s.logger.Warn().Interface("chatType", chatType).Err(err).Msg("failed to get chat with stream")
 				data["result"] = err.Error()
+				data["is_end"] = true
+				if s.config.UserIdentifierHeader != "" {
+					data[s.config.UserIdentifierHeader] = userIdentifier
+				}
 				s.sendEvent(eventType, eventSource, data)
 				s.writeError(w, http.StatusInternalServerError, err)
 				return
@@ -207,6 +211,10 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 				msg, err := stream.Recv()
 				if err != nil {
 					data["result"] = err.Error()
+					data["is_end"] = true
+					if s.config.UserIdentifierHeader != "" {
+						data[s.config.UserIdentifierHeader] = userIdentifier
+					}
 					s.sendEvent(eventType, eventSource, data)
 					if sync {
 						w.Write([]byte(fmt.Sprintf(`{"status":%d,"msg":"%s"}`, http.StatusInternalServerError, err.Error())))
