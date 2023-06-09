@@ -34,17 +34,20 @@ func (stream *ChatCompletionStream) Recv() (*ChatCompletionResponse, error) {
 	if stream.isFinished {
 		return nil, io.EOF
 	}
+	var headerData = []byte("data: ")
 
 waitForData:
 	line, err := stream.reader.ReadBytes('\n')
 	if err != nil {
+		if writeErr := stream.errAccumulator.write(line); writeErr != nil {
+			return nil, writeErr
+		}
 		respErr := stream.errAccumulator.unmarshalError()
 		if respErr != nil {
 			err = fmt.Errorf("response error code:%d, msg:%s", respErr.ErrorCode, respErr.ErrorMsg)
 		}
 		return nil, err
 	}
-	var headerData = []byte("data: ")
 	line = bytes.TrimSpace(line)
 	if !bytes.HasPrefix(line, headerData) {
 		if writeErr := stream.errAccumulator.write(line); writeErr != nil {

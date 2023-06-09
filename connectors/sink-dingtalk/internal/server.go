@@ -20,6 +20,7 @@ import (
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -42,30 +43,30 @@ func NewSink() cdkgo.Sink {
 var _ cdkgo.Sink = &dingtalkSink{}
 
 type dingtalkSink struct {
-	cfg   *dingtalkConfig
-	count int64
-	b     *bot.Bot
+	cfg    *dingtalkConfig
+	count  int64
+	b      *bot.Bot
+	logger zerolog.Logger
 }
 
 func (f *dingtalkSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	if len(events) != 1 {
 		return errSinkWrongEventNumber
 	}
-	atomic.AddInt64(&f.count, int64(len(events)))
-	log.Info("receive a new event", map[string]interface{}{
-		"count": f.count,
-	})
 	e := events[0]
+	atomic.AddInt64(&f.count, int64(len(events)))
+	f.logger.Info().Int64("count", atomic.LoadInt64(&f.count)).Str("event_id", e.ID()).Msg("receive a new event")
 	if err := f.b.SendMessage(e); err != nil {
 		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 	}
 	return cdkgo.SuccessResult
 }
 
-func (f *dingtalkSink) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (f *dingtalkSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	config, _ := cfg.(*dingtalkConfig)
+	f.logger = log.FromContext(ctx)
 	f.cfg = config
-	f.b = bot.NewBot()
+	f.b = bot.NewBot(f.logger)
 	return f.b.Init(config.Bot)
 }
 

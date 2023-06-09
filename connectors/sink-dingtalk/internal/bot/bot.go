@@ -26,9 +26,8 @@ import (
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/protocol/http"
 	"github.com/go-resty/resty/v2"
+	"github.com/rs/zerolog"
 	"github.com/tidwall/gjson"
-
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 type messageType string
@@ -48,11 +47,13 @@ type Bot struct {
 	defaultChatGroup string
 	hookMap          map[string]WebHook
 	httpClient       *resty.Client
+	logger           zerolog.Logger
 }
 
-func NewBot() *Bot {
+func NewBot(logger zerolog.Logger) *Bot {
 	return &Bot{
 		httpClient: resty.New(),
+		logger:     logger,
 	}
 }
 
@@ -82,10 +83,9 @@ func (b *Bot) SendMessage(e *v2.Event) (err error) {
 	defer func() {
 		if err != nil {
 			d, _ := e.MarshalJSON()
-			log.Warning("failed to send message", map[string]interface{}{
-				log.KeyError: err,
-				"event":      string(d),
-			})
+			b.logger.Warn().Str("event", string(d)).Err(err).Msg("failed to send message")
+		} else {
+			b.logger.Info().Str("event_id", e.ID()).Msg("success send message")
 		}
 	}()
 	chatGroup, ok := e.Extensions()[xChatGroupID].(string)
