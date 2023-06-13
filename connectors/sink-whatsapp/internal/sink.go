@@ -24,6 +24,7 @@ import (
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog"
 	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
@@ -47,6 +48,7 @@ type whatsappSink struct {
 	events chan *cdkgo.Tuple
 	number int
 	client *whatsmeow.Client
+	logger zerolog.Logger
 }
 
 type JID struct {
@@ -58,9 +60,10 @@ type JID struct {
 }
 
 func (s *whatsappSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*WhatsappConfig)
-	s.whatsappConnect()
-	return nil
+	err := s.whatsappConnect()
+	return err
 }
 
 func (s *whatsappSink) Name() string {
@@ -83,9 +86,7 @@ func (s *whatsappSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.R
 	for _, event := range events {
 		result := s.processEvent(ctx, event)
 		if cdkgo.SuccessResult != result {
-			log.Info("event process failed", map[string]interface{}{
-				log.KeyError: result.Error(),
-			})
+			s.logger.Warn().Err(result.Error()).Str("event_id", event.ID()).Msg("event process failed")
 			return result
 		}
 	}
@@ -120,10 +121,10 @@ func (s *whatsappSink) whatsappConnect() error {
 		if err != nil {
 			return err
 		}
-		log.Info("Database restored successfully.", nil)
+		s.logger.Info().Msg("Database restored successfully.")
 	}
 
-	dbLog := waLog.Stdout("Database", "DEBUG", true)
+	dbLog := waLog.Stdout("Database", "INFO", true)
 	container, err := sqlstore.New("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFileName), dbLog)
 	if err != nil {
 		return err
@@ -134,7 +135,7 @@ func (s *whatsappSink) whatsappConnect() error {
 		return err
 	}
 
-	clientLog := waLog.Stdout("Client", "DEBUG", true)
+	clientLog := waLog.Stdout("Client", "INFO", true)
 	s.client = whatsmeow.NewClient(deviceStore, clientLog)
 
 	if s.client.Store.ID == nil {
