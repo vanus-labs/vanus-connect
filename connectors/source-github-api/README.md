@@ -26,19 +26,52 @@ The contributor's data is converted to:
 
 ### Create the config file
 
+- config when api_type is "contributor"
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
+github_access_token: github_access_token
+api_type: contributor
 organizations:
   - apache
   - google
-github_access_token: github_access_token
 EOF
 ```
 
-| Name                    | Required | Default | Description                        |
-|:------------------------|:---------|:--------|:-----------------------------------|
-| target                  | YES      |         | the target URL to send CloudEvents |
-| organizations           | YES      |         | organization arrays                |
-| github_access_token     | YES      |         | the github api access token        |
+- config when api_type is "pr"
+```shell
+cat << EOF > config.yml
+target: http://localhost:31081
+github_access_token: github_access_token
+api_type: pr
+pr_configs:
+  - organization: apache
+    repo: spark
+    user_list: 
+      - user1
+      - user2
+  - organization: microsoft
+    repo: vcpkg
+    user_list: 
+      - user3
+      - user4
+EOF
+```
 
+Config
+---
+| Name                    | Required                           | Default | Description                        |
+|:------------------------|:-----------------------------------|:--------|:-----------------------------------|
+| target                  | YES                                |         | the target URL to send CloudEvents |
+| github_access_token     | YES                                |         | the github api access token        |
+| api_type                | YES                                |         | "contributor" or "pr"              |
+| organizations           | YES when api_type is "contributor" |         | organization arrays                |
+| pr_configs              | YES when api_type is "pr"          |         | PRConfig arrays                    |  
+
+PRConfig
+---
+| Name                    |  Description                        |
+|:------------------------|:------------------------------------|
+| organization            |  organization                       |
+| repo                    |  repository                         |
+| user_list               |  array of contributor id            | 

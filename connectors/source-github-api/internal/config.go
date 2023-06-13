@@ -14,17 +14,61 @@
 
 package internal
 
-import cdkgo "github.com/vanus-labs/cdk-go"
+import (
+	"fmt"
+	cdkgo "github.com/vanus-labs/cdk-go"
+)
+
+type Type string
+
+const (
+	Contributor Type = "contributor"
+	PR          Type = "pr"
+)
 
 var _ cdkgo.SourceConfigAccessor = &GitHubAPIConfig{}
 
 type GitHubAPIConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-	Organizations      []string `json:"organizations" yaml:"organizations" validate:"required"`
-	GitHubAccessToken  string   `json:"github_access_token" yaml:"github_access_token" validate:"required"`
-	GitHubHourLimit    int      `json:"github_hour_limit" yaml:"github_hour_limit"`
+
+	APIType       Type       `json:"api_type" yaml:"api_type" validate:"required"`
+	Organizations []string   `json:"organizations" yaml:"organizations"`
+	PRConfigs     []PRConfig `json:"pr_configs" yaml:"pr_configs"`
+
+	GitHubAccessToken string `json:"github_access_token" yaml:"github_access_token" validate:"required"`
+	GitHubHourLimit   int    `json:"github_hour_limit" yaml:"github_hour_limit"`
+}
+
+type PRConfig struct {
+	Organization string   `json:"organization" yaml:"organization"`
+	Repo         string   `json:"repo" yaml:"repo"`
+	UserList     []string `json:"user_list" yaml:"user_list"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {
 	return &GitHubAPIConfig{}
+}
+
+func (c *GitHubAPIConfig) Validate() error {
+	if c.APIType != "" {
+		switch c.APIType {
+		case PR:
+			if len(c.PRConfigs) == 0 {
+				return fmt.Errorf("API type is '%s', should have pr_config", PR)
+			}
+		case Contributor:
+			if len(c.Organizations) == 0 {
+				return fmt.Errorf("API type is '%s', should have organizations", Contributor)
+			}
+		default:
+			return fmt.Errorf("API type is invalid")
+		}
+	}
+	return nil
+}
+
+func (c *GitHubAPIConfig) Init() {
+	if c.GitHubHourLimit == 0 {
+		c.GitHubHourLimit = 3600
+	}
 }
