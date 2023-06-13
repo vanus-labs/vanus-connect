@@ -18,6 +18,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pandodao/tokenizer-go"
 	"github.com/sashabaranov/go-openai"
 
 	"github.com/vanus-labs/connector/source/chatai/chat/model"
@@ -133,5 +134,9 @@ func (s *chatCompletionStream) Close() {
 }
 
 func calTokens(content string) int {
-	return len(content) / 4
+	t, err := tokenizer.CalToken(content)
+	if err != nil {
+		t = len(content) / 4
+	}
+	return t
 }

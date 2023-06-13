@@ -20,6 +20,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pandodao/tokenizer-go"
 	"github.com/pkg/errors"
 	"github.com/sashabaranov/go-openai"
 
@@ -194,5 +195,9 @@ func (s *chatCompletionStream) doFinish() {
 }
 
 func calTokens(content string) int {
-	return len(content)
+	t, err := tokenizer.CalToken(content)
+	if err != nil {
+		t = len(content) / 4
+	}
+	return t
 }
