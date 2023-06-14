@@ -13,3 +13,65 @@
 // limitations under the License.
 
 package internal
+
+import (
+	"context"
+	"time"
+
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/uuid"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
+)
+
+const (
+	EventSource = "douyin"
+	EventType   = "video"
+)
+
+func (s *DouyinSource) syncVideo(ctx context.Context) {
+	s.getVideo()
+	tk := time.NewTicker(12 * time.Hour)
+	defer tk.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tk.C:
+			s.getVideo()
+		}
+	}
+}
+
+func (s *DouyinSource) getVideo() {
+	hasMore := true
+	cursor, pageSize := int64(0), int64(30)
+	for hasMore {
+		s.Limiter.Take()
+		info, err := s.openAPI.GetVideo().List(s.config.OpenID, cursor, pageSize)
+		if err != nil {
+			log.Warning("getVideo", map[string]interface{}{
+				"error": err,
+			})
+			return
+		}
+
+		for i := range info.List {
+			video := info.List[i]
+
+			event := ce.NewEvent()
+			event.SetSource(EventSource)
+			event.SetType(EventType)
+			event.SetTime(time.Now())
+			event.SetID(uuid.New().String())
+			_ = event.SetData(ce.ApplicationJSON, video)
+			s.events <- &cdkgo.Tuple{
+				Event: &event,
+			}
+		}
+
+		cursor = info.Cursor
+		hasMore = info.HasMore
+	}
+}

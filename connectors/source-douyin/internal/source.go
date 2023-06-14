@@ -23,8 +23,6 @@ import (
 	"github.com/amorist/douyin/open/config"
 	"github.com/amorist/douyin/open/oauth"
 	"github.com/amorist/douyin/util"
-	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/uuid"
 	"go.uber.org/ratelimit"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
@@ -65,7 +63,7 @@ func (s *DouyinSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 
 	s.Limiter = ratelimit.New(s.config.RateHourLimit / 3600)
 
-	go s.start(ctx)
+	s.start(ctx)
 	return nil
 }
 
@@ -86,20 +84,5 @@ func (s *DouyinSource) start(ctx context.Context) {
 		"starting time": time.Now(),
 	})
 
-	log.Info("!!! ending !!!", map[string]interface{}{
-		"ending time": time.Now(),
-	})
-}
-
-func (s *DouyinSource) sendEvent(eventType string, data map[string]interface{}) []byte {
-	event := ce.NewEvent()
-	event.SetID(uuid.NewString())
-	event.SetTime(time.Now())
-	event.SetType(eventType)
-	event.SetSource("Douyin")
-	event.SetData(ce.ApplicationJSON, data)
-	s.events <- &cdkgo.Tuple{
-		Event: &event,
-	}
-	return event.Data()
+	go s.syncVideo(ctx)
 }
