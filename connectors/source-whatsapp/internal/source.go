@@ -23,6 +23,7 @@ import (
 
 	ce "github.com/cloudevents/sdk-go/v2"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/rs/zerolog"
 	"github.com/skip2/go-qrcode"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -48,9 +49,11 @@ type whatsAppSource struct {
 	events      chan *cdkgo.Tuple
 	client      *whatsmeow.Client
 	chatService *chat.ChatService
+	logger      zerolog.Logger
 }
 
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*whatsAppConfig)
 	dbFileName := "store.db"
 	if s.config.Data != "" {
@@ -62,14 +65,14 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 		if err != nil {
 			return err
 		}
-		log.Info("Database restored successfully.", nil)
+		s.logger.Info().Msg("Database restored successfully.")
 	}
 
 	if s.config.EnableChatAi {
-		s.chatService = chat.NewChatService(*s.config.ChatConfig)
+		s.chatService = chat.NewChatService(*s.config.ChatConfig, s.logger)
 	}
 
-	dbLog := waLog.Stdout("Database", "DEBUG", true)
+	dbLog := waLog.Stdout("Database", "INFO", true)
 	container, err := sqlstore.New("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFileName), dbLog)
 	if err != nil {
 		return err
@@ -80,7 +83,7 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 		return err
 	}
 
-	clientLog := waLog.Stdout("Client", "DEBUG", true)
+	clientLog := waLog.Stdout("Client", "INFO", true)
 	s.client = whatsmeow.NewClient(deviceStore, clientLog)
 
 	s.events = make(chan *cdkgo.Tuple, 100)
@@ -98,16 +101,12 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 						s.events <- &cdkgo.Tuple{
 							Event: event,
 							Success: func() {
-								// TODO
-								b, _ := json.Marshal(event)
-								log.Info("send event success: "+string(b), nil)
+								s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
 							},
 							Failed: func(err error) {
 								// TODO
 								b, _ := json.Marshal(event)
-								log.Info("send event failed: "+string(b), map[string]interface{}{
-									log.KeyError: err,
-								})
+								s.logger.Warn().Err(err).Msg("send event failed: " + string(b))
 							},
 						}
 					}
@@ -117,16 +116,12 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 					s.events <- &cdkgo.Tuple{
 						Event: event,
 						Success: func() {
-							// TODO
-							b, _ := json.Marshal(event)
-							log.Info("send event success: "+string(b), nil)
+							s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
 						},
 						Failed: func(err error) {
 							// TODO
 							b, _ := json.Marshal(event)
-							log.Info("send event failed: "+string(b), map[string]interface{}{
-								log.KeyError: err,
-							})
+							s.logger.Warn().Err(err).Msg("send event failed: " + string(b))
 						},
 					}
 				}
@@ -193,9 +188,7 @@ func (s *whatsAppSource) makeEvent(info types.MessageInfo, message string) *ce.E
 	if s.chatService != nil {
 		resp, err := s.chatService.ChatCompletion(context.Background(), s.config.ChatConfig.DefaultChatMode, info.Sender.User, message)
 		if err != nil {
-			log.Warning("failed to get content from Chat", map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Warn().Err(err).Msg("failed to get content from Chat")
 		}
 		event.SetData(ce.ApplicationJSON, map[string]interface{}{
 			"info":    info,
