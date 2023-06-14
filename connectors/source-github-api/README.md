@@ -26,15 +26,29 @@ The contributor's data is converted to:
 
 ### Create the config file
 
-- config when api_type is "contributor"
+- config when list_type is "org"
 ```shell
 cat << EOF > config.yml
 target: http://localhost:31081
 github_access_token: github_access_token
 api_type: contributor
+list_type: org
 organizations:
   - apache
   - google
+EOF
+```
+
+- config when list_type is "user"
+```shell
+cat << EOF > config.yml
+target: http://localhost:31081
+github_access_token: github_access_token
+api_type: contributor
+list_type: user
+user_list:
+  - u1
+  - u2
 EOF
 ```
 
@@ -60,13 +74,15 @@ EOF
 
 Config
 ---
-| Name                    | Required                           | Default | Description                        |
-|:------------------------|:-----------------------------------|:--------|:-----------------------------------|
-| target                  | YES                                |         | the target URL to send CloudEvents |
-| github_access_token     | YES                                |         | the github api access token        |
-| api_type                | YES                                |         | "contributor" or "pr"              |
-| organizations           | YES when api_type is "contributor" |         | organization arrays                |
-| pr_configs              | YES when api_type is "pr"          |         | PRConfig arrays                    |  
+| Name                | Required                           | Default | Description                        |
+|:--------------------|:-----------------------------------|:--------|:-----------------------------------|
+| target              | YES                                |         | the target URL to send CloudEvents |
+| github_access_token | YES                                |         | the github api access token        |
+| api_type            | YES                                |         | "contributor" or "pr"              |
+| list_type           | YES when api_type is "contributor" |         | "org" or "user"                    |
+| organizations       | YES when list_type is "org"        |         | organization arrays                |
+| user_list           | YES when list_type is "user"       |         | uid arrays                         |
+| pr_configs          | YES when api_type is "pr"          |         | PRConfig arrays                    |  
 
 PRConfig
 ---

@@ -24,6 +24,9 @@ type Type string
 const (
 	Contributor Type = "contributor"
 	PR          Type = "pr"
+
+	ListByOrg  Type = "org"
+	ListByUser Type = "user"
 )
 
 var _ cdkgo.SourceConfigAccessor = &GitHubAPIConfig{}
@@ -32,7 +35,9 @@ type GitHubAPIConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
 	APIType       Type       `json:"api_type" yaml:"api_type" validate:"required"`
+	ListType      Type       `json:"list_type" yaml:"list_type"`
 	Organizations []string   `json:"organizations" yaml:"organizations"`
+	UserList      []string   `json:"user_list" yaml:"user_list"`
 	PRConfigs     []PRConfig `json:"pr_configs" yaml:"pr_configs"`
 
 	GitHubAccessToken string `json:"github_access_token" yaml:"github_access_token" validate:"required"`
@@ -57,8 +62,11 @@ func (c *GitHubAPIConfig) Validate() error {
 				return fmt.Errorf("API type is '%s', should have pr_config", PR)
 			}
 		case Contributor:
-			if len(c.Organizations) == 0 {
-				return fmt.Errorf("API type is '%s', should have organizations", Contributor)
+			if c.ListType == ListByOrg && len(c.Organizations) == 0 {
+				return fmt.Errorf("API type is '%s', should have organizations", ListByOrg)
+			}
+			if c.ListType == ListByUser && len(c.UserList) == 0 {
+				return fmt.Errorf("API type is '%s', should have users", ListByUser)
 			}
 		default:
 			return fmt.Errorf("API type is invalid")

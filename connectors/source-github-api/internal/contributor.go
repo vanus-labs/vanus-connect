@@ -21,14 +21,23 @@ import (
 	"github.com/vanus-labs/cdk-go/log"
 )
 
-func (s *GitHubAPISource) starContr(ctx context.Context) {
-	for i := range s.config.Organizations {
-		orgName := s.config.Organizations[i]
-		s.listOrg(ctx, orgName)
+func (s *GitHubAPISource) startContr(ctx context.Context) {
+	switch s.config.ListType {
+	case ListByOrg:
+		for i := range s.config.Organizations {
+			orgName := s.config.Organizations[i]
+			s.listOrgRepo(ctx, orgName)
+		}
+	case ListByUser:
+		for i := range s.config.UserList {
+			user := s.config.UserList[i]
+			s.listUserRepo(ctx, user)
+		}
 	}
+
 }
 
-func (s *GitHubAPISource) listOrg(ctx context.Context, orgName string) {
+func (s *GitHubAPISource) listOrgRepo(ctx context.Context, orgName string) {
 	// Repository
 	listOption := &github.RepositoryListByOrgOptions{
 		Type: "sources",
@@ -55,6 +64,42 @@ func (s *GitHubAPISource) listOrg(ctx context.Context, orgName string) {
 			"GitHub Rate":  resp.Rate,
 			"Organization": orgName,
 		})
+
+		for _, repo := range repos {
+			if *repo.StargazersCount < 1000 {
+				continue
+			}
+			s.numRepos += 1
+			s.listContributors(ctx, repo)
+		}
+
+		if resp.NextPage <= listOption.ListOptions.Page {
+			break
+		}
+		listOption.ListOptions.Page = resp.NextPage
+	}
+}
+
+func (s *GitHubAPISource) listUserRepo(ctx context.Context, user string) {
+	// Repository
+	listOption := &github.RepositoryListOptions{
+		ListOptions: github.ListOptions{
+			Page:    1,
+			PerPage: 250,
+		},
+	}
+
+	for {
+		s.Limiter.Take()
+		repos, resp, err := s.client.Repositories.List(ctx, user, listOption)
+		if err != nil {
+			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
+				log.KeyError: err,
+			})
+		}
+		if len(repos) == 0 {
+			break
+		}
 
 		for _, repo := range repos {
 			if *repo.StargazersCount < 1000 {
