@@ -21,7 +21,7 @@ import (
 	"github.com/vanus-labs/cdk-go/log"
 )
 
-func (s *GitHubAPISource) starPR(ctx context.Context) {
+func (s *GitHubAPISource) startPR(ctx context.Context) {
 	for i := range s.config.PRConfigs {
 		config := s.config.PRConfigs[i]
 		s.listPullRequests(ctx, config)

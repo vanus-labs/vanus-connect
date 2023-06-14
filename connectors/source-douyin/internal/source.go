@@ -16,82 +16,87 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"time"
+
+	"github.com/amorist/douyin"
+	"github.com/amorist/douyin/open"
+	"github.com/amorist/douyin/open/config"
+	"github.com/amorist/douyin/open/oauth"
+	"github.com/amorist/douyin/util"
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/go-github/v52/github"
 	"github.com/google/uuid"
+	"go.uber.org/ratelimit"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
-	"go.uber.org/ratelimit"
-	"sync"
-	"time"
 )
 
-var _ cdkgo.Source = &GitHubAPISource{}
+var _ cdkgo.Source = &DouyinSource{}
 
-type GitHubAPISource struct {
-	config  *GitHubAPIConfig
-	events  chan *cdkgo.Tuple
-	client  *github.Client
-	m       sync.Map
-	Limiter ratelimit.Limiter
+type DouyinSource struct {
+	config *DouyinConfig
+	events chan *cdkgo.Tuple
 
-	numRepos   int
-	numRecords int
-	numPRs     int
+	openAPI *open.API
+
+	Limiter  ratelimit.Limiter
+	numVideo int
 }
 
 func Source() cdkgo.Source {
-	return &GitHubAPISource{
+	return &DouyinSource{
 		events: make(chan *cdkgo.Tuple, 1024),
 	}
 }
 
-func (s *GitHubAPISource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-	s.config = cfg.(*GitHubAPIConfig)
+func (s *DouyinSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.config = cfg.(*DouyinConfig)
 	s.config.Init()
-	s.client = github.NewTokenClient(ctx, s.config.GitHubAccessToken)
-	s.Limiter = ratelimit.New(s.config.GitHubHourLimit / 3600)
+
+	dy := douyin.New()
+	dyScope := oauth.GetAllScope()
+	dyCfg := &config.Config{
+		ClientKey:    s.config.ClientKey,
+		ClientSecret: s.config.ClientSecret,
+		Scopes:       dyScope,
+		Cache:        util.NewMemCache(),
+	}
+	s.openAPI = dy.GetOpenAPI(dyCfg)
+
+	s.Limiter = ratelimit.New(s.config.RateHourLimit / 3600)
 
 	go s.start(ctx)
 	return nil
 }
 
-func (s *GitHubAPISource) Name() string {
-	return "GitHubAPISource"
+func (s *DouyinSource) Name() string {
+	return "DouyinSource"
 }
 
-func (s *GitHubAPISource) Destroy() error {
+func (s *DouyinSource) Destroy() error {
 	return nil
 }
 
-func (s *GitHubAPISource) Chan() <-chan *cdkgo.Tuple {
+func (s *DouyinSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *GitHubAPISource) start(ctx context.Context) {
+func (s *DouyinSource) start(ctx context.Context) {
 	log.Info("!!! starting !!!", map[string]interface{}{
 		"starting time": time.Now(),
 	})
-
-	switch s.config.APIType {
-	case PR:
-		s.startPR(ctx)
-	case Contributor:
-		s.startContr(ctx)
-	}
 
 	log.Info("!!! ending !!!", map[string]interface{}{
 		"ending time": time.Now(),
 	})
 }
 
-func (s *GitHubAPISource) sendEvent(eventType, org string, data map[string]interface{}) []byte {
+func (s *DouyinSource) sendEvent(eventType string, data map[string]interface{}) []byte {
 	event := ce.NewEvent()
 	event.SetID(uuid.NewString())
 	event.SetTime(time.Now())
 	event.SetType(eventType)
-	event.SetSource(fmt.Sprintf("https://github.com/%s", org))
+	event.SetSource("Douyin")
 	event.SetData(ce.ApplicationJSON, data)
 	s.events <- &cdkgo.Tuple{
 		Event: &event,
