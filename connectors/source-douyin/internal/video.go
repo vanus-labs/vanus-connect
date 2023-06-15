@@ -49,7 +49,7 @@ func (s *DouyinSource) getVideo() {
 	cursor, pageSize := int64(0), int64(30)
 	for hasMore {
 		s.Limiter.Take()
-		info, err := s.openAPI.GetVideo().List(s.config.OpenID, cursor, pageSize)
+		info, err := s.openAPI.GetVideo().List(s.openID, cursor, pageSize)
 		if err != nil {
 			log.Warning("getVideo", map[string]interface{}{
 				"error": err,

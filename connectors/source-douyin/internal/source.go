@@ -36,6 +36,7 @@ type DouyinSource struct {
 	events chan *cdkgo.Tuple
 
 	openAPI *open.API
+	openID  string
 
 	Limiter  ratelimit.Limiter
 	numVideo int
@@ -60,6 +61,11 @@ func (s *DouyinSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 		Cache:        util.NewMemCache(),
 	}
 	s.openAPI = dy.GetOpenAPI(dyCfg)
+	token, err := s.openAPI.GetOauth().GetUserAccessToken(s.config.AuthCode)
+	if err != nil {
+		return err
+	}
+	s.openID = token.OpenID
 
 	s.Limiter = ratelimit.New(s.config.RateHourLimit / 3600)
 

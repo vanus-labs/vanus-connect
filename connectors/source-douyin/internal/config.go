@@ -25,7 +25,7 @@ type DouyinConfig struct {
 
 	RateHourLimit int `json:"rate_hour_limit" yaml:"rate_hour_limit"`
 
-	OpenID       string `json:"open_id" yaml:"open_id" validate:"required"`
+	AuthCode     string `json:"auth_code" yaml:"auth_code" validate:"required"`
 	ClientKey    string `json:"client_key" yaml:"client_key" validate:"required"`
 	ClientSecret string `json:"client_secret" yaml:"client_secret" validate:"required"`
 }
