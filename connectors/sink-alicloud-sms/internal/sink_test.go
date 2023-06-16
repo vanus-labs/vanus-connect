@@ -35,12 +35,12 @@ func TestSMSSink(t *testing.T) {
 	s := NewSink()
 	c := &smsConfig{
 		aliConfig: aliConfig{
-			RegionId:        "",
 			AccessKeyId:     os.Getenv("AccessKeyId"),
 			AccessKeySecret: os.Getenv("AccessKeySecret"),
 			SignName:        "Vanus",
 			TemplateCode:    "SMS_280041016",
-			TemplateParam:   "{\"code\":\"1111\"}",
+			TemplateParam:   "{\"code\":\"919191\"}",
+			Phones:          os.Getenv("Phones"),
 		},
 	}
 	_ = c.Validate()

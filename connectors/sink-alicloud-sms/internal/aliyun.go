@@ -21,7 +21,6 @@ import (
 )
 
 type aliConfig struct {
-	RegionId        string `json:"region_id" yaml:"region_id" validate:"required"`
 	AccessKeyId     string `json:"access_key_id" yaml:"access_key_id" validate:"required"`
 	AccessKeySecret string `json:"access_key_secret" yaml:"access_key_secret" validate:"required"`
 	SignName        string `json:"sign_name" yaml:"sign_name" validate:"required"`
@@ -37,7 +36,7 @@ type aliSMS struct {
 
 func (sms *aliSMS) init(cfg aliConfig) (err error) {
 	sms.cfg = &cfg
-	sms.client, err = dysmsapi.NewClientWithAccessKey(sms.cfg.RegionId, sms.cfg.AccessKeyId, sms.cfg.AccessKeySecret)
+	sms.client, err = dysmsapi.NewClientWithAccessKey("", sms.cfg.AccessKeyId, sms.cfg.AccessKeySecret)
 	if err != nil {
 		return err
 	}
