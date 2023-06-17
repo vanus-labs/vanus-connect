@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
@@ -84,19 +83,16 @@ func (s *smsSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 		var data map[string]interface{}
 		err := json.Unmarshal(e.Data(), &data)
 		if err != nil {
-			fmt.Println("1", err)
 			return cdkgo.NewResult(http.StatusInternalServerError, "event data unmarshal error")
 		}
 
 		phones, ok := data[FieldPhones].(string)
 		if !ok {
-			fmt.Println("2")
 			return cdkgo.NewResult(http.StatusInternalServerError, "event data not contain phones")
 		}
 
 		err = s.sms.sendMsg(phones)
 		if err != nil {
-			fmt.Println("3", err)
 			return cdkgo.NewResult(http.StatusInternalServerError, "failed send sms")
 		}
 	}
