@@ -12,30 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package main
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/sink-alicloud-sms/internal"
 )
 
-var _ cdkgo.SourceConfigAccessor = &DouyinConfig{}
-
-type DouyinConfig struct {
-	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
-
-	RateHourLimit int `json:"rate_hour_limit" yaml:"rate_hour_limit"`
-
-	AuthCode     string `json:"auth_code" yaml:"auth_code" validate:"required"`
-	ClientKey    string `json:"client_key" yaml:"client_key" validate:"required"`
-	ClientSecret string `json:"client_secret" yaml:"client_secret" validate:"required"`
-}
-
-func NewConfig() cdkgo.SourceConfigAccessor {
-	return &DouyinConfig{}
-}
-
-func (c *DouyinConfig) Init() {
-	if c.RateHourLimit == 0 {
-		c.RateHourLimit = 3600
-	}
+func main() {
+	cdkgo.RunSink(internal.NewConfig, internal.NewSink)
 }
