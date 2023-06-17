@@ -9,7 +9,6 @@ cat << EOF > config.yml
 access_key_id:
 access_key_secret:
 sign_name: 
-phones: 
 template_code: 
 template_param: 
 EOF
@@ -21,7 +20,6 @@ EOF
 | access_key_id     | YES      |         | aliyun AccessKey ID     |
 | access_key_secret | YES      |         | aliyun AccessKey Secret |
 | sign_name         | YES      |         | 短信签名名称                  |
-| phones            | YES      |         | 1xxx,1xxxx              |
 | template_code     | YES      |         | 短信模板CODE                |
 | template_param    | Optional |         | 短信模板变量对应的实际值            |
 

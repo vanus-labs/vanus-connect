@@ -26,7 +26,6 @@ type aliConfig struct {
 	SignName        string `json:"sign_name" yaml:"sign_name" validate:"required"`
 	TemplateCode    string `json:"template_code" yaml:"template_code" validate:"required"`
 	TemplateParam   string `json:"template_param" yaml:"template_param" validate:"required"`
-	Phones          string `json:"phones" yaml:"phones" validate:"required"`
 }
 
 type aliSMS struct {
@@ -43,10 +42,10 @@ func (sms *aliSMS) init(cfg aliConfig) (err error) {
 	return nil
 }
 
-func (sms *aliSMS) sendMsg() (err error) {
+func (sms *aliSMS) sendMsg(phones string) (err error) {
 	request := dysmsapi.CreateSendSmsRequest()
 	request.Scheme = "https"
-	request.PhoneNumbers = sms.cfg.Phones
+	request.PhoneNumbers = phones
 	request.SignName = sms.cfg.SignName
 	request.TemplateCode = sms.cfg.TemplateCode
 	request.TemplateParam = sms.cfg.TemplateParam

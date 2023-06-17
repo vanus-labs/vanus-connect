@@ -16,15 +16,16 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 )
 
-var data = "{\"specversion\":\"1.0\",\"id\":\"55545b87-049d-48f2-a88c-1630915d6dd8\",\"source\":\"/debezium/mysql/test\"" +
+var dataFmt = "{\"specversion\":\"1.0\",\"id\":\"55545b87-049d-48f2-a88c-1630915d6dd8\",\"source\":\"/debezium/mysql/test\"" +
 	",\"type\":\"io.debezium.mysql.datachangeevent\",\"datacontenttype\":\"application/json\",\"time\":\"" +
-	"2022-12-28T01:23:43Z\",\"data\":{\"id\":2,\"name\":\"test\",\"a\":2112312321312123,\"c\":12.1111,\"d\":1234},\"iodebeziumrow\":\"0\",\"xvanusstime\":\"2022-12-28T0" +
+	"2022-12-28T01:23:43Z\",\"data\":{\"phones\":\"%s\"},\"iodebeziumrow\":\"0\",\"xvanusstime\":\"2022-12-28T0" +
 	"1:23:43.714Z\",\"iodebeziumpos\":\"1073\",\"iodebeziumsnapshot\":\"false\",\"iodebeziumname\":\"test\",\"iodeb" +
 	"eziumtsms\":\"1672190623000\",\"iodebeziumconnector\":\"mysql\",\"xvanuslogoffset\":\"AAAAAAAAAAQ=\",\"iodebez" +
 	"iumthread\":\"696\",\"iodebeziumversion\":\"2.0.1.Final\",\"iodebeziumfile\":\"mysql-bin-changelog.000392\",\"i" +
@@ -40,11 +41,15 @@ func TestSMSSink(t *testing.T) {
 			SignName:        "Vanus",
 			TemplateCode:    "SMS_280041016",
 			TemplateParam:   "{\"code\":\"919191\"}",
-			Phones:          os.Getenv("Phones"),
 		},
 	}
 	_ = c.Validate()
 	_ = s.Initialize(context.Background(), c)
+
+	phones := os.Getenv("Phones")
+	data := fmt.Sprintf(dataFmt, phones)
+
+	fmt.Println(data)
 
 	var events []*v2.Event
 	e := v2.NewEvent()

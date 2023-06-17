@@ -16,12 +16,18 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
+)
+
+const (
+	FieldPhones = "phones"
 )
 
 // Config
@@ -75,12 +81,23 @@ func (s *smsSink) Destroy() error {
 func (s *smsSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	for idx := range events {
 		e := events[idx]
-		_ = e
-		err := s.sms.sendMsg()
+		var data map[string]interface{}
+		err := json.Unmarshal(e.Data(), &data)
 		if err != nil {
-			log.Warning("sms.sendMsg", map[string]interface{}{
-				"error": err,
-			})
+			fmt.Println("1", err)
+			return cdkgo.NewResult(http.StatusInternalServerError, "event data unmarshal error")
+		}
+
+		phones, ok := data[FieldPhones].(string)
+		if !ok {
+			fmt.Println("2")
+			return cdkgo.NewResult(http.StatusInternalServerError, "event data not contain phones")
+		}
+
+		err = s.sms.sendMsg(phones)
+		if err != nil {
+			fmt.Println("3", err)
+			return cdkgo.NewResult(http.StatusInternalServerError, "failed send sms")
 		}
 	}
 	return cdkgo.SuccessResult
