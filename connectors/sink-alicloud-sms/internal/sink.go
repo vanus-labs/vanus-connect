@@ -16,7 +16,6 @@ package internal
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -80,18 +79,8 @@ func (s *smsSink) Destroy() error {
 func (s *smsSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Result {
 	for idx := range events {
 		e := events[idx]
-		var data map[string]interface{}
-		err := json.Unmarshal(e.Data(), &data)
-		if err != nil {
-			return cdkgo.NewResult(http.StatusInternalServerError, "event data unmarshal error")
-		}
 
-		phones, ok := data[FieldPhones].(string)
-		if !ok {
-			return cdkgo.NewResult(http.StatusInternalServerError, "event data not contain phones")
-		}
-
-		err = s.sms.sendMsg(phones)
+		err := s.sms.sendMsg(e)
 		if err != nil {
 			return cdkgo.NewResult(http.StatusInternalServerError, "failed send sms")
 		}
