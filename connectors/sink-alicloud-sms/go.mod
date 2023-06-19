@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.62.377
 	github.com/cloudevents/sdk-go/v2 v2.13.0
+	github.com/tidwall/gjson v1.14.4
 	github.com/vanus-labs/cdk-go v0.5.0
 )
 
@@ -26,6 +27,8 @@ require (
 	github.com/opentracing/opentracing-go v1.2.1-0.20220228012449-10b1cf09e00b // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.6 // indirect
