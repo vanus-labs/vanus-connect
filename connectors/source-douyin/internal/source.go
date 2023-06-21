@@ -35,8 +35,7 @@ type DouyinSource struct {
 	config *DouyinConfig
 	events chan *cdkgo.Tuple
 
-	openAPI *open.API
-	openID  string
+	douyin *open.API
 
 	Limiter  ratelimit.Limiter
 	numVideo int
@@ -60,12 +59,14 @@ func (s *DouyinSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 		Scopes:       dyScope,
 		Cache:        util.NewMemCache(),
 	}
-	s.openAPI = dy.GetOpenAPI(dyCfg)
-	token, err := s.openAPI.GetOauth().GetUserAccessToken(s.config.AuthCode)
+	s.douyin = dy.GetOpenAPI(dyCfg)
+	err := s.douyin.GetOauth().SetAccessToken(&s.config.DouyinToken)
 	if err != nil {
+		log.Error("Douyin SetAccessToken failed", map[string]interface{}{
+			"error": err,
+		})
 		return err
 	}
-	s.openID = token.OpenID
 
 	s.Limiter = ratelimit.New(s.config.RateHourLimit / 3600)
 

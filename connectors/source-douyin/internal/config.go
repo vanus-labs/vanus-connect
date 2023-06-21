@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"github.com/amorist/douyin/open/credential"
 	cdkgo "github.com/vanus-labs/cdk-go"
 )
 
@@ -25,9 +26,10 @@ type DouyinConfig struct {
 
 	RateHourLimit int `json:"rate_hour_limit" yaml:"rate_hour_limit"`
 
-	AuthCode     string `json:"auth_code" yaml:"auth_code" validate:"required"`
 	ClientKey    string `json:"client_key" yaml:"client_key" validate:"required"`
 	ClientSecret string `json:"client_secret" yaml:"client_secret" validate:"required"`
+
+	DouyinToken credential.AccessToken `json:"douyin_token" bson:"douyin_token"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {

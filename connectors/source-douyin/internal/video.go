@@ -32,7 +32,7 @@ const (
 
 func (s *DouyinSource) syncVideo(ctx context.Context) {
 	s.getVideo()
-	tk := time.NewTicker(12 * time.Hour)
+	tk := time.NewTicker(2 * time.Hour)
 	defer tk.Stop()
 	for {
 		select {
@@ -49,7 +49,7 @@ func (s *DouyinSource) getVideo() {
 	cursor, pageSize := int64(0), int64(30)
 	for hasMore {
 		s.Limiter.Take()
-		info, err := s.openAPI.GetVideo().List(s.openID, cursor, pageSize)
+		info, err := s.douyin.GetVideo().List(s.config.DouyinToken.OpenID, cursor, pageSize)
 		if err != nil {
 			log.Warning("getVideo", map[string]interface{}{
 				"error": err,

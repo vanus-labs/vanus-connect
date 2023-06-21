@@ -15,7 +15,6 @@ func TestDouyin(t *testing.T) {
 		SourceConfig: cdkgo.SourceConfig{
 			Target: "http://localhost:9191",
 		},
-		AuthCode:     os.Getenv("AuthCode"),
 		ClientKey:    os.Getenv("ClientKey"),
 		ClientSecret: os.Getenv("ClientSecret"),
 	}
