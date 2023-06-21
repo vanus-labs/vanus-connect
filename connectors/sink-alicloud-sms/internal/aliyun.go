@@ -82,7 +82,7 @@ func (sms *aliSMS) getPhones(e *v2.Event) string {
 		return sms.cfg.PhoneNumbers
 	}
 
-	keyField, _ := strings.CutPrefix(sms.cfg.PhoneNumbers, UnfixedKeyPrefix)
+	keyField, _ := cutPrefix(sms.cfg.PhoneNumbers, UnfixedKeyPrefix)
 	eStr, _ := e.MarshalJSON()
 	return gjson.Get(string(eStr), keyField).String()
 }
@@ -100,11 +100,18 @@ func (sms *aliSMS) getTemplateParam(e *v2.Event) string {
 		if !strings.HasPrefix(v, UnfixedKeyPrefix) {
 			m[k] = v
 		} else {
-			keyField, _ := strings.CutPrefix(v, UnfixedKeyPrefix)
+			keyField, _ := cutPrefix(v, UnfixedKeyPrefix)
 			m[k] = gjson.Get(string(eStr), keyField).String()
 		}
 	}
 
 	jsonStr, _ := json.Marshal(m)
 	return string(jsonStr)
+}
+
+func cutPrefix(s, prefix string) (after string, found bool) {
+	if !strings.HasPrefix(s, prefix) {
+		return s, false
+	}
+	return s[len(prefix):], true
 }
