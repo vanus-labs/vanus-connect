@@ -39,6 +39,7 @@ func NewGoogleSheetsSource() cdkgo.Source {
 type googleSheetsSource struct {
 	config *googleSheetsConfig
 	events chan *cdkgo.Tuple
+	srv    *sheets.Service
 }
 
 func (s *googleSheetsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -53,7 +54,7 @@ func (s *googleSheetsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAcc
 		log.Fatalf("Unable to parse credentials: %v", err)
 	}
 
-	s.config.srv, err = sheets.NewService(ctx, option.WithCredentials(credentials))
+	s.srv, err = sheets.NewService(ctx, option.WithCredentials(credentials))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
@@ -77,40 +78,34 @@ func (s *googleSheetsSource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *googleSheetsSource) loopProduceEvent() *ce.Event {
-
+func (s *googleSheetsSource) loopProduceEvent() {
 	poolingInterval := 10 * time.Second
-	pool := make(chan struct{})
 
 	for {
-		select {
-		case <-pool:
-			// Perform pooling tasks
-			data, err := fetchNewData(s.config.srv, s.config)
+		// Perform pooling tasks
+		data, err := fetchNewData(s.srv, s.config)
+		if err != nil {
+			log.Printf("Unable to fetch data: %v", err)
+		} else if len(data) > 0 {
+			jsonString, err := json.Marshal(data)
 			if err != nil {
-				log.Printf("Unable to fetch data: %v", err)
-			} else if len(data) > 0 {
-				jsonString, err := json.Marshal(data)
-				if err != nil {
-					log.Printf("Unable to marshal JSON: %v", err)
-				}
-
-				event := s.makeEvent(jsonString)
-				b, _ := json.Marshal(event)
-				success := func() {
-					fmt.Println("send event success: " + string(b))
-				}
-				failed := func(err error) {
-					fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
-				}
-				s.events <- cdkgo.NewTuple(event, success, failed)
-			} else {
-				log.Println("No new data found")
+				log.Printf("Unable to marshal JSON: %v", err)
 			}
-		case <-time.After(poolingInterval):
-			// Perform pooling tasks
 
+			event := s.makeEvent(jsonString)
+			b, _ := json.Marshal(event)
+			success := func() {
+				fmt.Println("send event success: " + string(b))
+			}
+			failed := func(err error) {
+				fmt.Println("send event failed: " + string(b) + ", error: " + err.Error())
+			}
+			s.events <- cdkgo.NewTuple(event, success, failed)
+		} else {
+			log.Println("No new data found")
 		}
+
+		time.Sleep(poolingInterval)
 	}
 }
 

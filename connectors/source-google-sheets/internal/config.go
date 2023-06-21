@@ -16,7 +16,6 @@ package internal
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"google.golang.org/api/sheets/v4"
 )
 
 var _ cdkgo.SourceConfigAccessor = &googleSheetsConfig{}
@@ -31,7 +30,6 @@ type googleSheetsConfig struct {
 	Credentials string `json:"credentials" yaml:"credentials" validate:"required"`
 	SheetID     string `json:"sheet_id" yaml:"sheet_id" validate:"required"`
 	SheetName   string `json:"sheet_name" yaml:"sheet_name" validate:"required"`
-	srv         *sheets.Service
 }
 
 func (c *googleSheetsConfig) Validate() error {
