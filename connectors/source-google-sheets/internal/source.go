@@ -58,6 +58,7 @@ func (s *googleSheetsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAcc
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
 
+	go s.loopProduceEvent()
 	return nil
 }
 
