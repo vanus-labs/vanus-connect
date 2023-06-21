@@ -28,7 +28,7 @@ Config
 | sign_name            | YES      |         | 短信签名名称                                                      |
 | phone_numbers        | YES      |         | 手机号，支持常量(131xxx,186xxx)，或指定field从event中获取(例如：$.data.phones) |
 | template_code        | YES      |         | 短信模板CODE                                                    |
-| template_param       | YES      |         | TemplateKV数组                                                |
+| template_param       | Optional |         | TemplateKV数组，短信模板变量对应的实际值                                   |
 
 TemplateKV
 ---
