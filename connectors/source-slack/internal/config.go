@@ -31,6 +31,8 @@ type slackConfig struct {
 
 	*chat.ChatConfig `json:",inline" yaml:",inline"`
 	EnableChatAi     bool `json:"enable_chatai" yaml:"enable_chatai"`
+
+	EnableVanusAi bool `json:"enable_vanusai" yaml:"enable_vanusai"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {

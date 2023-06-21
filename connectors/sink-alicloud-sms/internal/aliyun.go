@@ -35,7 +35,7 @@ type aliConfig struct {
 	SignName        string       `json:"sign_name" yaml:"sign_name" validate:"required"`
 	PhoneNumbers    string       `json:"phone_numbers" yaml:"phone_numbers" validate:"required"`
 	TemplateCode    string       `json:"template_code" yaml:"template_code" validate:"required"`
-	TemplateParam   []TemplateKV `json:"template_param" yaml:"template_param" validate:"required"`
+	TemplateParam   []TemplateKV `json:"template_param" yaml:"template_param"`
 }
 
 const (
@@ -63,7 +63,9 @@ func (sms *aliSMS) sendMsg(e *v2.Event) (err error) {
 	request.SignName = sms.cfg.SignName
 	request.TemplateCode = sms.cfg.TemplateCode
 	request.PhoneNumbers = sms.getPhones(e)
-	request.TemplateParam = sms.getTemplateParam(e)
+	if param := sms.getTemplateParam(e); param != "" {
+		request.TemplateParam = param
+	}
 
 	resp, err := sms.client.SendSms(request)
 	if err != nil {
@@ -86,6 +88,10 @@ func (sms *aliSMS) getPhones(e *v2.Event) string {
 }
 
 func (sms *aliSMS) getTemplateParam(e *v2.Event) string {
+	if len(sms.cfg.TemplateParam) == 0 {
+		return ""
+	}
+
 	m := make(map[string]string)
 	eStr, _ := e.MarshalJSON()
 

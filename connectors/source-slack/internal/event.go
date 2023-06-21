@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -62,7 +62,7 @@ func (s *slackSource) event(w http.ResponseWriter, req *http.Request) error {
 	if contentType != "application/json" {
 		return errInvalidContentTypeHeader
 	}
-	body, err := ioutil.ReadAll(req.Body)
+	body, err := io.ReadAll(req.Body)
 	if err != nil || len(body) == 0 {
 		return errReadPayload
 	}
