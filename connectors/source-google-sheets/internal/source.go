@@ -46,15 +46,12 @@ func (s *googleSheetsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAcc
 	s.config = cfg.(*googleSheetsConfig)
 
 	// Set up the Sheets API client
-	var err error
-
-	credentials := &google.Credentials{}
-	err = json.Unmarshal([]byte(s.config.Credentials), credentials)
+	creds, err := google.CredentialsFromJSON(ctx, []byte(s.config.Credentials), sheets.SpreadsheetsReadonlyScope)
 	if err != nil {
-		log.Fatalf("Unable to parse credentials: %v", err)
+		log.Fatalf("Failed to create credentials: %v", err)
 	}
 
-	s.srv, err = sheets.NewService(ctx, option.WithCredentials(credentials))
+	s.srv, err = sheets.NewService(ctx, option.WithCredentials(creds))
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
