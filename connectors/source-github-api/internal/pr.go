@@ -56,7 +56,8 @@ func (s *GitHubAPISource) listPullRequests(ctx context.Context, config PRConfig)
 		}
 
 		for _, pr := range prs {
-			s.prInfo(ctx, config, pr)
+			prDetail, _, _ := s.client.PullRequests.Get(ctx, config.Organization, config.Repo, *pr.Number)
+			s.prInfo(ctx, config, prDetail)
 		}
 
 		if resp.NextPage <= listOption.ListOptions.Page {
