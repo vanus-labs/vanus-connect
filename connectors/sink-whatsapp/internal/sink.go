@@ -111,7 +111,10 @@ func (s *whatsappSink) processEvent(ctx context.Context, event *ce.Event) cdkgo.
 }
 
 func (s *whatsappSink) whatsappConnect() error {
-	dbFileName := "store.db"
+	dbFileName := s.config.FileName
+	if dbFileName == "" {
+		dbFileName = "store.db"
+	}
 	if s.config.Data != "" {
 		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
 		if err != nil {

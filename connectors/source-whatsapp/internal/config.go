@@ -25,6 +25,7 @@ var _ cdkgo.SourceConfigAccessor = &whatsAppConfig{}
 
 type whatsAppConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
+	FileName           string `json:"file_name" yaml:"file_name"`
 	Data               string `json:"data" yaml:"data"`
 
 	*chat.ChatConfig `json:",inline" yaml:",inline"`
