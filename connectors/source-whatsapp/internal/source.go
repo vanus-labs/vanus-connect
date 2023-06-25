@@ -55,7 +55,10 @@ type whatsAppSource struct {
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*whatsAppConfig)
-	dbFileName := "store.db"
+	dbFileName := s.config.FileName
+	if dbFileName == "" {
+		dbFileName = "store.db"
+	}
 	if s.config.Data != "" {
 		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
 		if err != nil {

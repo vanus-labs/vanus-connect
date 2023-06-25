@@ -24,6 +24,7 @@ func WhatsAppConfig() cdkgo.SinkConfigAccessor {
 
 type WhatsappConfig struct {
 	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
+	FileName         string `json:"file_name" yaml:"file_name"`
 	Data             string `json:"data" yaml:"data"`
 }
 
