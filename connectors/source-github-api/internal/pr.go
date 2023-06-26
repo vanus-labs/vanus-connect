@@ -56,6 +56,7 @@ func (s *GitHubAPISource) listPullRequests(ctx context.Context, config PRConfig)
 		}
 
 		for _, pr := range prs {
+			s.Limiter.Take()
 			prDetail, _, _ := s.client.PullRequests.Get(ctx, config.Organization, config.Repo, *pr.Number)
 			s.prInfo(ctx, config, prDetail)
 		}
