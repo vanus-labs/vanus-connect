@@ -110,11 +110,18 @@ func (s *whatsappSink) processEvent(ctx context.Context, event *ce.Event) cdkgo.
 	return cdkgo.SuccessResult
 }
 
-func (s *whatsappSink) whatsappConnect() error {
-	dbFileName := s.config.FileName
-	if dbFileName == "" {
-		dbFileName = "store.db"
+func (s *whatsappSink) getDBFileName(cfg *WhatsappConfig) string {
+	if cfg.FileName != "" {
+		return cfg.FileName
 	}
+	if cfg.WhatsappID != "" {
+		return cfg.WhatsappID + ".db"
+	}
+	return "store.db"
+}
+
+func (s *whatsappSink) whatsappConnect() error {
+	dbFileName := s.getDBFileName(s.config)
 	if s.config.Data != "" {
 		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
 		if err != nil {

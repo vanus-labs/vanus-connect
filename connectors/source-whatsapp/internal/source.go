@@ -52,13 +52,20 @@ type whatsAppSource struct {
 	logger      zerolog.Logger
 }
 
+func (s *whatsAppSource) getDBFileName(cfg *whatsAppConfig) string {
+	if cfg.FileName != "" {
+		return cfg.FileName
+	}
+	if cfg.WhatsAppID != "" {
+		return cfg.WhatsAppID + ".db"
+	}
+	return "store.db"
+}
+
 func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*whatsAppConfig)
-	dbFileName := s.config.FileName
-	if dbFileName == "" {
-		dbFileName = "store.db"
-	}
+	dbFileName := s.getDBFileName(s.config)
 	if s.config.Data != "" {
 		dbBytes, err := base64.StdEncoding.DecodeString(s.config.Data)
 		if err != nil {
