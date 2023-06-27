@@ -33,7 +33,7 @@ func (s *WxworkSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 
 	s.workwxApp = workwx.New(s.config.WeworkCorpId).WithApp(s.config.WeworkAgentSecret, s.config.WeworkAgentId)
 
-	s.httpHandler, err = workwx.NewHTTPHandler(s.config.WeworkToken, s.config.WeworkEncodingAESKey, WxworkMessageHandler{})
+	s.httpHandler, err = workwx.NewHTTPHandler(s.config.WeworkToken, s.config.WeworkEncodingAESKey, &WxworkMessageHandler{*s})
 	if err != nil {
 		s.logger.Error().Err(err).Msg("workwx.NewHTTPHandler fail")
 		return err
