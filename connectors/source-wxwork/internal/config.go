@@ -24,5 +24,7 @@ func NewConfig() cdkgo.SourceConfigAccessor {
 }
 
 func (c *Config) Init() {
-
+	if c.VanusAIURL == "" {
+		c.VanusAIURL = "https://app.ai.vanus.ai"
+	}
 }
