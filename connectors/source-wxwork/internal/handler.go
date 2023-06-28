@@ -13,24 +13,20 @@ type WxworkMessageHandler struct {
 var _ workwx.RxMessageHandler = &WxworkMessageHandler{}
 
 func (h *WxworkMessageHandler) OnIncomingMessage(msg *workwx.RxMessage) (err error) {
-	h.s.logger.Info().Str("msg", msg.String()).
-		Msg("OnIncomingMessage")
-
 	if msg.MsgType == workwx.MessageTypeText {
 		message, ok := msg.Text()
 		if ok {
 			content := h.RequestVanusAI(message.GetContent(), msg.FromUserID)
-			h.s.logger.Info().Str("message", content).
-				Str("content", content).
+			h.s.logger.Info().Str("message", message.GetContent()).
 				Msg("RequestVanusAI")
 			h.s.sendEvent(content)
-			err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, "content", false)
+			err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, content, true)
 			if err != nil {
 				h.s.logger.Error().Err(err).Msg("Fail SendTextMessage")
 			}
 		}
 	} else {
-		err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, "VanusAI目前仅支持文本消息", false)
+		err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, "VanusAI目前仅支持文本消息", true)
 		if err != nil {
 			h.s.logger.Error().Err(err).Msg("Fail SendTextMessage")
 		}
