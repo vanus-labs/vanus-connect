@@ -16,14 +16,18 @@ func (h *WxworkMessageHandler) OnIncomingMessage(msg *workwx.RxMessage) (err err
 	if msg.MsgType == workwx.MessageTypeText {
 		message, ok := msg.Text()
 		if ok {
-			content := h.RequestVanusAI(message.GetContent(), msg.FromUserID)
-			h.s.logger.Info().Str("message", message.GetContent()).
+			prompt := message.GetContent()
+			content := h.RequestVanusAI(prompt, msg.FromUserID)
+			h.s.logger.Info().Str("prompt", prompt).
 				Msg("RequestVanusAI")
-			h.s.sendEvent(content)
-			err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, content, true)
-			if err != nil {
-				h.s.logger.Error().Err(err).Msg("Fail SendTextMessage")
-			}
+			data := make(map[string]interface{})
+			data["content"] = content
+			data["fromUserID"] = msg.FromUserID
+			h.s.sendEvent(data)
+			//err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, content, true)
+			//if err != nil {
+			//	h.s.logger.Error().Err(err).Msg("Fail SendTextMessage")
+			//}
 		}
 	} else {
 		err = h.s.workwxApp.SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, "VanusAI目前仅支持文本消息", true)
@@ -55,6 +59,7 @@ func (h *WxworkMessageHandler) RequestVanusAI(prompt, uid string) string {
 
 	if err != nil {
 		h.s.logger.Error().Err(err).Msg("failed request vanus-ai")
+		rsp = "VanusAI没查到答案，请稍后再试"
 	}
 	return rsp
 }
