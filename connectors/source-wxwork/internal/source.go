@@ -2,11 +2,14 @@ package internal
 
 import (
 	"context"
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 	"github.com/xen0n/go-workwx"
 	"net/http"
+	"time"
 )
 
 var _ cdkgo.HTTPSource = &WxworkSource{}
@@ -33,13 +36,12 @@ func (s *WxworkSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 
 	s.workwxApp = workwx.New(s.config.WeworkCorpId).WithApp(s.config.WeworkAgentSecret, s.config.WeworkAgentId)
 
-	s.httpHandler, err = workwx.NewHTTPHandler(s.config.WeworkToken, s.config.WeworkEncodingAESKey, &WxworkMessageHandler{*s})
+	s.httpHandler, err = workwx.NewHTTPHandler(s.config.WeworkToken, s.config.WeworkEncodingAESKey, &WxworkMessageHandler{s})
 	if err != nil {
 		s.logger.Error().Err(err).Msg("workwx.NewHTTPHandler fail")
 		return err
 	}
 
-	println("Initialize success")
 	return nil
 }
 
@@ -57,4 +59,20 @@ func (s *WxworkSource) Chan() <-chan *cdkgo.Tuple {
 
 func (s *WxworkSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s.httpHandler.ServeHTTP(w, req)
+}
+
+func (s *WxworkSource) sendEvent(content string) []byte {
+	data := make(map[string]interface{})
+	data["content"] = content
+
+	event := ce.NewEvent()
+	event.SetID(uuid.NewString())
+	event.SetTime(time.Now())
+	event.SetType("Conversion")
+	event.SetSource(s.Name())
+	event.SetData(ce.ApplicationJSON, data)
+	s.events <- &cdkgo.Tuple{
+		Event: &event,
+	}
+	return event.Data()
 }
