@@ -9,7 +9,13 @@ WORKDIR /build/vanus-connect/connectors/${connector}
 RUN go mod tidy
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connect/bin/${connector} ./cmd/main.go
 
-FROM centos:8.4.2105
+#FROM centos:8.4.2105
+FROM ubuntu:22.10
+# install ca-certificates
+RUN apt update -y
+RUN apt upgrade -y
+RUN apt install -y ca-certificates
+RUN update-ca-certificates
 
 ARG connector
 
