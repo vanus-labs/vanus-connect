@@ -66,7 +66,7 @@ func (s *WxworkSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *WxworkSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	s.logger.Debug().Msg("Request IN")
+	s.logger.Info().Any("req", *req).Msg("Request IN")
 	s.httpHandler.ServeHTTP(w, req)
 }
 
