@@ -35,6 +35,14 @@ func (s *WxworkSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor)
 	s.config.Init()
 
 	s.workwxApp = workwx.New(s.config.WeworkCorpId).WithApp(s.config.WeworkAgentSecret, s.config.WeworkAgentId)
+	s.workwxApp.SpawnAccessTokenRefresherWithContext(ctx)
+
+	depts, err := s.workwxApp.ListAllDepts()
+	if err != nil {
+		s.logger.Error().Err(err).Msg("ListAllDepts fail")
+		return err
+	}
+	s.logger.Info().Any("depts", depts).Msg("ListAllDepts")
 
 	s.httpHandler, err = workwx.NewHTTPHandler(s.config.WeworkToken, s.config.WeworkEncodingAESKey, &WxworkMessageHandler{s})
 	if err != nil {
@@ -58,7 +66,7 @@ func (s *WxworkSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *WxworkSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	println("Request IN")
+	s.logger.Debug().Msg("Request IN")
 	s.httpHandler.ServeHTTP(w, req)
 }
 
