@@ -62,10 +62,7 @@ func (s *WxworkSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	s.httpHandler.ServeHTTP(w, req)
 }
 
-func (s *WxworkSource) sendEvent(content string) []byte {
-	data := make(map[string]interface{})
-	data["content"] = content
-
+func (s *WxworkSource) sendEvent(data map[string]interface{}) []byte {
 	event := ce.NewEvent()
 	event.SetID(uuid.NewString())
 	event.SetTime(time.Now())
