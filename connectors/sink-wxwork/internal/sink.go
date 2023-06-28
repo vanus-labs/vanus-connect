@@ -17,8 +17,7 @@ type WxworkSink struct {
 	cfg    *Config
 	logger zerolog.Logger
 
-	workwxApp   *workwx.WorkwxApp
-	httpHandler *workwx.HTTPHandler
+	workwxApp *workwx.WorkwxApp
 }
 
 func NewSink() cdkgo.Sink {
