@@ -59,7 +59,11 @@ func (s *WxworkSource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *WxworkSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	s.logger.Info().Any("req", *req).Msg("Request IN")
+	s.logger.Info().
+		Str("req.RequestURI", req.RequestURI).
+		Str("req.RemoteAddr", req.RemoteAddr).
+		Str("req.Host", req.Host).
+		Msg("Request IN")
 	s.httpHandler.ServeHTTP(w, req)
 }
 
