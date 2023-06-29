@@ -6,13 +6,12 @@
 
 ```shell
 cat << EOF > config.yml
-client_key:
-client_secret:
+
 EOF
 ```
 
 
-| Name           | Required        | Default | Description |
-|:---------------|:----------------|:--------|:------------|
-| client_key     | YES             |         |             |
-| client_secret  | YES             |         |             |
+| Name | Required | Default | Description |
+|:-----|:---------|:--------|:------------|
+|      |          |         |             |
+
