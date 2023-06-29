@@ -14,8 +14,8 @@ EOF
 
 Config
 ---
-| Name                    | Required | Default                              | Description           |
-|:------------------------|:---------|:-------------------------------------|:----------------------|
-| wework_corp_id          | YES      |                                      | 企业微信 企业ID             |
-| wework_agent_id         | YES      |                                      | 企业微信 AgentId          |
-| wework_agent_secret     | YES      |                                      | 企业微信 AgentSecret      |
+| Name                    | Required | Type   | Default | Description      |
+|:------------------------|:---------|:-------|:--------|:-----------------|
+| wework_corp_id          | YES      | String |         | 企业微信 企业ID        |
+| wework_agent_id         | YES      | Int    |         | 企业微信 AgentId     |
+| wework_agent_secret     | YES      | String |         | 企业微信 AgentSecret |
