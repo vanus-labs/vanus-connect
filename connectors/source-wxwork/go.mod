@@ -6,6 +6,7 @@ require (
 	github.com/carlmjohnson/requests v0.23.4
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/google/uuid v1.3.0
+	github.com/jellydator/ttlcache/v3 v3.0.1
 	github.com/rs/zerolog v1.29.1
 	github.com/vanus-labs/cdk-go v0.7.3
 	github.com/xen0n/go-workwx v1.5.0
@@ -51,6 +52,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220314234659-1baeb1ce4c0b // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
