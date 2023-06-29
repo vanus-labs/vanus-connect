@@ -16,13 +16,16 @@ func (h *WxworkMessageHandler) asyncHandler(msg *workwx.RxMessage) {
 	message, ok := msg.Text()
 	if ok {
 		prompt := message.GetContent()
-		content := h.RequestVanusAI(prompt, msg.FromUserID)
 		h.s.logger.Info().Str("prompt", prompt).
 			Msg("RequestVanusAI")
-		data := make(map[string]interface{})
-		data["content"] = content
-		data["fromUserID"] = msg.FromUserID
-		h.s.sendEvent(data)
+
+		content, err := h.RequestVanusAI(prompt, msg.FromUserID)
+		if err == nil {
+			data := make(map[string]interface{})
+			data["content"] = content
+			data["fromUserID"] = msg.FromUserID
+			h.s.sendEvent(data)
+		}
 	} else {
 		err := h.s.workwxApp.
 			SendTextMessage(&workwx.Recipient{UserIDs: []string{msg.FromUserID}}, "输入文本错误，请重试", false)
@@ -51,7 +54,7 @@ type aiReq struct {
 	Stream bool   `json:"stream"`
 }
 
-func (h *WxworkMessageHandler) RequestVanusAI(prompt, uid string) string {
+func (h *WxworkMessageHandler) RequestVanusAI(prompt, uid string) (string, error) {
 	req := aiReq{prompt, false}
 	url := h.s.config.VanusAIURL + "/api/v1/" + h.s.config.VanusAIAppId
 	var rsp string
@@ -67,6 +70,8 @@ func (h *WxworkMessageHandler) RequestVanusAI(prompt, uid string) string {
 	if err != nil {
 		h.s.logger.Error().Err(err).Msg("failed request vanus-ai")
 		rsp = "VanusAI没查到答案，请稍后再试"
+		h.s.workwxApp.
+			SendTextMessage(&workwx.Recipient{UserIDs: []string{uid}}, rsp, false)
 	}
-	return rsp
+	return rsp, err
 }
