@@ -9,7 +9,7 @@ var _ cdkgo.SourceConfigAccessor = &Config{}
 type Config struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	VanusAIURL   string `json:"vanus_ai_url" yaml:"vanus_ai_url"`
+	VanusAIURL   string `json:"vanus_ai_url" yaml:"vanus_ai_url" validate:"required"`
 	VanusAIAppId string `json:"vanus_ai_app_id" yaml:"vanus_ai_app_id" validate:"required"`
 
 	WeworkCorpId         string `json:"wework_corp_id" yaml:"wework_corp_id" validate:"required"`
@@ -24,7 +24,5 @@ func NewConfig() cdkgo.SourceConfigAccessor {
 }
 
 func (c *Config) Init() {
-	if c.VanusAIURL == "" {
-		c.VanusAIURL = "https://app.ai.vanus.ai"
-	}
+
 }
