@@ -17,11 +17,11 @@ EOF
 
 Config
 ---
-| Name                    | Required | Default                              | Description           |
-|:------------------------|:---------|:-------------------------------------|:----------------------|
-| vanus_ai_app_id         | YES      |                                      | vanus-ai 应用ID         |
-| wework_corp_id          | YES      |                                      | 企业微信 企业ID             |
-| wework_agent_id         | YES      |                                      | 企业微信 AgentId          |
-| wework_agent_secret     | YES      |                                      | 企业微信 AgentSecret      |
-| wework_token            | YES      |                                      | 企业微信 Token            |
-| wework_encoding_aes_key | YES      |                                      | 企业微信 EncodingAESKey   |
+| Name                    | Required | Type   | Description            |
+|:------------------------|:---------|:-------|:-----------------------|
+| vanus_ai_app_id         | YES      | String | vanus-ai 应用ID          |
+| wework_corp_id          | YES      | String | 企业微信 企业ID              |
+| wework_agent_id         | YES      | Int    | 企业微信 AgentId           |
+| wework_agent_secret     | YES      | String | 企业微信 AgentSecret       |
+| wework_token            | YES      | String | 企业微信 Token             |
+| wework_encoding_aes_key | YES      | String | 企业微信 EncodingAESKey    |
