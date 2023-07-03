@@ -50,17 +50,23 @@ gpt
 ernie_bot
   access_key: xxxxxx
   secret_key: xxxxxx
+vanus_ai
+  url: xxxxxx
+  app_id: xxxxxx
 EOF
 ```
 
-| Name                  | Required | Default | Description                                  |
-|:----------------------|:--------:|:--------|:---------------------------------------------|
-| target                |   YES    |         | the target URL to send CloudEvents           |
-| port                  |    NO    | 8080    | the port to receive HTTP request             |
-| gpt.token             |   YES    |         | the ChatGPT auth token                       |
-| ernie_bot.access_key  |   YES    |         | the baidu ai [accessKey][ernie_bot]          |
-| ernie_bot.secret_key  |   YES    |         | the baidu ai [secretKey][ernie_bot]          |
-| everyday_limit        |    NO    | 100     | the ChatAI Source call ai api count everyday |
+| Name                 | Required | Default    | Description                                  |
+|:---------------------|:--------:|:-----------|:---------------------------------------------|
+| target               |   YES    |            | the target URL to send CloudEvents           |
+| port                 |    NO    | 8080       | the port to receive HTTP request             |
+| gpt.token            |   YES    |            | the ChatGPT auth token                       |
+| ernie_bot.access_key |   YES    |            | the baidu ai [accessKey][ernie_bot]          |
+| ernie_bot.secret_key |   YES    |            | the baidu ai [secretKey][ernie_bot]          |
+| vanus_ai.url         |   YES    |            | vanus-ai url                                 |
+| vanus_ai.app_id      |   YES    |            | vanus-ai application id                      |
+| everyday_limit       |    NO    | 100        | the ChatAI Source call ai api count everyday |
+| default_chat_mode    |    NO    | chatgpt    | chatgpt, wenxin, vanusai                     |
 
 The ChatAI Source tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
