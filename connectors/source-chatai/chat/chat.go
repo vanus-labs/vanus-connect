@@ -17,6 +17,7 @@ package chat
 import (
 	"context"
 	"fmt"
+	"github.com/vanus-labs/connector/source/chatai/chat/vanus_ai"
 	"sync"
 	"time"
 
@@ -47,11 +48,13 @@ type Type string
 const (
 	ChatGPT      Type = "chatgpt"
 	ChatErnieBot Type = "wenxin"
+	ChatVanusAI  Type = "vanusai"
 )
 
 type ChatService struct {
 	chatGpt      ChatClient
 	ernieBot     ChatClient
+	vanusAI      ChatClient
 	config       ChatConfig
 	lock         sync.RWMutex
 	day          int
@@ -70,6 +73,7 @@ func NewChatService(config ChatConfig, logger zerolog.Logger) *ChatService {
 		userNum:      map[string]int{},
 		chatGpt:      gpt.NewChatGPTService(config.GPT, config.MaxTokens, config.EnableContext),
 		ernieBot:     ernie_bot.NewErnieBotService(config.ErnieBot, config.MaxTokens, config.EnableContext),
+		vanusAI:      vanus_ai.NewVanusAIService(config.VanusAI),
 		day:          today(),
 		limitContent: fmt.Sprintf("You've reached the daily limit (%d/day). Your quota will be restored tomorrow.", config.EverydayLimit),
 	}
@@ -142,6 +146,7 @@ func (s *ChatService) reset() {
 	s.userNum = map[string]int{}
 	s.chatGpt.Reset()
 	s.ernieBot.Reset()
+	s.vanusAI.Reset()
 }
 
 func (s *ChatService) ChatCompletion(ctx context.Context, chatType Type, userIdentifier, content string) (resp string, err error) {
@@ -158,6 +163,8 @@ func (s *ChatService) ChatCompletion(ctx context.Context, chatType Type, userIde
 		resp, err = s.ernieBot.SendChatCompletion(ctx, userIdentifier, content)
 	case ChatGPT:
 		resp, err = s.chatGpt.SendChatCompletion(ctx, userIdentifier, content)
+	case ChatVanusAI:
+		resp, err = s.vanusAI.SendChatCompletion(ctx, userIdentifier, content)
 	}
 	if err != nil {
 		return responseErr, err
@@ -183,6 +190,8 @@ func (s *ChatService) ChatCompletionStream(ctx context.Context, chatType Type, u
 		stream, err = s.ernieBot.SendChatCompletionStream(ctx, userIdentifier, content)
 	case ChatGPT:
 		stream, err = s.chatGpt.SendChatCompletionStream(ctx, userIdentifier, content)
+	case ChatVanusAI:
+		stream, err = s.vanusAI.SendChatCompletionStream(ctx, userIdentifier, content)
 	}
 	if err != nil {
 		return nil, err

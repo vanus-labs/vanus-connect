@@ -148,7 +148,7 @@ func (s *chatSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if chatMode != "" {
 		chatType = chat.Type(chatMode)
 		switch chatType {
-		case chat.ChatGPT, chat.ChatErnieBot:
+		case chat.ChatGPT, chat.ChatErnieBot, chat.ChatVanusAI:
 		default:
 			s.writeError(w, http.StatusBadRequest, errors.New("chat_mode invalid"))
 			return

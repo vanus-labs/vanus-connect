@@ -16,6 +16,7 @@ package chat
 
 import (
 	"fmt"
+	"github.com/vanus-labs/connector/source/chatai/chat/vanus_ai"
 
 	"github.com/vanus-labs/connector/source/chatai/chat/ernie_bot"
 	"github.com/vanus-labs/connector/source/chatai/chat/gpt"
@@ -24,6 +25,7 @@ import (
 type ChatConfig struct {
 	GPT             gpt.Config       `json:"gpt" yaml:"gpt"`
 	ErnieBot        ernie_bot.Config `json:"ernie_bot" yaml:"ernie_bot"`
+	VanusAI         vanus_ai.Config  `json:"vanus_ai" yaml:"vanus_ai"`
 	EverydayLimit   int              `json:"everyday_limit" yaml:"everyday_limit"`
 	MaxTokens       int              `json:"max_tokens" yaml:"max_tokens"`
 	EnableContext   bool             `json:"enable_context" yaml:"enable_context"`
@@ -46,7 +48,7 @@ func (c *ChatConfig) init() {
 func (c *ChatConfig) Validate() error {
 	if c.DefaultChatMode != "" {
 		switch c.DefaultChatMode {
-		case ChatGPT, ChatErnieBot:
+		case ChatGPT, ChatErnieBot, ChatVanusAI:
 		default:
 			return fmt.Errorf("chat mode is invalid")
 		}

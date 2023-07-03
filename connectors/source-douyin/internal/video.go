@@ -26,8 +26,8 @@ import (
 )
 
 const (
-	EventSource = "douyin"
-	EventType   = "video"
+	EventSource    = "douyin"
+	EventTypeVideo = "video"
 )
 
 func (s *DouyinSource) syncVideo(ctx context.Context) {
@@ -62,7 +62,7 @@ func (s *DouyinSource) getVideo() {
 
 			event := ce.NewEvent()
 			event.SetSource(EventSource)
-			event.SetType(EventType)
+			event.SetType(EventTypeVideo)
 			event.SetTime(time.Now())
 			event.SetID(uuid.New().String())
 			_ = event.SetData(ce.ApplicationJSON, video)

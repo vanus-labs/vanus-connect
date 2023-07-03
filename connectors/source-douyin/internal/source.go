@@ -92,4 +92,5 @@ func (s *DouyinSource) start(ctx context.Context) {
 	})
 
 	go s.syncVideo(ctx)
+	go s.syncUser(ctx)
 }

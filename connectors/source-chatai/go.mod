@@ -12,6 +12,7 @@ require (
 	github.com/sashabaranov/go-openai v1.9.0
 	github.com/vanus-labs/cdk-go v0.7.2
 	golang.org/x/oauth2 v0.7.0
+	github.com/carlmjohnson/requests v0.23.4
 )
 
 require (
