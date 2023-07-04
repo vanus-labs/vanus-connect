@@ -44,6 +44,10 @@ class HttpSmartLabelMaker:
                 body = resp.json()
                 if body.get("status") == "normal":
                     self._target_expr.update_or_create(msg, body["labels"])
+
+                    if "new_label_names" in body:
+                        msg["new_label_names"] = body["new_label_names"]
+
                     break
 
             labels = self._label_maker.label(match.value)
