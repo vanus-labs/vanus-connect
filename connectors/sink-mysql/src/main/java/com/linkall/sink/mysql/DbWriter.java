@@ -69,11 +69,13 @@ public class DbWriter {
     public synchronized void add(String tableName, String splitColumnName, JsonObject data) throws SQLException {
         TableWriter tableWriter = tableWriters.get(tableName);
         if (tableWriter==null) {
+            LOGGER.info("new table {}", tableName);
             TableMetadata metadata = new TableMetadata(tableName, data.fieldNames());
             tableWriter = new TableWriter(dialect, insertMode, commitSize, connectionProvider.getConnection(), metadata);
             tableWriter.init();
             tableWriters.put(tableName, tableWriter);
         } else if (tableWriter.getTableMetadata().columnChange(data.fieldNames())) {
+            LOGGER.info("table {} column change", tableName);
             tableWriter.updateTableMetadata(new TableMetadata(tableName, data.fieldNames()));
         }
         if (splitColumnName==null) {
@@ -89,7 +91,7 @@ public class DbWriter {
                 tableWriter.addToBatch(obj);
             }
         } catch (ClassCastException e) {
-            LOGGER.warn("splitColumn {} is not array", splitColumnName, e);
+            LOGGER.warn("table {} splitColumn {} is not array", tableName, splitColumnName, e);
         }
     }
 
