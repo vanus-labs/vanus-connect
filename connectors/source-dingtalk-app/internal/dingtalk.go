@@ -73,7 +73,7 @@ func (d *Dingtalk) requestVanusAI(ctx context.Context, userIdentifier, prompt st
 		Fetch(ctx)
 
 	if err != nil {
-		rsp = "VanusAI没查到答案，请稍后再试"
+		rsp = "VanusAI异常，请稍后再试"
 	}
 	return
 }
