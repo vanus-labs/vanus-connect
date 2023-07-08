@@ -15,13 +15,16 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"github.com/rs/zerolog"
 	"strings"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi"
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/tidwall/gjson"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 type TemplateKV struct {
@@ -45,10 +48,12 @@ const (
 type aliSMS struct {
 	cfg    *aliConfig
 	client *dysmsapi.Client
+	logger zerolog.Logger
 }
 
-func (sms *aliSMS) init(cfg aliConfig) (err error) {
+func (sms *aliSMS) init(ctx context.Context, cfg aliConfig) (err error) {
 	sms.cfg = &cfg
+	sms.logger = log.FromContext(ctx)
 	sms.client, err = dysmsapi.NewClientWithAccessKey("", sms.cfg.AccessKeyId, sms.cfg.AccessKeySecret)
 	if err != nil {
 		return err
@@ -66,6 +71,11 @@ func (sms *aliSMS) sendMsg(e *v2.Event) (err error) {
 	if param := sms.getTemplateParam(e); param != "" {
 		request.TemplateParam = param
 	}
+
+	sms.logger.Info().
+		Str("PhoneNumbers", request.PhoneNumbers).
+		Str("TemplateParam", request.TemplateParam).
+		Msg("sendMsg")
 
 	resp, err := sms.client.SendSms(request)
 	if err != nil {
