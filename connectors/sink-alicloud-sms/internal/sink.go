@@ -65,7 +65,7 @@ func (s *smsSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) erro
 	}
 
 	s.cfg = _cfg
-	return s.sms.init(_cfg.aliConfig)
+	return s.sms.init(ctx, _cfg.aliConfig)
 }
 
 func (s *smsSink) Name() string {
