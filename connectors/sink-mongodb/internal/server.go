@@ -15,34 +15,27 @@
 package internal
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
-
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/config"
 	"github.com/vanus-labs/cdk-go/connector"
 	"github.com/vanus-labs/cdk-go/log"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.uber.org/ratelimit"
 )
 
 const (
-	mongoSinkDatabase   = "xvdatabasedb"
-	mongoSinkCollection = "xvdatabasecoll"
+	mongoCollection = "xvdcoll"
 
 	name = "Sink MongoDB"
 
@@ -52,23 +45,13 @@ const (
 var _ cdkgo.SinkConfigAccessor = &Config{}
 
 type Config struct {
-	cdkgo.SinkConfig      `json:",inline" yaml:",inline"`
-	ConnectionURI         string         `json:"connection_uri" yaml:"connection_uri"`
-	Credential            Credential     `json:"credential" yaml:"credential"`
-	ConvertConfig         *ConvertConfig `json:"convert" yaml:"convert"`
-	IgnoreDuplicatedError bool           `json:"ignore_duplicated_error" yaml:"ignore_duplicated_error"`
-	Parallelism           int            `json:"parallelism" yaml:"parallelism"`
-	InsertWriteConcern    string         `json:"insert_write_concern" yaml:"insert_write_concern"`
-	RateLimit             int            `json:"rate_limit" yaml:"rate_limit"`
-	DebugSkip             bool           `json:"debug_skip" yaml:"debug_skip"`
-	BulkSize              int            `json:"bulk_size" yaml:"bulk_size"`
-	Upsert                bool           `json:"upsert" yaml:"upsert"`
-	ackDisable            bool
-	writeCon              writeconcern.Option
-}
-
-func (c *Config) GetWriteConcern() writeconcern.Option {
-	return c.writeCon
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
+	ConnectionURI    string     `json:"connection_uri" yaml:"connection_uri" validate:"required"`
+	Database         string     `json:"database" yaml:"database" validate:"required"`
+	Collection       string     `json:"collection" yaml:"collection" validate:"required"`
+	Credential       Credential `json:"credential" yaml:"credential"`
+	BulkSize         int        `json:"bulk_size" yaml:"bulk_size"`
+	FlushInterval    int        `json:"flush_interval" yaml:"flush_interval"`
 }
 
 type Credential struct {
@@ -84,64 +67,12 @@ func (c *Config) GetSecret() cdkgo.SecretAccessor {
 }
 
 func (c *Config) Validate() error {
-	if c.ConvertConfig != nil {
-		err := c.ConvertConfig.Validate()
-		if err != nil {
-			return err
-		}
-	}
-	if c.Parallelism == 0 {
-		c.Parallelism = 1
-	}
-
-	if c.Parallelism > 32 {
-		c.Parallelism = 32
-		log.Info("the parallelism is exceeded than the maximum value of 32, set it to 32", nil)
-	}
-
-	var opt = writeconcern.WMajority()
-	if c.InsertWriteConcern != "" {
-		w := strings.Split(c.InsertWriteConcern, ":")
-		if len(w) == 2 && w[0] == "w" {
-			i, err := strconv.ParseInt(w[1], 10, 64)
-			if err != nil || i > 3 {
-				log.Info("invalid insert_write_concern, use majority", map[string]interface{}{
-					"config":     c.InsertWriteConcern,
-					"ref":        "https://www.mongodb.com/docs/manual/reference/write-concern/",
-					log.KeyError: err,
-				})
-			}
-			if i == 0 {
-				log.Warning("insert unacknowledged is enable, watch carefully your mongodb instance ", nil)
-				c.ackDisable = true
-			}
-			opt = writeconcern.W(int(i))
-		}
-	} else {
-		log.Info("use default writeConcern: majority", nil)
-	}
-	c.writeCon = opt
-
-	if c.RateLimit == 0 {
-		if c.ackDisable {
-			c.RateLimit = 5000
-		} else {
-			c.RateLimit = 1 << 20
-		}
-	}
-
-	log.Info("config", map[string]interface{}{
-		"rate_limit": c.RateLimit,
-	})
-
 	if c.BulkSize == 0 {
-		c.BulkSize = 4
+		c.BulkSize = 100
 	}
-
-	log.Info("config", map[string]interface{}{
-		"bulk_size": c.BulkSize,
-	})
-
+	if c.FlushInterval == 0 {
+		c.FlushInterval = 2000
+	}
 	return c.SinkConfig.Validate()
 }
 
@@ -168,33 +99,29 @@ func NewConfig() cdkgo.SinkConfigAccessor {
 var _ cdkgo.Sink = &mongoSink{}
 
 type mongoSink struct {
-	cfg           *Config
-	dbClient      *mongo.Client
-	logger        log.Logger
-	convertStruct *convertStruct
-	db            map[string]map[string]*mongo.Collection
-	mutex         sync.RWMutex
-	rateLimit     ratelimit.Limiter
+	cfg      *Config
+	writer   map[string]*InsertWriter
+	dbClient *mongo.Client
+	logger   zerolog.Logger
+	lock     sync.Mutex
+	stop     chan bool
 }
 
 func NewMongoSink() cdkgo.Sink {
 	return &mongoSink{
-		db: map[string]map[string]*mongo.Collection{},
+		writer: map[string]*InsertWriter{},
+		stop:   make(chan bool),
 	}
 }
 
 func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) error {
-	c, ok := cfg.(*Config)
-	if !ok {
-		return errors.New("unexpected config type")
-	}
-
+	c, _ := cfg.(*Config)
+	s.logger = log.FromContext(ctx)
 	s.cfg = c
 	clientOptions := options.Client().ApplyURI(s.cfg.ConnectionURI)
 	if s.cfg.Credential.IsSet() {
 		clientOptions.Auth = s.cfg.Credential.GetMongoDBCredential()
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	mongoClient, err := mongo.Connect(ctx, clientOptions)
@@ -204,19 +131,43 @@ func (s *mongoSink) Initialize(ctx context.Context, cfg config.ConfigAccessor) e
 	if err = mongoClient.Ping(ctx, readpref.Primary()); err != nil {
 		return fmt.Errorf("failed to connect mongodb: %s", err.Error())
 	} else {
-		log.Info("mongodb is connected", nil)
+		s.logger.Info().Msg("mongodb is connected")
 	}
 	s.dbClient = mongoClient
-	if s.cfg.ConvertConfig != nil {
-		s.convertStruct = newConvert(s.cfg.ConvertConfig)
-	}
-	s.rateLimit = ratelimit.New(s.cfg.RateLimit)
-
+	go s.start()
 	return nil
 }
 
+func (s *mongoSink) start() {
+	ticker := time.NewTicker(time.Duration(s.cfg.FlushInterval) * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-s.stop:
+			s.logger.Info().Msg("flush task stop")
+			return
+		case <-ticker.C:
+			s.flush()
+		}
+	}
+}
+
+func (s *mongoSink) flush() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	for collName, writer := range s.writer {
+		err := writer.Flush()
+		if err != nil {
+			s.logger.Warn().Str("collection", collName).Msg("flush error")
+		}
+	}
+}
+
 func (s *mongoSink) Destroy() error {
-	log.Info("mongodb connection is closing", nil)
+	s.logger.Info().Msg("destroy mongodb sink")
+	s.stop <- true
+	s.flush()
+	s.logger.Info().Msg("destroy mongodb sink flush complete")
 	return s.dbClient.Disconnect(context.Background())
 }
 
@@ -224,226 +175,39 @@ func (s *mongoSink) Name() string {
 	return name
 }
 
-type Command struct {
-	Inserts []interface{} `json:"inserts"`
-	Updates []Update      `json:"updates"`
-	Deletes []Delete      `json:"deletes"`
-}
-
-type Update struct {
-	Filter     map[string]interface{} `json:"filter"`
-	Update     map[string]interface{} `json:"update"`
-	UpdateMany bool                   `json:"update_many"`
-}
-
-type Delete struct {
-	Filter     bson.M `json:"filter"`
-	DeleteMany bool   `json:"delete_many"`
-}
-
 func (s *mongoSink) Arrived(ctx context.Context, events ...*ce.Event) connector.Result {
-	if s.cfg.DebugSkip {
-		return cdkgo.SuccessResult
-	}
-	var dbName string
-	var collName string
-	wms := make([]mongo.WriteModel, 0)
-	start := time.Now()
-	var inserts []interface{}
 	for idx := range events {
-		s.rateLimit.Take()
 		e := events[idx]
-
-		v, exist := e.Extensions()[debeziumConnector]
-		if exist {
-			switch v {
-			case "mysql":
-				_e, err := s.convertEvents(e)
-				if err != nil {
-					return cdkgo.NewResult(http.StatusBadRequest, err.Error())
-				}
-				e = _e[0]
-			}
-		}
-
-		if dbName == "" {
-			_db, err := getAttr(e, mongoSinkDatabase)
-			if err != nil {
-				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
-			}
-			dbName = _db
-		}
-
-		if collName == "" {
-			_coll, err := getAttr(e, mongoSinkCollection)
-			if err != nil {
-				return cdkgo.NewResult(http.StatusBadRequest, err.Error())
-			}
-			collName = _coll
-		}
-
-		c := Command{}
-		d := json.NewDecoder(bytes.NewReader(e.Data()))
-		d.UseNumber()
-
-		if err := d.Decode(&c); err != nil {
+		coll, err := getAttr(e, mongoCollection, s.cfg.Collection)
+		if err != nil {
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
-
-		c.Inserts = recursive(c.Inserts).([]interface{})
-		inserts = append(inserts, c.Inserts...)
-
-		c.Updates = recursive(c.Updates).([]Update)
-		c.Deletes = recursive(c.Deletes).([]Delete)
-		wm := getUpdateOrDeleteModels(&c, s.cfg.Upsert)
-		if len(wm) > 0 {
-			wms = append(wms, wm...)
+		collName := coll
+		var data interface{}
+		if err := json.Unmarshal(e.Data(), &data); err != nil {
+			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
+		writer := s.getWriter(collName)
+		writer.Write(data)
 	}
-
-	cur := time.Now()
-	if cur.Sub(start) > 10*time.Millisecond {
-		log.Info("preparing data takes too long", map[string]interface{}{
-			"numbers": len(inserts),
-			"used":    cur.Sub(start),
-		})
-	}
-
-	start = time.Now()
-	getColl := func() *mongo.Collection {
-		d, exist := s.db[dbName]
-		if !exist {
-			return nil
-		}
-		return d[collName]
-	}
-
-	s.mutex.RLock()
-	collInstance := getColl()
-	s.mutex.RUnlock()
-
-	if collInstance == nil {
-		s.mutex.Lock()
-		collInstance = getColl()
-		if collInstance == nil {
-			collOpt := options.Collection().SetWriteConcern(writeconcern.New(s.cfg.GetWriteConcern()))
-			d, exist := s.db[dbName]
-			if !exist {
-				d = make(map[string]*mongo.Collection)
-				s.db[dbName] = d
-			}
-			collInstance = s.dbClient.Database(dbName).Collection(collName, collOpt)
-			d[collName] = collInstance
-		}
-		s.mutex.Unlock()
-	}
-
-	cur = time.Now()
-	if cur.Sub(start) > 10*time.Millisecond {
-		log.Info("take collection too long", map[string]interface{}{
-			"numbers": len(inserts),
-			"used":    cur.Sub(start),
-		})
-	}
-
-	start = time.Now()
-	var err error
-	if len(inserts) > 0 {
-		para := s.cfg.Parallelism
-		if para > len(inserts) {
-			para = len(inserts)
-		}
-		avg := len(inserts) / para
-		from := 0
-		end := from + avg
-		wg := sync.WaitGroup{}
-		mutex := sync.Mutex{}
-		insert := func(data []interface{}) {
-			defer wg.Done()
-			opt := options.InsertMany().SetOrdered(false)
-
-			if res, _err := collInstance.InsertMany(ctx, data, opt); _err != nil {
-				if _err == mongo.ErrUnacknowledgedWrite && s.cfg.ackDisable {
-					return
-				}
-				log.Warning("failed to insert many to mongodb", map[string]interface{}{
-					log.KeyError: _err,
-					"inserted":   res,
-				})
-				mutex.Lock()
-				if err == nil {
-					err = _err
-				} else if mongo.IsDuplicateKeyError(err) && !mongo.IsDuplicateKeyError(_err) {
-					err = _err
-				}
-				mutex.Unlock()
-			}
-		}
-
-		for idx := 0; idx < para; idx++ {
-			wg.Add(1)
-
-			if idx == para-1 {
-				go insert(inserts[from:])
-			} else {
-				go insert(inserts[from:end])
-			}
-			from = end
-			end = from + avg
-		}
-		wg.Wait()
-	}
-
-	if err != nil {
-		if !mongo.IsDuplicateKeyError(err) ||
-			(mongo.IsDuplicateKeyError(err) && !s.cfg.IgnoreDuplicatedError) {
-			return cdkgo.NewResult(http.StatusInternalServerError,
-				fmt.Sprintf("failed to insert many to mongodb: %s", err))
-		}
-	}
-
-	cur = time.Now()
-	if cur.Sub(start) > 100*time.Millisecond {
-		log.Info("insert mongodb takes too long", map[string]interface{}{
-			"numbers": len(inserts),
-			"used":    cur.Sub(start),
-		})
-	}
-
-	start = time.Now()
-	for from := 0; from < len(wms); {
-		var models []mongo.WriteModel
-		end := from + s.cfg.BulkSize
-		if end >= len(wms) {
-			models = wms[from:]
-		} else {
-			models = wms[from:end]
-		}
-		if _, err := s.dbClient.Database(dbName).Collection(collName).BulkWrite(ctx, models); err != nil {
-			log.Warning("failed to write mongodb", map[string]interface{}{
-				log.KeyError: err,
-			})
-			return cdkgo.NewResult(http.StatusInternalServerError,
-				fmt.Sprintf("failed to write mongodb: %s", err))
-		}
-		from = end
-	}
-
-	cur = time.Now()
-	if cur.Sub(start) > 100*time.Millisecond {
-		log.Info("update to mongodb takes too long", map[string]interface{}{
-			"numbers": len(wms),
-			"used":    cur.Sub(start),
-		})
-	}
-
 	return cdkgo.SuccessResult
 }
 
-func getAttr(e *ce.Event, key string) (string, error) {
+func (s *mongoSink) getWriter(collName string) *InsertWriter {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	writer, ok := s.writer[collName]
+	if !ok {
+		writer = NewInsertWriter(s.dbClient, s.logger, s.cfg.Database, collName, s.cfg.BulkSize)
+		s.writer[collName] = writer
+	}
+	return writer
+}
+
+func getAttr(e *ce.Event, key, defaultValue string) (string, error) {
 	val, exist := e.Extensions()[key]
 	if val == nil && !exist {
-		return "", fmt.Errorf("mongodb: attribute %s not found or is empty", key)
+		return defaultValue, nil
 	}
 
 	str, ok := val.(string)
@@ -451,84 +215,4 @@ func getAttr(e *ce.Event, key string) (string, error) {
 		return "", fmt.Errorf("mongodb: invalid attribute %s=%v", key, val)
 	}
 	return str, nil
-}
-
-func getUpdateOrDeleteModels(c *Command, upsert bool) []mongo.WriteModel {
-	wms := make([]mongo.WriteModel, len(c.Updates)+len(c.Deletes))
-	var i = 0
-
-	for idx := range c.Updates {
-		u := c.Updates[idx]
-		if u.UpdateMany {
-			wms[i] = &mongo.UpdateManyModel{
-				Filter: u.Filter,
-				Update: u.Update,
-				Upsert: &upsert,
-			}
-		} else {
-			wms[i] = &mongo.UpdateOneModel{
-				Filter: u.Filter,
-				Update: u.Update,
-				Upsert: &upsert,
-			}
-		}
-		i++
-	}
-
-	for idx := range c.Deletes {
-		d := c.Deletes[idx]
-		if d.DeleteMany {
-			wms[i] = &mongo.DeleteManyModel{
-				Filter: d.Filter,
-			}
-		} else {
-			wms[i] = &mongo.DeleteOneModel{
-				Filter: d.Filter,
-			}
-		}
-		i++
-	}
-	return wms
-}
-
-func recursive(val interface{}) interface{} {
-	switch val.(type) {
-	case json.Number:
-		v := val.(json.Number)
-		if i, err := v.Int64(); err == nil {
-			val = i
-		} else {
-			val, _ = v.Float64()
-		}
-	case map[string]interface{}:
-		v := val.(map[string]interface{})
-		for k := range v {
-			v[k] = recursive(v[k])
-		}
-	case []interface{}:
-		v := val.([]interface{})
-		for idx := range v {
-			v[idx] = recursive(v[idx])
-		}
-	case []Update:
-		v := val.([]Update)
-		for idx := range v {
-			v[idx] = recursive(v[idx]).(Update)
-		}
-	case Update:
-		v := val.(Update)
-		v.Filter = recursive(v.Filter).(map[string]interface{})
-		v.Update = recursive(v.Update).(map[string]interface{})
-	case []Delete:
-		v := val.([]Delete)
-		for idx := range v {
-			v[idx] = recursive(v[idx]).(Delete)
-		}
-	case Delete:
-		v := val.(Delete)
-		v.Filter = recursive(v.Filter).(map[string]interface{})
-	default:
-		return val
-	}
-	return val
 }
