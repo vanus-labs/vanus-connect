@@ -10,6 +10,8 @@ github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kd
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6rlkpw=
+github.com/carlmjohnson/requests v0.23.4 h1:AxcvapfB9RPXLSyvAHk9YJoodQ43ZjzNHj6Ft3tQGdg=
+github.com/carlmjohnson/requests v0.23.4/go.mod h1:Qzp6tW4DQyainPP+tGwiJTzwxvElTIKm0B191TgTtOA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chzyer/logex v1.2.0/go.mod h1:9+9sk7u7pGNWYMkh0hdiL++6OeibzJccyQU4p4MedaY=
@@ -230,8 +232,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
-github.com/vanus-labs/cdk-go v0.7.2 h1:SV9XmC+UB3c1PvcGla/4iWHU1PaZMA/Z8YDKPtAUnEU=
-github.com/vanus-labs/cdk-go v0.7.2/go.mod h1:TFnL6lBmvxAtsa3b11SQWNxlCXBh7bnvNfS351pah28=
+github.com/vanus-labs/cdk-go v0.7.5 h1:oG0P/Pz6asbx46cVHw3eH8qewGb4F/68/d2vvpde/Zw=
+github.com/vanus-labs/cdk-go v0.7.5/go.mod h1:TFnL6lBmvxAtsa3b11SQWNxlCXBh7bnvNfS351pah28=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0 h1:zxK8mhyzhPWW8daj3PC3zziMkd2Q9JjnN2yJGYS60yI=
 github.com/vanus-labs/vanus-connect-runtime v0.2.0/go.mod h1:NDH8Jf6kZslANsLL5Bv5VzpWi+GsbZfg9vY/pHpd4ug=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/jellydator/ttlcache/v3 v3.0.1
 	github.com/rs/zerolog v1.29.1
-	github.com/vanus-labs/cdk-go v0.7.3
+	github.com/vanus-labs/cdk-go v0.7.5
 	github.com/xen0n/go-workwx v1.5.0
 )
 
