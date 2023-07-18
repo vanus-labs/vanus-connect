@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
 	github.com/google/uuid v1.3.0
 	github.com/rs/zerolog v1.29.1
-	github.com/vanus-labs/cdk-go v0.7.3
+	github.com/vanus-labs/cdk-go v0.7.5
 )
 
 require (
