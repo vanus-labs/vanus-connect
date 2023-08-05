@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
+
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/config"
 	"github.com/vanus-labs/cdk-go/connector"
@@ -61,15 +62,10 @@ func (ds *displaySink) Arrived(_ context.Context, events ...*v2.Event) connector
 	for idx := range events {
 		e := events[idx]
 		atomic.AddInt64(&ds.count, 1)
-		log.Info("receive a new event", map[string]interface{}{
-			"in_total": atomic.LoadInt64(&ds.count),
-		})
+		log.Info().Int64("total", atomic.LoadInt64(&ds.count)).Msg("receive a new event")
 		d, err := e.MarshalJSON()
 		if err != nil {
-			log.Warning("received a new event, but failed to marshal to JSON", map[string]interface{}{
-				log.KeyError: err,
-				"event":      e.String(),
-			})
+			log.Warn().Err(err).Str("event", e.String()).Msg("received a new event, but failed to marshal to JSON")
 		} else {
 			buf := bytes.NewBuffer([]byte{})
 			_ = json.Indent(buf, d, "", "  ")
