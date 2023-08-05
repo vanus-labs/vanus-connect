@@ -1,9 +1,10 @@
-module github.com/vanus-labs/connector/sink/display
+module github.com/vanus-labs/connector/sink/cloudevent
 
 go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
+	github.com/rs/zerolog v1.29.1
 	github.com/vanus-labs/cdk-go v0.7.5
 )
 
@@ -36,7 +37,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rs/zerolog v1.29.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/vanus-labs/vanus-connect-runtime v0.2.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.6 // indirect
