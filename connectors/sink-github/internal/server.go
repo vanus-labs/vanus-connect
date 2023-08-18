@@ -65,6 +65,7 @@ func (e *githubSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Res
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 		go func() {
+			ctx = context.TODO()
 			prompt, err := e.aiCli.Chat(ctx, vanusai.NewChatRequest(issue.Body, issue.URL))
 			if err != nil {
 				e.logger.Warn().Err(err).
