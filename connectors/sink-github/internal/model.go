@@ -13,16 +13,16 @@ type IssueData struct {
 }
 
 func (m IssueData) GetIssue() (*Issue, error) {
-	// https://api.github.com/repos/octocat/Hello-World/issues/comments/1
+	// https://api.github.com/repos/octocat/Hello-World/issues/1
 	url, err := url.Parse(m.URL)
 	if err != nil {
 		return nil, err
 	}
 	paths := strings.Split(url.Path, "/")
-	if len(paths) != 7 {
+	if len(paths) != 6 {
 		return nil, fmt.Errorf("url is invalid")
 	}
-	num, err := strconv.Atoi(strings.TrimSpace(paths[6]))
+	num, err := strconv.Atoi(strings.TrimSpace(paths[5]))
 	if err != nil {
 		return nil, fmt.Errorf("url issue nubmer is invalid")
 	}
