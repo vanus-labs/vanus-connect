@@ -64,24 +64,26 @@ func (e *githubSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Res
 				Str("url", issue.URL).Msg("url is invalid")
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
-		prompt, err := e.aiCli.Chat(ctx, vanusai.NewChatRequest(issue.Body, issue.URL))
-		if err != nil {
-			e.logger.Warn().Err(err).
-				Str("prompt", issue.Body).Msg("call ai failed")
-			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
-		}
-		_, _, err = e.client.Issues.CreateComment(ctx, i.Owner, i.Repo, i.Number, &github.IssueComment{
-			Body: &prompt,
-		})
-		if err != nil {
-			e.logger.Warn().Err(err).
-				Str("event_id", event.ID()).
-				Str("url", issue.URL).Msg("create comment failed")
-		} else {
-			e.logger.Info().
-				Str("event_id", event.ID()).
-				Str("url", issue.URL).Msg("create comment success")
-		}
+		go func() {
+			prompt, err := e.aiCli.Chat(ctx, vanusai.NewChatRequest(issue.Body, issue.URL))
+			if err != nil {
+				e.logger.Warn().Err(err).
+					Str("prompt", issue.Body).Msg("call ai failed")
+				return
+			}
+			_, _, err = e.client.Issues.CreateComment(ctx, i.Owner, i.Repo, i.Number, &github.IssueComment{
+				Body: &prompt,
+			})
+			if err != nil {
+				e.logger.Warn().Err(err).
+					Str("event_id", event.ID()).
+					Str("url", issue.URL).Msg("create comment failed")
+			} else {
+				e.logger.Info().
+					Str("event_id", event.ID()).
+					Str("url", issue.URL).Msg("create comment success")
+			}
+		}()
 	}
 	return cdkgo.SuccessResult
 }
