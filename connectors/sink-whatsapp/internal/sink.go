@@ -88,6 +88,9 @@ func (s *whatsappSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.R
 		if cdkgo.SuccessResult != result {
 			s.logger.Warn().Err(result.Error()).Str("event_id", event.ID()).Msg("event process failed")
 			return result
+		} else {
+			s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
+
 		}
 	}
 	return cdkgo.SuccessResult
