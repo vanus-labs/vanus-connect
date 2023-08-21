@@ -4,12 +4,12 @@ go 1.18
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.13.0
-	github.com/mattn/go-sqlite3 v1.14.16
-	github.com/rs/zerolog v1.29.1
+	github.com/mattn/go-sqlite3 v1.14.17
+	github.com/rs/zerolog v1.30.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/vanus-labs/cdk-go v0.7.5
 	github.com/vanus-labs/connector/source/chatai v0.0.0
-	go.mau.fi/whatsmeow v0.0.0-20230516145702-d5485ef06d61
+	go.mau.fi/whatsmeow v0.0.0-20230817083005-1c185f033d88
 
 )
 
@@ -61,13 +61,14 @@ require (
 	go.etcd.io/etcd/client/pkg/v3 v3.5.6 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.6 // indirect
 	go.mau.fi/libsignal v0.1.0 // indirect
+	go.mau.fi/util v0.0.0-20230805154123-3981666a86f1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/term v0.7.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect

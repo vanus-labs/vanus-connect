@@ -100,10 +100,16 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 	s.client.AddEventHandler(func(evt interface{}) {
 
 		switch v := evt.(type) {
+		case *events.PairSuccess:
+			log.Info().Str("jid", v.ID.String()).Msg("pair success")
 		case *events.Message:
 
 			info := v.Info
 			message := v.Message.GetConversation()
+			if message == "" {
+				// androd
+				message = v.Message.GetExtendedTextMessage().GetText()
+			}
 			if message != "" {
 				if v.Info.IsFromMe {
 					if v.Info.Sender.User == v.Info.Chat.User {
@@ -122,6 +128,7 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 					}
 
 				} else {
+
 					event := s.makeEvent(info, message)
 					s.events <- &cdkgo.Tuple{
 						Event: event,
