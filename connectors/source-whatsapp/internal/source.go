@@ -107,28 +107,14 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 			info := v.Info
 			message := v.Message.GetConversation()
 			if message == "" {
-				// androd
+				// android
 				message = v.Message.GetExtendedTextMessage().GetText()
 			}
-			if message != "" {
-				if v.Info.IsFromMe {
-					if v.Info.Sender.User == v.Info.Chat.User {
-						event := s.makeEvent(info, message)
-						s.events <- &cdkgo.Tuple{
-							Event: event,
-							Success: func() {
-								s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
-							},
-							Failed: func(err error) {
-								// TODO
-								b, _ := json.Marshal(event)
-								s.logger.Warn().Err(err).Msg("send event failed: " + string(b))
-							},
-						}
-					}
-
-				} else {
-
+			if message == "" {
+				return
+			}
+			if v.Info.IsFromMe {
+				if v.Info.Sender.Device == 0 && v.Info.Sender.User == v.Info.Chat.User {
 					event := s.makeEvent(info, message)
 					s.events <- &cdkgo.Tuple{
 						Event: event,
@@ -141,6 +127,19 @@ func (s *whatsAppSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccesso
 							s.logger.Warn().Err(err).Msg("send event failed: " + string(b))
 						},
 					}
+				}
+			} else {
+				event := s.makeEvent(info, message)
+				s.events <- &cdkgo.Tuple{
+					Event: event,
+					Success: func() {
+						s.logger.Info().Str("event_id", event.ID()).Msg("send event success")
+					},
+					Failed: func(err error) {
+						// TODO
+						b, _ := json.Marshal(event)
+						s.logger.Warn().Err(err).Msg("send event failed: " + string(b))
+					},
 				}
 			}
 		}
