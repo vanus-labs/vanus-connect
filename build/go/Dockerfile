@@ -15,7 +15,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connect/bi
 #FROM centos:8.4.2105
 FROM ubuntu:22.10
 # install ca-certificates
-RUN apt update -y && apt upgrade -y && apt install -y ca-certificates && update-ca-certificates
+RUN apt update -y && apt upgrade -y && apt install -y ca-certificates && update-ca-certificates && apt install -y tzdata
 
 ARG connector
 
