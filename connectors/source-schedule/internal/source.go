@@ -22,6 +22,7 @@ import (
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
 	"github.com/robfig/cron/v3"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -39,9 +40,11 @@ type scheduleSource struct {
 	events chan *cdkgo.Tuple
 	number uint64
 	cron   *cron.Cron
+	logger zerolog.Logger
 }
 
-func (s *scheduleSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor) error {
+func (s *scheduleSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	config := cfg.(*scheduleConfig)
 	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
 	spec := config.Cron
@@ -55,7 +58,7 @@ func (s *scheduleSource) Initialize(_ context.Context, cfg cdkgo.ConfigAccessor)
 	}
 	c := cron.New(cron.WithParser(parser),
 		cron.WithLocation(time.UTC),
-		cron.WithChain(cron.Recover(cronLog{})))
+		cron.WithChain(cron.Recover(cronLog{logger: s.logger})))
 	c.Schedule(schedule, cron.FuncJob(s.makeEvent))
 	c.Start()
 	return nil
@@ -88,13 +91,9 @@ func (s *scheduleSource) makeEvent() {
 	s.events <- &cdkgo.Tuple{
 		Event: &event,
 		Success: func() {
-			log.Info("send new event success", map[string]interface{}{
-				"number": number,
-			})
+			s.logger.Info().Uint64("number", number).Msg("send new event success")
 		}, Failed: func(err error) {
-			log.Info("send new event failed", map[string]interface{}{
-				"number": number,
-			})
+			s.logger.Warn().Uint64("number", number).Err(err).Msg("send new event failed")
 		},
 	}
 }
