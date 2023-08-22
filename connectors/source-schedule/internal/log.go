@@ -17,30 +17,31 @@ package internal
 import (
 	"fmt"
 
-	"github.com/vanus-labs/cdk-go/log"
+	"github.com/rs/zerolog"
 )
 
-type cronLog struct{}
+type cronLog struct {
+	logger zerolog.Logger
+}
 
 func (l cronLog) Info(msg string, keysAndValues ...interface{}) {
-	log.Info(msg, l.convertKeysAndValues(keysAndValues))
+	e := l.logger.Info()
+	l.logKeysAndValues(e, keysAndValues).Msg(msg)
 }
 
 func (l cronLog) Error(err error, msg string, keysAndValues ...interface{}) {
-	m := l.convertKeysAndValues(keysAndValues)
-	m[log.KeyError] = err
-	log.Error(msg, m)
+	e := l.logger.Error().Err(err)
+	l.logKeysAndValues(e, keysAndValues).Msg(msg)
 }
 
-func (l cronLog) convertKeysAndValues(keysAndValues ...interface{}) map[string]interface{} {
+func (l cronLog) logKeysAndValues(e *zerolog.Event, keysAndValues ...interface{}) *zerolog.Event {
 	len := len(keysAndValues)
-	m := make(map[string]interface{}, len)
 	for i := 0; i < len; i += 2 {
 		var v interface{}
 		if i+1 < len {
 			v = keysAndValues[i+1]
 		}
-		m[fmt.Sprintf("%v", keysAndValues[i])] = v
+		e.Interface(fmt.Sprintf("%v", keysAndValues[i]), v)
 	}
-	return m
+	return e
 }
