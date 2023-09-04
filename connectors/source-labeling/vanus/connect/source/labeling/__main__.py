@@ -17,7 +17,7 @@ import argparse
 import json
 
 import yaml
-from vanus.connect.customsource import run_http_source
+from vanus.connect.source.custom import run_http_source
 
 
 def _run_labeling(config):

@@ -11,5 +11,5 @@ RUN python3 -m pip install vanus_connect_labelingsource-*.whl && rm vanus_connec
 
 EXPOSE 8080
 
-ENTRYPOINT ["python3", "-m", "vanus.connect.labelingsource"]
+ENTRYPOINT ["python3", "-m", "vanus.connect.source.labeling"]
 CMD ["--config=/vanus-connect/config/config.yml"]
