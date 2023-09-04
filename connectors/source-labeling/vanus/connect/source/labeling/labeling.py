@@ -21,7 +21,7 @@ from actrie import Matcher
 from cloudevents.abstract import AnyCloudEvent
 from cloudevents.http import CloudEvent
 from jsonpath_ng import parse
-from vanus.connect.customsource import Message
+from vanus.connect.source.custom import Message
 
 
 class LabelMaker:

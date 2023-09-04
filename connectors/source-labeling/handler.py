@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-from vanus.connect.customsource import EventHandler
-from vanus.connect.labelingsource import CloudEventLabelMaker
+from vanus.connect.source.custom import EventHandler
+from vanus.connect.source.labeling import CloudEventLabelMaker
 
 
 def create_handler(*args, **kwargs) -> EventHandler:
