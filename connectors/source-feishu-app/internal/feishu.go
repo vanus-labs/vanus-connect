@@ -93,11 +93,11 @@ func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2M
 		Msg("event receive")
 	d.cache.SetDefault(eventID, true)
 	eventData.Answer = answer
-	eventData.AnswerUser = *event.Event.Sender.SenderId.UserId
+	eventData.AnswerUser = *event.Event.Sender.SenderId.OpenId
 	e := ce.NewEvent()
 	e.SetID(eventID)
 	e.SetSource("vanus-feishu-app")
-	e.SetType("reply")
+	e.SetType("question-answer")
 	e.SetData(ce.ApplicationJSON, eventData)
 	d.events <- &cdkgo.Tuple{
 		Event: &e,
@@ -147,18 +147,8 @@ func (d *Feishu) getParentMsgContent(ctx context.Context, msgID string) (*EventD
 		return nil, nil
 	}
 	return &EventData{
-		Question:     prompt,
-		QuestionUser: *msg.Mentions[0].Id,
+		Question:       prompt,
+		QuestionUser:   *msg.Sender.Id,
+		QuestionAtUser: *msg.Mentions[0].Id,
 	}, nil
-}
-
-type TextMsg struct {
-	Text string `json:"text"`
-}
-
-type EventData struct {
-	QuestionUser string `json:"question_user"`
-	Question     string `json:"question"`
-	Answer       string `json:"answer"`
-	AnswerUser   string `json:"answer_user"`
 }

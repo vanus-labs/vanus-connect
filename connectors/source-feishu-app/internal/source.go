@@ -52,7 +52,7 @@ func (s *FeishuSource) Initialize(ctx context.Context, cfg cdk.ConfigAccessor) e
 }
 
 func (s *FeishuSource) Name() string {
-	return "feishu"
+	return "FeishuAppSource"
 }
 
 func (s *FeishuSource) Destroy() error {
