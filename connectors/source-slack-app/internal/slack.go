@@ -2,11 +2,11 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"strings"
+	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/pkg/errors"
+	"github.com/patrickmn/go-cache"
 	"github.com/rs/zerolog"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
@@ -16,13 +16,12 @@ import (
 )
 
 type Slack struct {
-	logger            zerolog.Logger
-	cfg               *slackConfig
-	cancel            context.CancelFunc
-	groupMsgPrefix    string
-	groupMsgPrefixLen int
-	userID            string
-	events            chan *cdkgo.Tuple
+	logger zerolog.Logger
+	cfg    *slackConfig
+	cancel context.CancelFunc
+	userID string
+	events chan *cdkgo.Tuple
+	cache  *cache.Cache
 }
 
 func NewSlack(cfg *slackConfig, logger zerolog.Logger, events chan *cdkgo.Tuple) *Slack {
@@ -30,6 +29,7 @@ func NewSlack(cfg *slackConfig, logger zerolog.Logger, events chan *cdkgo.Tuple)
 		logger: logger,
 		cfg:    cfg,
 		events: events,
+		cache:  cache.New(time.Minute*10, time.Minute*15),
 	}
 }
 
@@ -47,8 +47,6 @@ func (d *Slack) Start() error {
 	}
 	// userID fmt: U04M1L7L64U
 	d.userID = resp.UserID
-	d.groupMsgPrefix = fmt.Sprintf("<@%s> ", d.userID)
-	d.groupMsgPrefixLen = len(d.groupMsgPrefix)
 	slackClient := socketmode.New(api)
 	handler := socketmode.NewSocketmodeHandler(slackClient)
 	handler.HandleEvents(slackevents.Message, d.directMessageEvent)
@@ -78,20 +76,23 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 		return
 	}
 	if d.cfg.UserID != "" && ev.User != d.cfg.UserID {
-		// not use msg
+		// not user msg
 		return
 	}
 	if ev.ThreadTimeStamp == "" || ev.ThreadTimeStamp == ev.EventTimeStamp {
 		// not reply msg
 		return
 	}
-	eventData, err := d.getTsMsgContent(ev, client)
-	if err != nil {
-		d.logger.Warn().Err(err).Str("thread_ts", ev.ThreadTimeStamp).Msg("get ts msg error")
+	_, exist := d.cache.Get(ev.ClientMsgID)
+	if exist {
+		d.logger.Info().Str("msgID", ev.ClientMsgID).
+			Str("thread_ts", ev.ThreadTimeStamp).
+			Msg("repeated receive")
 		return
 	}
+	d.cache.SetDefault(ev.ClientMsgID, true)
+	eventData := d.getTsMsgContent(ev, client)
 	if eventData == nil {
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).Msg("ts msg is nil")
 		return
 	}
 	answer := ev.Text
@@ -119,7 +120,7 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 	return
 }
 
-func (d *Slack) getTsMsgContent(ev *slackevents.MessageEvent, client *socketmode.Client) (*EventData, error) {
+func (d *Slack) getTsMsgContent(ev *slackevents.MessageEvent, client *socketmode.Client) *EventData {
 	resp, err := client.GetConversationHistory(&slack.GetConversationHistoryParameters{
 		Latest:    ev.ThreadTimeStamp,
 		ChannelID: ev.Channel,
@@ -127,34 +128,60 @@ func (d *Slack) getTsMsgContent(ev *slackevents.MessageEvent, client *socketmode
 		Inclusive: true,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "get conversation history error")
+		d.logger.Warn().Err(err).Str("thread_ts", ev.ThreadTimeStamp).
+			Msg("get conversation history error")
+		return nil
 	}
 	if len(resp.Messages) != 1 {
-		return nil, nil
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Int("length", len(resp.Messages)).
+			Msg("resp message gt 1")
+		return nil
 	}
 	msg := resp.Messages[0]
-	texts := strings.SplitN(msg.Text, " ", 2)
+	if msg.User == ev.User {
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Msg("question same with reply user")
+		return nil
+	}
+	if msg.BotID != "" {
+		// bot message
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Msg("is a bot message")
+		return nil
+	}
+	text := msg.Text
+	texts := strings.SplitN(text, " ", 2)
 	if len(texts) != 2 {
 		// not @ msg
-		return nil, nil
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Str("text", text).
+			Msg("not a at message")
+		return nil
 	}
 	if !strings.HasPrefix(texts[0], "<@") || !strings.HasSuffix(texts[0], ">") {
-		return nil, nil
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Str("text", text).
+			Msg("not a at message")
+		return nil
 	}
-	text := strings.TrimSpace(texts[1])
+	text = strings.TrimSpace(texts[1])
 	if text == "" {
-		return nil, nil
+		return nil
 	}
 	if strings.HasPrefix(text, "<@") {
 		//@ other user
-		return nil, nil
+		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
+			Str("text", text).
+			Msg("at multi user message")
+		return nil
 	}
 	botUser := texts[0][2 : len(texts[0])-1]
 	return &EventData{
 		Question:       text,
 		QuestionUser:   msg.User,
 		QuestionAtUser: botUser,
-	}, nil
+	}
 }
 func (d *Slack) defaultEvent(evt *socketmode.Event, client *socketmode.Client) {
 	// Unexpected event type received
