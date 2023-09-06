@@ -3,8 +3,8 @@ package internal
 type MessageType string
 
 const (
-	ReplyMessage    MessageType = "message.reply"
-	NormalMessage   MessageType = "message"
+	ReplyMessage    MessageType = "message.text.reply"
+	NormalMessage   MessageType = "message.text"
 	NormalAtMessage MessageType = "message.at"
 )
 
@@ -12,9 +12,10 @@ type MessageData struct {
 	ThreadMessage *MessageData `json:"thread_message,omitempty"`
 	Channel       string       `json:"channel"`
 	ChannelType   string       `json:"channel_type,omitempty"`
-	MentionUser   string       `json:"mention_user,omitempty"`
-	Content       string       `json:"content"`
-	Text          string       `json:"text"`
-	User          string       `json:"user"`
 	BotID         string       `json:"bot_id,omitempty"`
+
+	MentionUsers []string `json:"mention_users,omitempty"`
+	Content      string   `json:"content"`
+	Text         string   `json:"text"`
+	User         string   `json:"user"`
 }

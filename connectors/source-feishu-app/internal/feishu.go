@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	larkim "github.com/larksuite/oapi-sdk-go/v3/service/im/v1"
 	"github.com/patrickmn/go-cache"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	cdk "github.com/vanus-labs/cdk-go"
@@ -18,21 +18,35 @@ import (
 )
 
 type Feishu struct {
-	logger zerolog.Logger
-	cli    *lark.Client
-	cfg    *Config
-	cache  *cache.Cache
-	events chan *cdk.Tuple
+	logger     zerolog.Logger
+	cli        *lark.Client
+	cfg        *Config
+	cache      *cache.Cache
+	events     chan *cdk.Tuple
+	eventTypes map[MessageType]struct{}
 }
 
 func NewFeishu(logger zerolog.Logger, cfg *Config, events chan *cdk.Tuple) *Feishu {
-	return &Feishu{
-		logger: logger,
-		cfg:    cfg,
-		events: events,
-		cli:    lark.NewClient(cfg.AppID, cfg.AppSecret),
-		cache:  cache.New(time.Minute*10, time.Minute*15),
+	eventTypes := make(map[MessageType]struct{}, len(cfg.EventType))
+	for _, t := range cfg.EventType {
+		eventTypes[t] = struct{}{}
 	}
+	return &Feishu{
+		logger:     logger,
+		cfg:        cfg,
+		events:     events,
+		eventTypes: eventTypes,
+		cli:        lark.NewClient(cfg.AppID, cfg.AppSecret),
+		cache:      cache.New(time.Minute*10, time.Minute*15),
+	}
+}
+
+func (d *Feishu) containsMsgType(msgType MessageType) bool {
+	if len(d.eventTypes) == 0 {
+		return true
+	}
+	_, exist := d.eventTypes[msgType]
+	return exist
 }
 
 func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2MessageReceiveV1) error {
@@ -40,65 +54,50 @@ func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2M
 	if *message.MessageType != "text" {
 		return nil
 	}
-	if *message.ChatType != "group" {
-		return nil
-	}
-	if d.cfg.UserID != "" && *event.Event.Sender.SenderId.UserId != d.cfg.UserID {
-		//not cfg user message
-		return nil
-	}
-	if message.ParentId == nil || *message.ParentId == "" {
-		//not reply message
-		return nil
-	}
-	if message.RootId != nil && *message.RootId != *message.ParentId {
-		// reply multi message
-		return nil
-	}
-	if len(message.Mentions) != 1 {
-		//not @ msg
-		return nil
-	}
-	eventData, err := d.getParentMsgContent(ctx, *message.ParentId)
-	if err != nil {
-		return err
-	}
-	if eventData == nil {
-		return nil
-	}
-	var text TextMsg
-	err = json.Unmarshal([]byte(*message.Content), &text)
-	if err != nil {
-		d.logger.Info().Err(err).Str("content", *message.Content).Msg("unmarshal content error")
-		return err
-	}
-	answer := text.Text
-	if len(answer) < 9 {
-		return nil
-	}
-	answer = strings.TrimSpace(answer[9:])
-	if answer == "" {
-		return nil
-	}
 	eventID := event.EventV2Base.Header.EventID
 	_, exist := d.cache.Get(eventID)
 	if exist {
-		d.logger.Info().Str("event", eventID).Msg("repeated receive")
+		d.logger.Info().Str("event", eventID).
+			Str("content", *message.Content).Msg("repeated receive")
 		return nil
 	}
-	d.logger.Info().
-		Str("msgID", *message.MessageId).
-		Str("answer", answer).
-		Str("question", eventData.Question).
-		Msg("event receive")
 	d.cache.SetDefault(eventID, true)
-	eventData.Answer = answer
-	eventData.AnswerUser = *event.Event.Sender.SenderId.OpenId
+	content, text := d.parseText(*message.Content)
+	if text == "" {
+		return nil
+	}
+	msgType := MessageText
+	var mentionUsers []string
+	if len(message.Mentions) > 0 {
+		for _, m := range message.Mentions {
+			mentionUsers = append(mentionUsers, *m.Id.OpenId)
+		}
+		msgType = MessageTextAt
+	}
+	ed := &MessageData{
+		ChatID:       *message.ChatId,
+		ChatType:     *message.ChatType,
+		Content:      content,
+		Text:         text,
+		MentionUsers: mentionUsers,
+		User:         *event.Event.Sender.SenderId.OpenId,
+	}
+	parentID := message.RootId
+	if parentID == nil || *parentID == "" {
+		parentID = message.ParentId
+	}
+	if parentID != nil && *parentID != "" {
+		parentMsg := d.getParentMsg(ctx, *parentID)
+		ed.ParentMessage = parentMsg
+	}
+	if ed.ParentMessage != nil {
+		msgType = MessageTextReply
+	}
 	e := ce.NewEvent()
 	e.SetID(eventID)
 	e.SetSource("vanus-feishu-app")
-	e.SetType("question-answer")
-	e.SetData(ce.ApplicationJSON, eventData)
+	e.SetType(string(msgType))
+	e.SetData(ce.ApplicationJSON, ed)
 	d.events <- &cdkgo.Tuple{
 		Event: &e,
 		Success: func() {
@@ -111,44 +110,61 @@ func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2M
 	return nil
 }
 
-func (d *Feishu) getParentMsgContent(ctx context.Context, msgID string) (*EventData, error) {
+func (d *Feishu) parseText(content string) (string, string) {
+	var textMsg TextMsg
+	err := json.Unmarshal([]byte(content), &textMsg)
+	if err != nil {
+		d.logger.Warn().Err(err).
+			Str("content", content).
+			Msg("unmarshal content error")
+		return "", ""
+	}
+	text := textMsg.Text
+	for i := 1; ; i++ {
+		t := fmt.Sprintf("@_user_%d ", i)
+		if !strings.HasPrefix(text, t) {
+			break
+		}
+		text = text[len(t):]
+	}
+	return strings.TrimSpace(text), textMsg.Text
+}
+
+func (d *Feishu) getParentMsg(ctx context.Context, msgID string) *MessageData {
 	req := larkim.NewGetMessageReqBuilder().MessageId(msgID).Build()
 	resp, err := d.cli.Im.Message.Get(ctx, req)
 	if err != nil {
-		return nil, errors.Wrap(err, "get message error")
+		d.logger.Warn().Err(err).Str("msg_id", msgID).
+			Msg("get message error")
+		return nil
 	}
 	if !resp.Success() {
-		return nil, errors.Errorf("resp error,code:%d,msg:%s", resp.StatusCode, resp.Msg)
+		d.logger.Warn().Str("msg_id", msgID).
+			Str("resp", resp.Error()).
+			Msg("get message resp error")
+		return nil
 	}
 	if len(resp.Data.Items) != 1 {
-		return nil, nil
+		d.logger.Info().Str("msg_id", msgID).
+			Int("length", len(resp.Data.Items)).
+			Msg("resp message length not equal to 1")
 	}
 	msg := resp.Data.Items[0]
 	if *msg.MsgType != "text" {
-		return nil, nil
+		return nil
 	}
-	if len(msg.Mentions) != 1 {
-		//not @ msg
-		return nil, nil
+	content, text := d.parseText(*msg.Body.Content)
+	if text == "" {
+		return nil
 	}
-	//todo @ is bot
-	var text TextMsg
-	err = json.Unmarshal([]byte(*msg.Body.Content), &text)
-	if err != nil {
-		return nil, errors.Wrapf(err, "unmarshal content %s error", *msg.Body.Content)
+	var mentionUsers []string
+	for _, m := range msg.Mentions {
+		mentionUsers = append(mentionUsers, *m.Id)
 	}
-	prompt := text.Text
-	//format @_user_1 hi"
-	if len(prompt) < 9 {
-		return nil, nil
+	return &MessageData{
+		Content:      content,
+		MentionUsers: mentionUsers,
+		Text:         text,
+		User:         *msg.Sender.Id,
 	}
-	prompt = strings.TrimSpace(prompt[9:])
-	if prompt == "" {
-		return nil, nil
-	}
-	return &EventData{
-		Question:       prompt,
-		QuestionUser:   *msg.Sender.Id,
-		QuestionAtUser: *msg.Mentions[0].Id,
-	}, nil
 }

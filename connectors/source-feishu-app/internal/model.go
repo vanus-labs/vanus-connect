@@ -4,10 +4,21 @@ type TextMsg struct {
 	Text string `json:"text"`
 }
 
-type EventData struct {
-	QuestionUser   string `json:"question_user"`
-	QuestionAtUser string `json:"question_at_user"`
-	Question       string `json:"question"`
-	Answer         string `json:"answer"`
-	AnswerUser     string `json:"answer_user"`
+type MessageType string
+
+const (
+	MessageTextReply MessageType = "message.text.reply"
+	MessageText      MessageType = "message.text"
+	MessageTextAt    MessageType = "message.text.at"
+)
+
+type MessageData struct {
+	ParentMessage *MessageData `json:"parent_message,omitempty"`
+	ChatID        string       `json:"chat_id,omitempty"`
+	ChatType      string       `json:"chat_type,omitempty"`
+
+	MentionUsers []string `json:"mention_users,omitempty"`
+	Content      string   `json:"content"`
+	Text         string   `json:"text"`
+	User         string   `json:"user"`
 }

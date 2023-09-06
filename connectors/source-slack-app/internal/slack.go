@@ -34,8 +34,8 @@ func NewSlack(cfg *slackConfig, logger zerolog.Logger, events chan *cdkgo.Tuple)
 		logger:     logger,
 		cfg:        cfg,
 		events:     events,
-		cache:      cache.New(time.Minute*10, time.Minute*15),
 		eventTypes: eventTypes,
+		cache:      cache.New(time.Minute*10, time.Minute*15),
 	}
 }
 
@@ -94,18 +94,18 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 		Str("user", ev.User).
 		Msg("receive msg")
 	msgType := NormalMessage
-	mentionUser, content := d.parseText(ev.Text)
-	if mentionUser != "" {
+	mentionUsers, content := d.parseText(ev.Text)
+	if len(mentionUsers) > 0 {
 		msgType = NormalAtMessage
 	}
 	ed := &MessageData{
-		Channel:     ev.Channel,
-		ChannelType: ev.ChannelType,
-		BotID:       ev.BotID,
-		User:        ev.User,
-		MentionUser: mentionUser,
-		Content:     content,
-		Text:        ev.Text,
+		Channel:      ev.Channel,
+		ChannelType:  ev.ChannelType,
+		BotID:        ev.BotID,
+		User:         ev.User,
+		MentionUsers: mentionUsers,
+		Content:      content,
+		Text:         ev.Text,
 	}
 	if ev.ThreadTimeStamp != "" && ev.ThreadTimeStamp != ev.EventTimeStamp {
 		threadMsg := d.getThreadMsg(ev, client)
@@ -134,8 +134,8 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 	return
 }
 
-func (d *Slack) parseText(text string) (string, string) {
-	var mentionUser string
+func (d *Slack) parseText(text string) ([]string, string) {
+	var mentionUsers []string
 	for {
 		if !strings.HasPrefix(text, "<@") {
 			break
@@ -144,13 +144,10 @@ func (d *Slack) parseText(text string) (string, string) {
 		if index <= 0 {
 			break
 		}
-		if mentionUser != "" {
-			mentionUser += ","
-		}
-		mentionUser += text[2:index]
+		mentionUsers = append(mentionUsers, text[2:index])
 		text = text[index+2:]
 	}
-	return mentionUser, strings.TrimSpace(text)
+	return mentionUsers, strings.TrimSpace(text)
 }
 
 func (d *Slack) getThreadMsg(ev *slackevents.MessageEvent, client *socketmode.Client) *MessageData {
@@ -172,13 +169,13 @@ func (d *Slack) getThreadMsg(ev *slackevents.MessageEvent, client *socketmode.Cl
 			Msg("resp message length not equal to 1")
 	}
 	msg := messages[0]
-	mentionUser, content := d.parseText(msg.Text)
+	mentionUsers, content := d.parseText(msg.Text)
 	return &MessageData{
-		User:        msg.User,
-		BotID:       msg.BotID,
-		MentionUser: mentionUser,
-		Content:     content,
-		Text:        msg.Text,
+		User:         msg.User,
+		BotID:        msg.BotID,
+		MentionUsers: mentionUsers,
+		Content:      content,
+		Text:         msg.Text,
 	}
 }
 func (d *Slack) defaultEvent(evt *socketmode.Event, client *socketmode.Client) {
