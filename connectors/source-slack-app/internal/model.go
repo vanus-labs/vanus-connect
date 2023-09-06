@@ -3,9 +3,9 @@ package internal
 type MessageType string
 
 const (
-	ReplyMessage    MessageType = "message.text.reply"
-	NormalMessage   MessageType = "message.text"
-	NormalAtMessage MessageType = "message.at"
+	MessageTextReply MessageType = "message.text.reply"
+	MessageText      MessageType = "message.text"
+	MessageTextAt    MessageType = "message.text.at"
 )
 
 type MessageData struct {

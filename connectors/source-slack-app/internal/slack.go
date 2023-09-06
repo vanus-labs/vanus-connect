@@ -55,7 +55,7 @@ func (d *Slack) Start() error {
 	d.userID = resp.UserID
 	slackClient := socketmode.New(api)
 	handler := socketmode.NewSocketmodeHandler(slackClient)
-	handler.HandleEvents(slackevents.Message, d.directMessageEvent)
+	handler.HandleEvents(slackevents.Message, d.messageEvent)
 	handler.HandleDefault(d.defaultEvent)
 	ctx, cancel := context.WithCancel(context.TODO())
 	d.cancel = cancel
@@ -71,7 +71,7 @@ func (d *Slack) containsEventType(msgType MessageType) bool {
 	return exist
 }
 
-func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Client) {
+func (d *Slack) messageEvent(evt *socketmode.Event, client *socketmode.Client) {
 	client.Ack(*evt.Request)
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
 	if !ok {
@@ -93,10 +93,10 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 		Str("text", ev.Text).
 		Str("user", ev.User).
 		Msg("receive msg")
-	msgType := NormalMessage
+	msgType := MessageText
 	mentionUsers, content := d.parseText(ev.Text)
 	if len(mentionUsers) > 0 {
-		msgType = NormalAtMessage
+		msgType = MessageTextAt
 	}
 	ed := &MessageData{
 		Channel:      ev.Channel,
@@ -112,7 +112,7 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 		ed.ThreadMessage = threadMsg
 	}
 	if ed.ThreadMessage != nil {
-		msgType = ReplyMessage
+		msgType = MessageTextReply
 	}
 	if !d.containsEventType(msgType) {
 		return
