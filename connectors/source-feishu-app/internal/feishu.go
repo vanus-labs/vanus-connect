@@ -62,6 +62,10 @@ func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2M
 		return nil
 	}
 	d.cache.SetDefault(eventID, true)
+	d.logger.Info().Str("eventID", eventID).
+		Str("content", *message.Content).
+		Str("user", *event.Event.Sender.SenderId.OpenId).
+		Msg("receive msg")
 	content, text := d.parseText(*message.Content)
 	if text == "" {
 		return nil
@@ -92,6 +96,9 @@ func (d *Feishu) OnChatBotMessageReceived(ctx context.Context, event *larkim.P2M
 	}
 	if ed.ParentMessage != nil {
 		msgType = MessageTextReply
+	}
+	if !d.containsMsgType(msgType) {
+		return nil
 	}
 	e := ce.NewEvent()
 	e.SetID(eventID)

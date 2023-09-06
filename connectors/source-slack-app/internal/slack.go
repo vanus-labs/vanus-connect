@@ -63,7 +63,7 @@ func (d *Slack) Start() error {
 	return nil
 }
 
-func (d *Slack) containsEventType(msgType MessageType) bool {
+func (d *Slack) containsMsgType(msgType MessageType) bool {
 	if len(d.eventTypes) == 0 {
 		return true
 	}
@@ -120,7 +120,7 @@ func (d *Slack) messageEvent(evt *socketmode.Event, client *socketmode.Client) {
 	if ed.ThreadMessage != nil {
 		msgType = MessageTextReply
 	}
-	if !d.containsEventType(msgType) {
+	if !d.containsMsgType(msgType) {
 		return
 	}
 	e := ce.NewEvent()
