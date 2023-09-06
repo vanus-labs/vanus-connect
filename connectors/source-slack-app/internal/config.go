@@ -23,9 +23,9 @@ var _ cdkgo.SourceConfigAccessor = &slackConfig{}
 type slackConfig struct {
 	cdkgo.SourceConfig `json:",inline" yaml:",inline"`
 
-	BotToken string `json:"bot_token" yaml:"bot_token" validate:"required"`
-	AppToken string `json:"app_token" yaml:"app_token" validate:"required"`
-	UserID   string `json:"user_id" yaml:"user_id"`
+	BotToken  string        `json:"bot_token" yaml:"bot_token" validate:"required"`
+	AppToken  string        `json:"app_token" yaml:"app_token" validate:"required"`
+	EventType []MessageType `json:"event_type" yaml:"event_type"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {

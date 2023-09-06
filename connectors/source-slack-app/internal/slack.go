@@ -16,20 +16,26 @@ import (
 )
 
 type Slack struct {
-	logger zerolog.Logger
-	cfg    *slackConfig
-	cancel context.CancelFunc
-	userID string
-	events chan *cdkgo.Tuple
-	cache  *cache.Cache
+	logger     zerolog.Logger
+	cfg        *slackConfig
+	cancel     context.CancelFunc
+	userID     string
+	events     chan *cdkgo.Tuple
+	cache      *cache.Cache
+	eventTypes map[MessageType]struct{}
 }
 
 func NewSlack(cfg *slackConfig, logger zerolog.Logger, events chan *cdkgo.Tuple) *Slack {
+	eventTypes := make(map[MessageType]struct{}, len(cfg.EventType))
+	for _, t := range cfg.EventType {
+		eventTypes[t] = struct{}{}
+	}
 	return &Slack{
-		logger: logger,
-		cfg:    cfg,
-		events: events,
-		cache:  cache.New(time.Minute*10, time.Minute*15),
+		logger:     logger,
+		cfg:        cfg,
+		events:     events,
+		cache:      cache.New(time.Minute*10, time.Minute*15),
+		eventTypes: eventTypes,
 	}
 }
 
@@ -57,6 +63,14 @@ func (d *Slack) Start() error {
 	return nil
 }
 
+func (d *Slack) containsEventType(msgType MessageType) bool {
+	if len(d.eventTypes) == 0 {
+		return true
+	}
+	_, exist := d.eventTypes[msgType]
+	return exist
+}
+
 func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Client) {
 	client.Ack(*evt.Request)
 	eventsAPIEvent, ok := evt.Data.(slackevents.EventsAPIEvent)
@@ -67,47 +81,47 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 	if !ok {
 		return
 	}
-	if ev.BotID != "" {
-		// bot message
-		return
-	}
-	if ev.ChannelType != "channel" {
-		// not channel message
-		return
-	}
-	if d.cfg.UserID != "" && ev.User != d.cfg.UserID {
-		// not user msg
-		return
-	}
-	if ev.ThreadTimeStamp == "" || ev.ThreadTimeStamp == ev.EventTimeStamp {
-		// not reply msg
-		return
-	}
 	_, exist := d.cache.Get(ev.ClientMsgID)
 	if exist {
 		d.logger.Info().Str("msgID", ev.ClientMsgID).
-			Str("thread_ts", ev.ThreadTimeStamp).
-			Msg("repeated receive")
+			Str("text", ev.Text).
+			Msg("repeated receive msg")
 		return
 	}
 	d.cache.SetDefault(ev.ClientMsgID, true)
-	eventData := d.getTsMsgContent(ev, client)
-	if eventData == nil {
+	d.logger.Info().Str("msgID", ev.ClientMsgID).
+		Str("text", ev.Text).
+		Str("user", ev.User).
+		Msg("receive msg")
+	msgType := NormalMessage
+	mentionUser, content := d.parseText(ev.Text)
+	if mentionUser != "" {
+		msgType = NormalAtMessage
+	}
+	ed := &MessageData{
+		Channel:     ev.Channel,
+		ChannelType: ev.ChannelType,
+		BotID:       ev.BotID,
+		User:        ev.User,
+		MentionUser: mentionUser,
+		Content:     content,
+		Text:        ev.Text,
+	}
+	if ev.ThreadTimeStamp != "" && ev.ThreadTimeStamp != ev.EventTimeStamp {
+		threadMsg := d.getThreadMsg(ev, client)
+		ed.ThreadMessage = threadMsg
+	}
+	if ed.ThreadMessage != nil {
+		msgType = ReplyMessage
+	}
+	if !d.containsEventType(msgType) {
 		return
 	}
-	answer := ev.Text
-	eventData.Answer = answer
-	eventData.AnswerUser = ev.User
-	d.logger.Info().
-		Str("thread_ts", ev.ThreadTimeStamp).
-		Str("answer", answer).
-		Str("question", eventData.Question).
-		Msg("event receive")
 	e := ce.NewEvent()
 	e.SetID(ev.ClientMsgID)
 	e.SetSource("vanus-slack-app")
-	e.SetType("question-answer")
-	e.SetData(ce.ApplicationJSON, eventData)
+	e.SetType(string(msgType))
+	e.SetData(ce.ApplicationJSON, ed)
 	d.events <- &cdkgo.Tuple{
 		Event: &e,
 		Success: func() {
@@ -120,67 +134,51 @@ func (d *Slack) directMessageEvent(evt *socketmode.Event, client *socketmode.Cli
 	return
 }
 
-func (d *Slack) getTsMsgContent(ev *slackevents.MessageEvent, client *socketmode.Client) *EventData {
-	resp, err := client.GetConversationHistory(&slack.GetConversationHistoryParameters{
-		Latest:    ev.ThreadTimeStamp,
+func (d *Slack) parseText(text string) (string, string) {
+	var mentionUser string
+	for {
+		if !strings.HasPrefix(text, "<@") {
+			break
+		}
+		index := strings.Index(text, "> ")
+		if index <= 0 {
+			break
+		}
+		if mentionUser != "" {
+			mentionUser += ","
+		}
+		mentionUser += text[2:index]
+		text = text[index+2:]
+	}
+	return mentionUser, strings.TrimSpace(text)
+}
+
+func (d *Slack) getThreadMsg(ev *slackevents.MessageEvent, client *socketmode.Client) *MessageData {
+	messages, _, _, err := client.GetConversationReplies(&slack.GetConversationRepliesParameters{
 		ChannelID: ev.Channel,
+		Timestamp: ev.ThreadTimeStamp,
+		Latest:    ev.ThreadTimeStamp,
 		Oldest:    ev.ThreadTimeStamp,
 		Inclusive: true,
 	})
 	if err != nil {
 		d.logger.Warn().Err(err).Str("thread_ts", ev.ThreadTimeStamp).
-			Msg("get conversation history error")
+			Msg("get conversation replies error")
 		return nil
 	}
-	if len(resp.Messages) != 1 {
+	if len(messages) != 1 {
 		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Int("length", len(resp.Messages)).
-			Msg("resp message gt 1")
-		return nil
+			Int("length", len(messages)).
+			Msg("resp message length not equal to 1")
 	}
-	msg := resp.Messages[0]
-	if msg.User == ev.User {
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Msg("question same with reply user")
-		return nil
-	}
-	if msg.BotID != "" {
-		// bot message
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Msg("is a bot message")
-		return nil
-	}
-	text := msg.Text
-	texts := strings.SplitN(text, " ", 2)
-	if len(texts) != 2 {
-		// not @ msg
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Str("text", text).
-			Msg("not a at message")
-		return nil
-	}
-	if !strings.HasPrefix(texts[0], "<@") || !strings.HasSuffix(texts[0], ">") {
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Str("text", text).
-			Msg("not a at message")
-		return nil
-	}
-	text = strings.TrimSpace(texts[1])
-	if text == "" {
-		return nil
-	}
-	if strings.HasPrefix(text, "<@") {
-		//@ other user
-		d.logger.Info().Str("thread_ts", ev.ThreadTimeStamp).
-			Str("text", text).
-			Msg("at multi user message")
-		return nil
-	}
-	botUser := texts[0][2 : len(texts[0])-1]
-	return &EventData{
-		Question:       text,
-		QuestionUser:   msg.User,
-		QuestionAtUser: botUser,
+	msg := messages[0]
+	mentionUser, content := d.parseText(msg.Text)
+	return &MessageData{
+		User:        msg.User,
+		BotID:       msg.BotID,
+		MentionUser: mentionUser,
+		Content:     content,
+		Text:        msg.Text,
 	}
 }
 func (d *Slack) defaultEvent(evt *socketmode.Event, client *socketmode.Client) {
