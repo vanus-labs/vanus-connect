@@ -81,6 +81,9 @@ func (d *Slack) messageEvent(evt *socketmode.Event, client *socketmode.Client) {
 	if !ok {
 		return
 	}
+	if ev.Text == "" {
+		return
+	}
 	_, exist := d.cache.Get(ev.ClientMsgID)
 	if exist {
 		d.logger.Info().Str("msgID", ev.ClientMsgID).
@@ -95,6 +98,9 @@ func (d *Slack) messageEvent(evt *socketmode.Event, client *socketmode.Client) {
 		Msg("receive msg")
 	msgType := MessageText
 	mentionUsers, content := d.parseText(ev.Text)
+	if content == "" {
+		return
+	}
 	if len(mentionUsers) > 0 {
 		msgType = MessageTextAt
 	}
