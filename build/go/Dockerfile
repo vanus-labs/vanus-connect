@@ -12,10 +12,12 @@ ARG TARGETOS
 ARG TARGETARCH
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o /build/vanus-connect/bin/${connector} ./cmd/main.go
 
-#FROM centos:8.4.2105
-FROM ubuntu:22.10
-# install ca-certificates
-RUN apt update -y && apt upgrade -y && apt install -y ca-certificates && update-ca-certificates && apt install -y tzdata
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y \
+        ca-certificates \
+        tzdata \
+        && update-ca-certificates \
+        && rm -rf /var/lib/apt/lists/*
 
 ARG connector
 
