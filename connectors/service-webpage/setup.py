@@ -6,15 +6,14 @@ from setuptools import find_namespace_packages, setup
 
 if __name__ == "__main__":
     setup(
-        name="vanus-connect-webpagesource",
-        description="Web page Source of Vanus Connect.",
+        name="vanus-connect-webpageservice",
+        description="Webpage Service of Vanus Connect.",
         author="Linkall Inc.",
         url="https://github.com/vanus-labs/vanus-connect",
         license="Apache License 2.0",
         packages=find_namespace_packages(
             include=[
-                "vanus.connect.source.timer",
-                "vanus.connect.source.webpage",
+                "vanus.connect.service.webpage",
             ]
         ),
         classifiers=[
@@ -23,8 +22,11 @@ if __name__ == "__main__":
         ],
         install_requires=[
             "aiorun",
-            "pyyaml",
-            "vanus-connect-webpageservice",
+            "beautifulsoup4",
+            "bs2json",
+            "httpx[http2]",
+            "lxml",
+            "vanus-cdk",
         ],
         zip_safe=True,
     )

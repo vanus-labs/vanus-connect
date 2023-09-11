@@ -21,6 +21,11 @@ if __name__ == "__main__":
             "Operating System :: OS Independent",
             "Programming Language :: Python :: 3",
         ],
-        install_requires=["cloudevents", "httpx[http2]"],
+        install_requires=[
+            "cloudevents",
+            "httpx[http2]",
+            "hypercorn",
+            "quart",
+        ],
         zip_safe=True,
     )
