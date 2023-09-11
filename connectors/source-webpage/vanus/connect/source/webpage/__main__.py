@@ -8,16 +8,16 @@ import aiorun
 import yaml
 from vanus.connect.cdk import build_pipeline
 from vanus.connect.cloudevents import CloudEventSink
+from vanus.connect.service.webpage import CrawlerService
 
 from ..timer import TimerSource
-from .crawler import CrawlerService
 
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="labeling-source", description="vanus connect source webpage", epilog="Linkall Inc."
+        prog="webpage-source", description="vanus connect source webpage", epilog="Linkall Inc."
     )
-    parser.add_argument("--config", help="the label source config")
+    parser.add_argument("--config", help="the webpage source config")
     args = parser.parse_args()
 
     with open(args.config) as f:
