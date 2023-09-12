@@ -29,25 +29,32 @@ For example, if the incoming CloudEvent looks like:
 
 The Mailchimp Sink will add a member to mailchimp:
 
-## Create the config file
+## Config
 
-
-```shell
-cat << EOF > config.yml
-target: <you server endpoint>
-EOF
-```
-
-| Name          | Required | Default | Description                                                                      |
-|:--------------|:--------:|:--------|----------------------------------------------------------------------------------|
-| port          |    NO    | 8080    | the port which HTTP Sink listens on                                              |
-| api_key       |   YES    |         | the mailchimp [api key][api_key]                                                 |
-| list_id       |    NO    |         | the mailchimp [audience id][list_id]                                             |
+| Name        | Required | Default | Description                               |
+|:------------|:--------:|:--------|-------------------------------------------|
+| port        |    NO    | 8080    | the port which Mailchimp Sink listens on  |
+| api_key     |   YES    |         | the mailchimp [api key][api_key]          |
+| audience_id |   YES    |         | the mailchimp [audience id][audience_id]  |
 
 The Mailchimp Sink tries to find the config file at `/vanus-connect/config/config.yml` by default. You can specify the
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
-### Start with Docker
+## Sink details
+
+### Extension Attributes
+
+The Mailchimp Sink has additional options if the incoming CloudEvent contains the following[Extension Attributes][ce_extension].
+
+| Attribute | Required  | Examples   | Description |
+|:----------|:---------:|:-----------|:------------|
+| xvaction  |    NO     | member.put | action      |
+
+### Data Format
+
+The Mailchimp Sink call mailchimp api to do, the event data must  meet api param, such as [member.add](https://mailchimp.com/developer/marketing/api/list-members/add-member-to-list/)
+
+## Start with Docker
 
 ```shell
 docker run -it --rm \
@@ -87,8 +94,8 @@ Then your mailchimp contacts will add one.
 docker stop sink-mailchimp
 ```
 
-```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [api_key]: https://mailchimp.com/help/about-api-keys
-[list_id]: https://mailchimp.com/help/find-audience-id
+[audience_id]: https://mailchimp.com/help/find-audience-id
+[ce_extension]: https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md#extension-context-attributes
