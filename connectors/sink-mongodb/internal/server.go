@@ -35,11 +35,9 @@ import (
 )
 
 const (
-	mongoCollection = "xvdcoll"
+	mongoCollection = "xvcoll"
 
 	name = "Sink MongoDB"
-
-	debeziumConnector = "iodebeziumconnector"
 )
 
 var _ cdkgo.SinkConfigAccessor = &Config{}
