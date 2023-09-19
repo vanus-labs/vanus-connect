@@ -72,12 +72,12 @@ func (s *gmailSink) Arrived(ctx context.Context, events ...*ce.Event) cdkgo.Resu
 		err = s.service.Send(em)
 		if err != nil {
 			s.logger.Warn().Err(err).Str("event_id", event.ID()).
-				Str("receiver", em.Receiver).
+				Str("receiver", em.To).
 				Msg("failed to send email")
 			return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
 		} else {
 			s.logger.Info().Str("event_id", event.ID()).
-				Str("receiver", em.Receiver).
+				Str("receiver", em.To).
 				Msg("success to send email")
 		}
 	}

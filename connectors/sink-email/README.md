@@ -20,24 +20,20 @@ For example, the incoming CloudEvent looks like:
   "datacontenttype": "application/json",
   "time": "2022-10-26T10:38:29.345Z",
   "data": {
+    "to": "example@example.com",
     "subject": "vanus auto mail",
     "body": "this is vanus test email",
-    "receiver": "example@example.com",
     "body_type": "text"
   }
 }
 ```
 
-then recipients will receive an email like:
-![received.png](https://raw.githubusercontent.com/vanus-labs/vanus-connect/main/connectors/sink-email/received.png)
-
+then recipients will receive an email
 ## Quick Start
 
 in this section, we show how to use Email Sink sends a text message to recipients.
 
 ### Create Config file
-
-replace `<from_email_address>`, `<from_email_address>`, and `<smtp server address>` to yours.
 
 ```shell
 cat << EOF > config.yml
@@ -81,9 +77,9 @@ curl --location --request POST 'localhost:18080' \
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
     "data": {
+      "to": "example@example.com",
       "subject": "vanus auto mail",
-      "body": "this is vanus test email",
-      "receiver": "example@example.com"
+      "body": "this is vanus test email"
     }
 }'
 ```
@@ -101,11 +97,11 @@ docker stop sink-email
 ### Event Data Schema
 
 
-| Attribute | Required | Description                                          |
-|:----------|:--------:|------------------------------------------------------|
-| subject   |   YES    | Email subject                                        |
-| body      |   YES    | Email content                                        |
-| receiver  |   YES    | Email receiver                                       |
-| body_type |    NO    | Email content type, `text` or `html`, default `text` |
+| Attribute | Required | Description                                       |
+|:----------|:--------:|---------------------------------------------------|
+| subject   |   YES    | Email subject                                     |
+| body      |   YES    | Email body                                        |
+| to        |   YES    | Email to                                          |
+| body_type |    NO    | Email body type, `text` or `html`, default `text` |
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect

@@ -9,7 +9,7 @@ import (
 )
 
 func (e *emailSink) send(ctx context.Context, em *EmailMessage) error {
-	_ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	_ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	cfg := e.emailCfg
 	port := cfg.Port
@@ -18,7 +18,7 @@ func (e *emailSink) send(ctx context.Context, em *EmailMessage) error {
 	}
 	m := mail.New(cfg.Account, fmt.Sprintf("%s:%d", cfg.Host, port))
 	m.AuthenticateSMTP(cfg.Identity, cfg.Account, cfg.Password, cfg.Host)
-	m.AddReceivers(em.To...)
+	m.AddReceivers(em.ToAdders...)
 	m.BodyFormat(em.GetBodyType())
 	return m.Send(_ctx, em.Subject, em.Body)
 }

@@ -10,10 +10,10 @@ import (
 
 type EmailMessage struct {
 	Subject  string   `json:"subject"`
+	To       string   `json:"to"`
 	Body     string   `json:"body"`
-	Receiver string   `json:"receiver"`
 	BodyType string   `json:"body_type"`
-	To       []string `json:"-"`
+	ToAdders []string `json:"-"`
 }
 
 func (e *EmailMessage) GetBodyType() mail.BodyType {
@@ -34,18 +34,18 @@ func (e *EmailMessage) Validate() error {
 	if e.Body == "" {
 		return errors.New("email body is empty")
 	}
-	if e.Receiver == "" {
-		return errors.New("email receiver is empty")
+	if e.To == "" {
+		return errors.New("email to is empty")
 	}
-	adders, err := stdMail.ParseAddressList(e.Receiver)
+	adders, err := stdMail.ParseAddressList(e.To)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse receiver address %s", e.Receiver)
+		return errors.Wrapf(err, "failed to parse to address %s", e.To)
 	}
 	if len(adders) == 0 {
-		return errors.New("receiver address is empty")
+		return errors.New("to address is empty")
 	}
 	for i := range adders {
-		e.To = append(e.To, adders[i].Address)
+		e.ToAdders = append(e.ToAdders, adders[i].Address)
 	}
 	return nil
 }
