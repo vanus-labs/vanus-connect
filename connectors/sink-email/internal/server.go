@@ -66,12 +66,12 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 		}
 		if err := e.send(ctx, m); err != nil {
 			e.logger.Warn().Err(err).Str("event_id", event.ID()).
-				Str("receiver", m.Recipients).
+				Str("to", m.To).
 				Msg("failed to send email")
 			return errFailedToSend
 		} else {
 			e.logger.Info().Str("event_id", event.ID()).
-				Str("receiver", m.Recipients).
+				Str("to", m.To).
 				Msg("success to send email")
 		}
 	}

@@ -20,9 +20,9 @@ For example, the incoming CloudEvent looks like:
   "datacontenttype": "application/json",
   "time": "2022-10-26T10:38:29.345Z",
   "data": {
+    "to": "example@example.com",
     "subject": "vanus auto mail",
     "body": "this is vanus test email",
-    "recipients": "example@example.com",
     "body_type": "text"
   }
 }
@@ -77,9 +77,9 @@ curl --location --request POST 'localhost:18080' \
     "datacontenttype": "application/json",
     "time": "2022-10-26T10:38:29.345Z",
     "data": {
+      "to": "example@example.com",
       "subject": "vanus auto mail",
-      "body": "this is vanus test email",
-      "recipients": "example@example.com"
+      "body": "this is vanus test email"
     }
 }'
 ```
@@ -97,11 +97,11 @@ docker stop sink-email
 ### Event Data Schema
 
 
-| Attribute  | Required | Description                                       |
-|:-----------|:--------:|---------------------------------------------------|
-| subject    |   YES    | Email subject                                     |
-| body       |   YES    | Email body                                        |
-| recipients |   YES    | Email recipients                                  |
-| body_type  |    NO    | Email body type, `text` or `html`, default `text` |
+| Attribute | Required | Description                                       |
+|:----------|:--------:|---------------------------------------------------|
+| subject   |   YES    | Email subject                                     |
+| body      |   YES    | Email body                                        |
+| to        |   YES    | Email to                                          |
+| body_type |    NO    | Email body type, `text` or `html`, default `text` |
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect

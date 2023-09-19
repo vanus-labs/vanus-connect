@@ -85,7 +85,7 @@ func (svc *gmailService) init(credentialsJSON string, oauthCfg *OAuth) (*gmail.S
 func (svc *gmailService) Send(em *EmailMessage) error {
 	var bf bytes.Buffer
 	bf.WriteString("To: ")
-	bf.WriteString(em.Recipients)
+	bf.WriteString(em.To)
 	bf.WriteString("\r\n")
 
 	bf.WriteString("Subject: ")
