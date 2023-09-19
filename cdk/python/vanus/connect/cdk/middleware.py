@@ -36,6 +36,11 @@ class ServiceCallingMiddleware(Middleware):
         super().__init__()
         self._service = service
 
+    async def start(self):
+        """start the sink"""
+        await super().start()
+        await self._service.start()
+
     async def _on_event(self, event: CloudEvent) -> CloudEvent:
         resp = await self._service.on_event(event)
         assert resp is not None

@@ -21,4 +21,5 @@ class OpenAIEmbeddingService(Sink):
         return event
 
     async def embed_text(self, text: str) -> List[float]:
-        return await openai.Embedding.acreate(input=[text], **self._embedding_args)["data"][0]["embedding"]  # type: ignore
+        result = await openai.Embedding.acreate(input=[text], **self._embedding_args)
+        return result["data"][0]["embedding"]  # type: ignore
