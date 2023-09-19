@@ -5,10 +5,9 @@ import (
 )
 
 type EmailMessage struct {
-	Subject  string `json:"subject"`
-	Body     string `json:"body"`
-	Receiver string `json:"receiver"`
-	Sender   string `json:"-"`
+	Subject    string `json:"subject"`
+	Body       string `json:"body"`
+	Recipients string `json:"recipients"`
 }
 
 func (e *EmailMessage) Validate() error {
@@ -18,8 +17,8 @@ func (e *EmailMessage) Validate() error {
 	if e.Body == "" {
 		return errors.New("email body is empty")
 	}
-	if e.Receiver == "" {
-		return errors.New("email receiver is empty")
+	if e.Recipients == "" {
+		return errors.New("email recipients is empty")
 	}
 	return nil
 }
