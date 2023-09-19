@@ -32,7 +32,7 @@ class MilvusSink(Sink):
         self._load_args = load_args
 
     async def start(self):
-        self._alias = self._create_connection_alias(**self._connection_args)
+        self._alias = self._create_connection_alias(self._connection_args)
         self._col = Collection(self._collection_name, using=self._alias)
 
         if self._mode == "upsert":
@@ -41,6 +41,8 @@ class MilvusSink(Sink):
             self._load_func = self._col.insert
 
     async def on_event(self, event: AnyCloudEvent) -> None:
+        assert hasattr(self, "_load_func")
+
         data = cast(Dict[str, Any], event.get_data())
 
         await asyncio.get_running_loop().run_in_executor(

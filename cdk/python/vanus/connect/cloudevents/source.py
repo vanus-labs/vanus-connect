@@ -52,6 +52,8 @@ class CloudEventSource(Source):
         self._port = port
 
     async def start(self):
+        await super().start()
+
         try:
             import uvloop
 
