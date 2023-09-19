@@ -2,18 +2,29 @@ package internal
 
 import (
 	stdMail "net/mail"
+	"strings"
 
 	"github.com/nikoksr/notify/service/mail"
 	"github.com/pkg/errors"
 )
 
 type EmailMessage struct {
-	Subject  string        `json:"subject"`
-	Body     string        `json:"body"`
-	Receiver string        `json:"receiver"`
-	To       []string      `json:"-"`
-	Type     mail.BodyType `json:"-"`
-	Sender   string        `json:"-"`
+	Subject  string   `json:"subject"`
+	Body     string   `json:"body"`
+	Receiver string   `json:"receiver"`
+	BodyType string   `json:"body_type"`
+	To       []string `json:"-"`
+}
+
+func (e *EmailMessage) GetBodyType() mail.BodyType {
+	if e.BodyType == "" {
+		return mail.PlainText
+	}
+	bodyType := strings.ToLower(e.BodyType)
+	if bodyType == "html" {
+		return mail.HTML
+	}
+	return mail.PlainText
 }
 
 func (e *EmailMessage) Validate() error {
