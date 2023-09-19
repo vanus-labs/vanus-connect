@@ -20,63 +20,39 @@ import (
 	"net/http"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
-	"github.com/nikoksr/notify/service/mail"
 	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
 )
 
-const (
-	name          = "Email Sink"
-	xvEmailFrom   = "xvemailfrom"
-	xvEmailFormat = "xvemailformat"
-)
-
 var (
-	errFromAddressNotInConfiguration = cdkgo.NewResult(http.StatusBadRequest,
-		"email: the email from address not found in configuration")
 	errFailedToSend = cdkgo.NewResult(http.StatusInternalServerError,
 		"email: failed to sent email, please view logs")
 )
 
 func NewEmailSink() cdkgo.Sink {
-	return &emailSink{
-		mails: map[string]EmailConfig{},
-	}
+	return &emailSink{}
 }
 
 var _ cdkgo.Sink = &emailSink{}
 
 type emailSink struct {
-	count              int64
-	mails              map[string]EmailConfig
-	defaultAccount     string
-	defaultEmailFormat mail.BodyType
-	logger             zerolog.Logger
+	count    int64
+	logger   zerolog.Logger
+	emailCfg EmailConfig
 }
 
 func (e *emailSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	e.logger = log.FromContext(ctx)
 	config := cfg.(*emailConfig)
-	for _, m := range config.Emails {
-		e.mails[m.Account] = m
-		if m.Account == config.DefaultAccount {
-			e.defaultEmailFormat = getEmailBodyType(m.Format)
-		}
-	}
-	e.defaultAccount = config.DefaultAccount
+	e.emailCfg = config.Email
 	return nil
 }
 
 func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Result {
 	for idx := range events {
 		event := events[idx]
-		address := e.getEmailAddress(event)
-		_, exist := e.mails[address]
-		if !exist {
-			return errFromAddressNotInConfiguration
-		}
 		m := &EmailMessage{}
 		err := json.Unmarshal(event.Data(), m)
 		if err != nil {
@@ -88,8 +64,6 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 			e.logger.Warn().Err(err).Str("event_id", event.ID()).Msg("event data invalid")
 			return cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
-		m.Type = e.getEmailBodyType(event)
-		m.Sender = address
 		if err := e.send(ctx, m); err != nil {
 			e.logger.Warn().Err(err).Str("event_id", event.ID()).
 				Str("receiver", m.Receiver).
@@ -105,7 +79,7 @@ func (e *emailSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 }
 
 func (e *emailSink) Name() string {
-	return name
+	return "emailSink"
 }
 
 func (e *emailSink) Destroy() error {
