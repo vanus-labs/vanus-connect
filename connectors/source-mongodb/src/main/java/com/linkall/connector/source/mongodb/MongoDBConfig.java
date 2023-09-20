@@ -15,11 +15,14 @@
 package com.linkall.connector.source.mongodb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.linkall.cdk.database.debezium.DebeziumConfig;
+import io.debezium.connector.mongodb.MongoDbConnector;
 
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
-public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumConfig {
+public class MongoDBConfig extends DebeziumConfig {
     private static final String DEBEZIUM_CLASS = "io.debezium.connector.mongodb.MongoDbConnector";
 
     @JsonProperty("name")
@@ -47,14 +50,7 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
     public MongoDBConfig() {
     }
 
-    public MongoDBConfig(String name) {
-        this.name = name;
-    }
-
-    public void setCredentials(MongoDBCredentials credentials) {
-        this.credentials = credentials;
-    }
-
+    @Override
     public Class<?> secretClass() {
         return MongoDBCredentials.class;
     }
@@ -63,7 +59,7 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
     // https://debezium.io/documentation/reference/stable/connectors/mongodb.html#mongodb-connector-properties
     public Properties getDebeziumProperties() {
         final Properties props = new Properties();
-        props.setProperty("connector.class", DEBEZIUM_CLASS);
+        props.setProperty("connector.class", MongoDbConnector.class.getCanonicalName());
         props.setProperty("name", name);
         if (connectionUrl != null) {
             props.setProperty("mongodb.connection.string", connectionUrl);
@@ -75,18 +71,18 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
             props.putAll(credentials.getProperties());
         }
 
-        props.setProperty("topic.prefix", "test");
+        props.setProperty("topic.prefix", name);
 
         if (includeDatabases != null && includeDatabases.length > 0 &&
                 excludeDatabases != null && excludeDatabases.length > 0) {
             throw new IllegalArgumentException("the database.include and database.exclude can't be set together");
         }
         if (includeDatabases != null && includeDatabases.length > 0) {
-            props.setProperty("database.include.list", tableFormat("", Arrays.stream(includeDatabases)));
+            props.setProperty("database.include.list", Arrays.stream(includeDatabases).collect(Collectors.joining(",")));
         }
 
         if (excludeDatabases != null && excludeDatabases.length > 0) {
-            props.setProperty("database.exclude.list", tableFormat("", Arrays.stream(excludeCollections)));
+            props.setProperty("database.exclude.list", Arrays.stream(excludeDatabases).collect(Collectors.joining(",")));
         }
 
         if (includeCollections != null && includeCollections.length > 0
@@ -94,13 +90,18 @@ public class MongoDBConfig extends com.linkall.cdk.database.debezium.DebeziumCon
             throw new IllegalArgumentException("the collection.include and collection.exclude can't be set together");
         }
         if (includeCollections != null && includeCollections.length > 0) {
-            props.setProperty("collection.include.list", tableFormat("", Arrays.stream(includeCollections)));
+            props.setProperty("collection.include.list", Arrays.stream(includeCollections).collect(Collectors.joining(",")));
         }
 
         if (excludeCollections != null && excludeCollections.length > 0) {
-            props.setProperty("collection.exclude.list", tableFormat("", Arrays.stream(excludeCollections)));
+            props.setProperty("collection.exclude.list", Arrays.stream(excludeCollections).collect(Collectors.joining(",")));
         }
 
         return props;
+    }
+
+    @Override
+    protected Object getOffset() {
+        return null;
     }
 }

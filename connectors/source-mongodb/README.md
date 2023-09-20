@@ -28,13 +28,14 @@ cat << EOF > config.yml
 target: http://localhost:31081
 
 name: "quick-start"
-hosts: "127.0.0.1:27017",
+hosts: 
+ - 127.0.0.1:27017
 credential:
   username: "vanus"
   password: "abc123"
   auth_source: "admin"
-database_include: [ "test" ]
-collection_include: [ "test.demo" ]
+database_include: [ "testdb" ]
+collection_include: [ "testdb.testcoll" ]
 store:
   type: "FILE"
   pathname: "/tmp/vanus-connect/source-mongodb/offset.data",
@@ -62,9 +63,6 @@ The MongoDB Source tries to find the config file at `/vanus-connect/config/confi
 position of config file by setting the environment variable `CONNECTOR_CONFIG` for your connector.
 
 ### Start with Docker
-
-it assumes that the mongodb instance doesn't need authentication. For how to use authentication please see
-[secret](#secret) section.
 
 ```shell
 docker run -it --rm --network=host \
@@ -98,30 +96,23 @@ and you will receive an event like this:
 ```json
 {
   "specversion": "1.0",
-  "id": "4cbc7a65-5338-41aa-8f16-8fd164146975",
-  "source": "/debezium/mongodb/test",
-  "type": "io.debezium.mongodb.datachangeevent",
+  "id": "3687fced-84f1-4ccf-ae08-cd756e62c27c",
+  "source": "/debezium/mongodb/vanus_quick_start",
+  "type": "debezium.mongodb.datachangeevent",
   "datacontenttype": "application/json",
-  "time": "2022-12-21T21:23:40Z",
+  "time": "2023-09-20T08:48:19.291Z",
   "data": {
-    "after": {
-      "_id": "63a3795c8835b568e786e26a",
-      "test": "demo"
-    }
+    "_id": {
+      "$oid": "63a55d00fdb1221a32f43394"
+    },
+    "a": "b",
+    "b": "2"
   },
-  "iodebeziumversion": "2.0.1.Final",
-  "xvanuslogoffset": "AAAAAAAAAHk=",
-  "iodebeziumord": "1",
-  "iodebeziumdb": "test",
-  "iodebeziumrs": "replicaset-01",
-  "iodebeziumname": "test",
-  "iodebeziumcollection": "mongo_source",
-  "xvanusstime": "2022-12-21T21:23:41.109Z",
-  "iodebeziumsnapshot": "false",
-  "iodebeziumtsms": "1671657820000",
-  "xvanuseventbus": "test",
-  "iodebeziumconnector": "mongodb",
-  "iodebeziumop": "c"
+  "xvcollection": "testcoll",
+  "xvdebeziumname": "quick_start",
+  "xvdebeziumop": "r",
+  "xvdb": "testdb",
+  "xvop": "c"
 }
 ```
 
@@ -131,92 +122,6 @@ and you will receive an event like this:
 docker stop source-mongodb sink-display
 ```
 
-## Run in Kubernetes
-
-```shell
-kubectl apply -f sink-mongodb.yaml
-```
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: source-mongodb
-  namespace: vanus
-data:
-  config.yml: |-
-    target: "http://localhost:8080",
-    store:
-      type: "FILE"
-      pathname: "/tmp/vanus-connect/source-mongodb/offset.data",
-    name: "test",
-    hosts: "127.0.0.1:27017",
-    credential:
-      username: "vanus"
-      password: "abc123"
-      auth_source: "admin"
-    database_include: ["test"]
-    collection_include: ["test.demo"]
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: source-mongodb
-  namespace: vanus
-  labels:
-    app: source-mongodb
-spec:
-  selector:
-    matchLabels:
-      app: source-mongodb
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: source-mongodb
-    spec:
-      containers:
-        - name: source-mongodb
-          image: public.ecr.aws/vanus/connector/source-mongodb:latest
-          imagePullPolicy: Always
-          ports:
-            - name: http
-              containerPort: 8080
-          volumeMounts:
-            - name: config
-              mountPath: /vanus-connect/config
-      volumes:
-        - name: config
-          configMap:
-            name: source-mongodb
-```
-
-## Integrate with Vanus
-
-This section shows how a sink connector can receive CloudEvents from a
-running [Vanus cluster](https://github.com/vanus-labs/vanus).
-
-1. Run the sink-mongodb.yaml
-
-```shell
-kubectl apply -f sink-mongodb.yaml
-```
-
-2. Create an eventbus
-
-```shell
-vsctl eventbus create --name quick-start
-```
-
-3. Create a subscription (the sink should be specified as the sink service address or the host name with its port)
-
-```shell
-vsctl subscription create \
-  --name quick-start \
-  --eventbus quick-start \
-  --sink 'http://sink-mongodb:8080'
-```
 
 [vc]: https://docs.vanus.ai/introduction/concepts#vanus-connect
 [debezium]: https://debezium.io/documentation/reference/2.1/connectors/mongodb.html
