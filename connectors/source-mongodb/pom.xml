@@ -11,55 +11,26 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <debezium.version>2.0.1.Final</debezium.version>
-        <junit-jupiter.version>5.5.2</junit-jupiter.version>
+        <debezium.version>2.1.1.Final</debezium.version>
         <fastjson.version>1.2.83</fastjson.version>
-        <grpc.version>1.49.0</grpc.version>
         <google.proto.version>3.21.5</google.proto.version>
         <apache.commons.version>1.10.0</apache.commons.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.linkall.cdk</groupId>
-            <artifactId>cdk-core</artifactId>
-            <version>0.4.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.linkall.cdk</groupId>
             <artifactId>cdk-database</artifactId>
-            <version>0.4.0</version>
+            <version>0.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.debezium</groupId>
             <artifactId>debezium-connector-mongodb</artifactId>
-            <version>2.0.1.Final</version>
-        </dependency>
-        <dependency>
-            <groupId>io.debezium</groupId>
-            <artifactId>debezium-embedded</artifactId>
             <version>${debezium.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>${apache.commons.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <version>2.3</version>
-            <type>maven-plugin</type>
-        </dependency>
-        <dependency>
-            <groupId>io.cloudevents</groupId>
-            <artifactId>cloudevents-core</artifactId>
-            <version>2.4.0</version>
         </dependency>
     </dependencies>
     <build>
