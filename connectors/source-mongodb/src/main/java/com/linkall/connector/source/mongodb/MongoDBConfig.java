@@ -46,6 +46,8 @@ public class MongoDBConfig extends DebeziumConfig {
     private String[] includeCollections;
     @JsonProperty("collection_exclude")
     private String[] excludeCollections;
+    @JsonProperty("ssl_enable")
+    private boolean sslEnable;
 
     public MongoDBConfig() {
     }
@@ -95,6 +97,11 @@ public class MongoDBConfig extends DebeziumConfig {
 
         if (excludeCollections != null && excludeCollections.length > 0) {
             props.setProperty("collection.exclude.list", Arrays.stream(excludeCollections).collect(Collectors.joining(",")));
+        }
+        if (sslEnable){
+            props.setProperty("mongodb.ssl.enabled","true");
+        }else{
+            props.setProperty("mongodb.ssl.enabled","false");
         }
 
         return props;
