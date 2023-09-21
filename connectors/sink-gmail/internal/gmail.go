@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
@@ -28,14 +27,6 @@ func NewGmailService(credentialsJSON string, oauthCfg *OAuth) (*gmailService, er
 	return svc, nil
 }
 
-func getClient(config *oauth2.Config) (*http.Client, error) {
-	tok, err := getTokenFromWeb(config)
-	if err != nil {
-		return nil, err
-	}
-	return config.Client(context.Background(), tok), nil
-}
-
 // Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
@@ -55,27 +46,28 @@ func getTokenFromWeb(config *oauth2.Config) (*oauth2.Token, error) {
 }
 
 func (svc *gmailService) init(credentialsJSON string, oauthCfg *OAuth) (*gmail.Service, error) {
-	var opts []option.ClientOption
+	var config *oauth2.Config
+	var token *oauth2.Token
 	if oauthCfg != nil {
-		config := oauth2.Config{
+		config = &oauth2.Config{
 			ClientID:     oauthCfg.ClientID,
 			ClientSecret: oauthCfg.ClientSecret,
 			Endpoint:     google.Endpoint,
 		}
-		tokenSource := config.TokenSource(context.Background(), oauthCfg.GetToken())
-		opts = append(opts, option.WithTokenSource(tokenSource))
+		token = oauthCfg.GetToken()
 	} else {
-		config, err := google.ConfigFromJSON([]byte(credentialsJSON), gmail.GmailSendScope)
+		var err error
+		config, err = google.ConfigFromJSON([]byte(credentialsJSON), gmail.GmailSendScope)
 		if err != nil {
 			return nil, err
 		}
-		c, err := getClient(config)
+		token, err = getTokenFromWeb(config)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, option.WithHTTPClient(c))
 	}
-	client, err := gmail.NewService(context.Background(), opts...)
+	tokenSource := config.TokenSource(context.Background(), token)
+	client, err := gmail.NewService(context.Background(), option.WithTokenSource(tokenSource))
 	if err != nil {
 		return nil, errors.Wrap(err, "new gmail service error")
 	}
