@@ -23,7 +23,7 @@ import (
 )
 
 type OAuth struct {
-	TenantID     string `json:"tenant_id" yaml:"tenant_id" validate:"required"`
+	TenantID     string `json:"tenant_id" yaml:"tenant_id"`
 	ClientID     string `json:"client_id" yaml:"client_id" validate:"required"`
 	ClientSecret string `json:"client_secret" yaml:"client_secret" validate:"required"`
 	RefreshToken string `json:"refresh_token" yaml:"refresh_token"`
