@@ -28,14 +28,16 @@ import (
 var _ cdkgo.Sink = &mailchimpSink{}
 
 func NewMailchimpSink() cdkgo.Sink {
-	return &mailchimpSink{}
+	return &mailchimpSink{
+		listMap: map[string]*gochimp3.ListResponse{},
+	}
 }
 
 type mailchimpSink struct {
-	api    *gochimp3.API
-	list   *gochimp3.ListResponse
-	logger zerolog.Logger
-	config *sinkConfig
+	api     *gochimp3.API
+	listMap map[string]*gochimp3.ListResponse
+	logger  zerolog.Logger
+	config  *sinkConfig
 }
 
 func (s *mailchimpSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
