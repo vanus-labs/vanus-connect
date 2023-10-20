@@ -23,6 +23,7 @@ import (
 	"time"
 
 	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -46,9 +47,11 @@ type GoogleSheetSink struct {
 	defaultSheetName string
 	summary          []*Summary
 	lock             sync.Mutex
+	logger           zerolog.Logger
 }
 
 func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	config := cfg.(*GoogleSheetConfig)
 	spreadsheetID := config.SheetID
 	sheetName := config.SheetName
@@ -59,7 +62,7 @@ func (s *GoogleSheetSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccess
 	if config.FlushSize <= 0 {
 		config.FlushSize = 500
 	}
-	service, err := newGoogleSheetService(spreadsheetID, config.Credentials, config.OAuth)
+	service, err := newGoogleSheetService(spreadsheetID, config.Credentials, config.OAuth, s.logger)
 	if err != nil {
 		return err
 	}
@@ -110,10 +113,7 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 	sheetRow := make(map[string]interface{})
 	err := event.DataAs(&sheetRow)
 	if err != nil {
-		log.Error("event data decode error", map[string]interface{}{
-			log.KeyError: err,
-			"data":       string(event.Data()),
-		})
+		s.logger.Error().Err(err).Msg("event data decode error")
 		return cdkgo.NewResult(http.StatusBadRequest, "event data decode error")
 	}
 	// get sheet headers
@@ -123,25 +123,27 @@ func (s *GoogleSheetSink) saveDataToSpreadsheet(ctx context.Context, event *ce.E
 	}
 	values := make([]interface{}, len(headers))
 	for key, index := range headers {
-		values[index] = sheetValue(sheetRow[key])
+		v, err := sheetValue(sheetRow[key])
+		if err != nil {
+			return cdkgo.NewResult(http.StatusBadRequest, "sheet value invalid:"+err.Error())
+		}
+		values[index] = v
 	}
 	// append data
 	err = s.buffer.AppendData(sheetName, values)
 	if err != nil {
-		log.Error("append sheet data error", map[string]interface{}{
-			log.KeyError: err,
-			"sheetName":  sheetName,
-		})
-		return cdkgo.NewResult(http.StatusInternalServerError, "append data error")
+		s.logger.Error().Err(err).
+			Str("sheet_name", sheetName).
+			Msg("append sheet data error")
+		return cdkgo.NewResult(http.StatusBadRequest, "append data error")
 	}
 	if len(s.summary) > 0 {
 		for i := range s.summary {
 			err = s.summary[i].appendData(ctx, event.Time(), sheetRow)
 			if err != nil {
-				log.Error("append summary data error", map[string]interface{}{
-					log.KeyError: err,
-					"index":      i,
-				})
+				s.logger.Error().Err(err).
+					Int("index", i).
+					Msg("append summary data error")
 			}
 		}
 	}
@@ -163,11 +165,10 @@ func (s *GoogleSheetSink) checkSheetName(ctx context.Context, event *ce.Event) (
 	}
 	err := s.service.createSheetIfNotExist(ctx, sheetName)
 	if err != nil {
-		log.Error("create sheet error", map[string]interface{}{
-			log.KeyError: err,
-			"sheetName":  sheetName,
-		})
-		return "", cdkgo.NewResult(http.StatusInternalServerError, "create sheet error")
+		s.logger.Error().Err(err).
+			Str("sheet_name", sheetName).
+			Msg("create sheet error")
+		return "", cdkgo.NewResult(http.StatusBadRequest, "create sheet error")
 	}
 	return sheetName, cdkgo.SuccessResult
 }
@@ -185,18 +186,16 @@ func (s *GoogleSheetSink) checkHeader(ctx context.Context, sheetName string, she
 			}
 			err = s.service.insertHeader(ctx, sheetName, headers)
 			if err != nil {
-				log.Error("insert header error", map[string]interface{}{
-					log.KeyError: err,
-					"sheetName":  sheetName,
-				})
-				return nil, cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+				s.logger.Error().Err(err).
+					Str("sheet_name", sheetName).
+					Msg("insert header error")
+				return nil, cdkgo.NewResult(http.StatusBadRequest, err.Error())
 			}
 		} else {
-			log.Error("get header error", map[string]interface{}{
-				log.KeyError: err,
-				"sheetName":  sheetName,
-			})
-			return nil, cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+			s.logger.Error().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("get header error")
+			return nil, cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 	}
 	total := len(headers)
@@ -213,19 +212,17 @@ func (s *GoogleSheetSink) checkHeader(ctx context.Context, sheetName string, she
 	if headerChange {
 		err = s.buffer.FlushSheet(sheetName)
 		if err != nil {
-			log.Error("flush data error", map[string]interface{}{
-				log.KeyError: err,
-				"sheetName":  sheetName,
-			})
-			return nil, cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+			s.logger.Error().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("flush data error")
+			return nil, cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 		err = s.service.updateHeader(ctx, sheetName, headers)
 		if err != nil {
-			log.Error("insert header error", map[string]interface{}{
-				log.KeyError: err,
-				"sheetName":  sheetName,
-			})
-			return nil, cdkgo.NewResult(http.StatusInternalServerError, err.Error())
+			s.logger.Error().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("update header error")
+			return nil, cdkgo.NewResult(http.StatusBadRequest, err.Error())
 		}
 	}
 	return headers, cdkgo.SuccessResult

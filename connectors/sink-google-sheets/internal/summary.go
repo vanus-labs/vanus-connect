@@ -20,8 +20,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 type SummaryConfig struct {
@@ -96,18 +94,16 @@ func (s *Summary) init(config SummaryConfig) error {
 	sheetName := s.getSheetName(time.Now())
 	err := s.service.createSheetIfNotExist(context.Background(), sheetName)
 	if err != nil {
-		log.Warning("create summary sheet error", map[string]interface{}{
-			log.KeyError: err,
-			"sheet_name": sheetName,
-		})
+		s.service.logger.Warn().Err(err).
+			Str("sheet_name", sheetName).
+			Msg("create summary sheet error")
 		return nil
 	}
 	headers, err := s.getHeader(context.Background(), sheetName)
 	if err != nil {
-		log.Warning("get header error", map[string]interface{}{
-			log.KeyError: err,
-			"sheet_name": sheetName,
-		})
+		s.service.logger.Warn().Err(err).
+			Str("sheet_name", sheetName).
+			Msg("get header error")
 		return nil
 	}
 	index := len(headers)
@@ -123,10 +119,9 @@ func (s *Summary) init(config SummaryConfig) error {
 	if change {
 		err = s.service.updateHeader(context.Background(), sheetName, headers)
 		if err != nil {
-			log.Warning("update header error", map[string]interface{}{
-				log.KeyError: err,
-				"sheet_name": sheetName,
-			})
+			s.service.logger.Warn().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("update header error")
 		}
 	}
 	return nil
@@ -156,10 +151,10 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 	}
 	if rowValues == nil {
 		// no exist insert data
-		log.Info("summary new row", map[string]interface{}{
-			"sheetName":  sheetName,
-			s.primaryKey: value,
-		})
+		s.service.logger.Info().
+			Interface(s.primaryKey, value).
+			Str("sheet_name", sheetName).
+			Msg("summary new row")
 		return s.insertData(ctx, sheetName, headers, data)
 	}
 	// update data
@@ -175,24 +170,27 @@ func (s *Summary) appendData(ctx context.Context, eventTime time.Time, data map[
 		if calType == Sum {
 			currFloat, err := convertFloat(rowValues[index])
 			if err != nil {
-				log.Warning("number sheet value is invalid", map[string]interface{}{
-					s.primaryKey: value,
-					"column":     key,
-					"value":      rowValues[index],
-				})
+				s.service.logger.Warn().
+					Interface(s.primaryKey, value).
+					Interface("column", key).
+					Interface("value", rowValues[index]).
+					Str("sheet_name", sheetName).
+					Msg("number sheet value is invalid")
 			}
 			vFloat, err := convertFloat(v)
 			if err != nil {
-				log.Warning("number event value is invalid", map[string]interface{}{
-					s.primaryKey: value,
-					"column":     key,
-					"value":      v,
-				})
+				s.service.logger.Warn().
+					Interface(s.primaryKey, value).
+					Interface("column", key).
+					Interface("value", rowValues[index]).
+					Str("sheet_name", sheetName).
+					Msg("number event value is invalid")
 				continue
 			}
 			rowValues[index] = currFloat + vFloat
 		} else {
-			rowValues[index] = sheetValue(v)
+			v_, _ := sheetValue(v)
+			rowValues[index] = v_
 		}
 	}
 	return s.service.updateData(ctx, sheetName, rowIndex+1, rowValues)
@@ -206,15 +204,17 @@ func (s *Summary) insertData(ctx context.Context, sheetName string, headers map[
 		if calType == Sum {
 			vFloat, err := convertFloat(v)
 			if err != nil {
-				log.Warning("number event value is invalid", map[string]interface{}{
-					s.primaryKey: data[s.primaryKey],
-					"column":     key,
-					"value":      v,
-				})
+				s.service.logger.Warn().
+					Interface(s.primaryKey, data[s.primaryKey]).
+					Interface("column", key).
+					Interface("value", v).
+					Str("sheet_name", sheetName).
+					Msg("number event value is invalid")
 			}
 			values[index] = vFloat
 		} else {
-			values[index] = sheetValue(v)
+			v_, _ := sheetValue(v)
+			values[index] = v_
 		}
 	}
 	err := s.service.appendData(ctx, sheetName, [][]interface{}{values})

@@ -7,14 +7,19 @@ import (
 )
 
 func (s *mailchimpSink) getList(event *ce.Event) (*gochimp3.ListResponse, error) {
-	id, exist := event.Extensions()[AttrAudienceID].(string)
-	if !exist {
+	id, ok := event.Extensions()[AttrAudienceID].(string)
+	if !ok {
 		id = s.config.AudienceID
 	}
-	if s.list != nil {
-		return s.list, nil
+	if list, exist := s.listMap[id]; exist {
+		return list, nil
 	}
-	return s.api.GetList(id, nil)
+	list, err := s.api.GetList(id, nil)
+	if err != nil {
+		return nil, err
+	}
+	s.listMap[id] = list
+	return list, nil
 }
 
 func (s *mailchimpSink) addMember(list *gochimp3.ListResponse, event *ce.Event) error {

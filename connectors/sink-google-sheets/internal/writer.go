@@ -18,8 +18,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 type BufferWriter struct {
@@ -27,16 +25,18 @@ type BufferWriter struct {
 	flushInterval time.Duration
 	flushSize     int
 	// sheetName: rows
-	buffer map[string][][]interface{}
-	lock   sync.RWMutex
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     sync.WaitGroup
+	buffer    map[string][][]interface{}
+	failFlush map[string]int
+	lock      sync.RWMutex
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
 }
 
 func newBufferWriter(service *GoogleSheetService, flushInterval time.Duration, flushSize int) *BufferWriter {
 	return &BufferWriter{
 		buffer:        map[string][][]interface{}{},
+		failFlush:     map[string]int{},
 		service:       service,
 		flushInterval: flushInterval,
 		flushSize:     flushSize,
@@ -45,7 +45,7 @@ func newBufferWriter(service *GoogleSheetService, flushInterval time.Duration, f
 
 func (w *BufferWriter) AppendData(sheetName string, value []interface{}) error {
 	w.lock.Lock()
-	w.lock.Unlock()
+	defer w.lock.Unlock()
 	values := append(w.buffer[sheetName], value)
 	w.buffer[sheetName] = values
 	if len(values) >= w.flushSize {
@@ -56,20 +56,19 @@ func (w *BufferWriter) AppendData(sheetName string, value []interface{}) error {
 
 func (w *BufferWriter) FlushSheet(sheetName string) error {
 	w.lock.Lock()
-	w.lock.Unlock()
+	defer w.lock.Unlock()
 	return w.flushBySheet(sheetName)
 }
 
 func (w *BufferWriter) flushAll() {
 	w.lock.Lock()
-	w.lock.Unlock()
+	defer w.lock.Unlock()
 	for sheetName := range w.buffer {
 		err := w.flushBySheet(sheetName)
 		if err != nil {
-			log.Error("append sheet data error", map[string]interface{}{
-				log.KeyError: err,
-				"sheetName":  sheetName,
-			})
+			w.service.logger.Error().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("append sheet data error")
 		}
 	}
 }
@@ -107,8 +106,23 @@ func (w *BufferWriter) flushBySheet(sheetName string) error {
 	defer cancel()
 	err := w.service.appendData(ctx, sheetName, values)
 	if err != nil {
+		c, exist := w.failFlush[sheetName]
+		if !exist {
+			c = 0
+		}
+		if c >= 3 {
+			w.service.logger.Error().Str("sheet_name", sheetName).
+				Int("length", len(values)).
+				Msg("flush max buffer data discard")
+			delete(w.buffer, sheetName)
+			delete(w.failFlush, sheetName)
+		} else {
+			c++
+			w.failFlush[sheetName] = c
+		}
 		return err
 	}
 	delete(w.buffer, sheetName)
+	delete(w.failFlush, sheetName)
 	return nil
 }
