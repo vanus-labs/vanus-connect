@@ -45,7 +45,7 @@ public class TableWriter {
         }
     }
 
-    public void init() throws SQLException {
+    public synchronized void init() throws SQLException {
         exceptionCount = 0;
         this.sqlExecutor = getSqlExecutor();
         sqlExecutor.prepareStatement(connection);
@@ -81,11 +81,11 @@ public class TableWriter {
         sqlExecutor.prepareStatement(connection);
     }
 
-    public TableMetadata getTableMetadata() {
+    public synchronized TableMetadata getTableMetadata() {
         return this.metadata;
     }
 
-    public void updateTableMetadata(TableMetadata tableMetadata) throws SQLException {
+    public synchronized void updateTableMetadata(TableMetadata tableMetadata) throws SQLException {
         try {
             flush();
             sqlExecutor.close();
