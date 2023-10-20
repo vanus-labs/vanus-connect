@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/rs/zerolog"
 	"golang.org/x/oauth2/google"
 
 	"google.golang.org/api/option"
@@ -27,8 +28,6 @@ import (
 
 	"github.com/pkg/errors"
 	"google.golang.org/api/sheets/v4"
-
-	"github.com/vanus-labs/cdk-go/log"
 )
 
 var (
@@ -41,10 +40,12 @@ type GoogleSheetService struct {
 	sheetIDs      map[string]int64          // key: sheetName, value: sheetID
 	sheetHeaders  map[string]map[string]int // key: sheetName, value: sheet headers
 	lock          sync.RWMutex
+	logger        zerolog.Logger
 }
 
-func newGoogleSheetService(spreadSheetID, credentialsJSON string, oauthCfg *OAuth) (*GoogleSheetService, error) {
+func newGoogleSheetService(spreadSheetID, credentialsJSON string, oauthCfg *OAuth, logger zerolog.Logger) (*GoogleSheetService, error) {
 	service := &GoogleSheetService{
+		logger:       logger,
 		sheetHeaders: map[string]map[string]int{},
 		sheetIDs:     map[string]int64{},
 	}
@@ -147,10 +148,7 @@ func (s *GoogleSheetService) createSheetIfNotExist(ctx context.Context, sheetNam
 		// sheetName no exist sheetID, create the sheetName
 		err := s.createSheet(ctx, sheetName)
 		if err != nil {
-			log.Error("create sheet error", map[string]interface{}{
-				log.KeyError: err,
-				"sheetName":  sheetName,
-			})
+			s.logger.Error().Err(err).Str("sheet_name", sheetName).Msg("create sheet error")
 			return err
 		}
 	}
@@ -173,35 +171,32 @@ func (s *GoogleSheetService) createSheet(ctx context.Context, sheetName string) 
 	for retry := 0; retry < 3; retry++ {
 		spreadSheet, err := s.client.Spreadsheets.Get(s.spreadsheetID).Do()
 		if err != nil {
-			log.Warning("get spread sheets error", map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Warn().Err(err).Str("sheet_name", sheetName).Msg("get spread sheets error")
 			continue
 		}
 		for _, sheet := range spreadSheet.Sheets {
 			if sheet.Properties.Title == sheetName {
-				log.Info("sheet create success", map[string]interface{}{
-					"sheet_name": sheetName,
-					"sheet_id":   sheet.Properties.SheetId,
-				})
+				s.logger.Info().
+					Str("sheet_name", sheetName).
+					Int64("sheet_id", sheet.Properties.SheetId).
+					Msg("create sheet success")
 				s.sheetIDs[sheetName] = sheet.Properties.SheetId
 				return nil
 			}
 		}
-		log.Info("sheet no exist will create it", map[string]interface{}{
-			"sheet_name": sheetName,
-		})
+		s.logger.Info().
+			Str("sheet_name", sheetName).
+			Msg("sheet no exist will create it")
 		_, err = s.client.Spreadsheets.BatchUpdate(s.spreadsheetID, &updateRequests).Context(ctx).Do()
 		if err != nil {
-			log.Info("sheet create error", map[string]interface{}{
-				log.KeyError: err,
-				"sheet_name": sheetName,
-			})
+			s.logger.Info().Err(err).
+				Str("sheet_name", sheetName).
+				Msg("create sheet error")
 			continue
 		}
-		log.Info("sheet create api success", map[string]interface{}{
-			"sheet_name": sheetName,
-		})
+		s.logger.Info().
+			Str("sheet_name", sheetName).
+			Msg("sheet create api success")
 	}
 
 	return errors.New("create sheet failed")

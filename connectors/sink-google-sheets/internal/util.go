@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit#gid=0
@@ -45,20 +47,25 @@ func getSpreadsheetID(sheetURL string) (string, error) {
 	return arr[0], nil
 }
 
-func sheetValue(value interface{}) interface{} {
+var errValueTooLength = errors.New("value too length")
+
+func sheetValue(value interface{}) (interface{}, error) {
 	if value == nil {
-		return nil
+		return nil, nil
 	}
 	switch value.(type) {
 	case string, bool, float64:
-		return value
+		return value, nil
 	default:
 		v, err := json.Marshal(value)
-		if err == nil {
-			return string(v)
+		if err != nil {
+			return nil, err
 		}
+		if len(v) > 50000 {
+			return nil, errValueTooLength
+		}
+		return string(v), nil
 	}
-	return nil
 }
 
 func convertFloat(value interface{}) (v float64, err error) {
