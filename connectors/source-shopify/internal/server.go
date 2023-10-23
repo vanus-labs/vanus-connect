@@ -86,6 +86,7 @@ func (c *shopifySource) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(body, &m)
 	e.SetData(ce.ApplicationJSON, m)
 
+	e.SetExtension(extendAttributesTopic, topic)
 	e.SetExtension(extendAttributesWebhookID, r.Header.Get(headerWebhookID))
 	e.SetExtension(extendAttributesShopDomain, r.Header.Get(headerShopDomain))
 	e.SetExtension(extendAttributesAPIVersion, r.Header.Get(headerAPIVersion))
