@@ -20,5 +20,5 @@ import (
 )
 
 func main() {
-	cdkgo.RunSource(internal.NewConfig, internal.NewShopifySource)
+	cdkgo.RunHttpSource(internal.NewConfig, internal.NewShopifySource)
 }
