@@ -224,8 +224,10 @@ func (b *bot) event2BotMessage(e *v2.Event, msgType messageType) (*botMessage, e
 			return nil, err
 		}
 		msg.Card = m
+	default:
+		return nil, errMessageType.Error()
 	}
-	return nil, errMessageType.Error()
+	return msg, nil
 }
 
 func isJSONString(e *v2.Event) bool {
@@ -246,135 +248,6 @@ func isJSONString(e *v2.Event) bool {
 	return false
 }
 
-func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
-	var text string
-	if isJSONString(e) {
-		err := json.Unmarshal(e.Data(), &text)
-		if err != nil {
-			return err
-		}
-	} else {
-		text = string(e.Data())
-	}
-	content := map[string]interface{}{
-		"text": text,
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.URL)
-		if err != nil {
-
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
-	m := map[string]interface{}{}
-	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
-
-		return errInvalidPostMessage
-	}
-	content := map[string]interface{}{
-		"post": m,
-	}
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.URL)
-		if err != nil {
-
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendShareChatMessage(e *v2.Event, whs []WebHook) error {
-	content := map[string]interface{}{
-		"share_chat_id": string(e.Data()),
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
-	content := map[string]interface{}{
-		"image_key": string(e.Data()),
-	}
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
-	m := map[string]interface{}{}
-
-	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
-		return errInvalidPostMessage
-	}
-
-	t := time.Now()
-	payload := map[string]interface{}{
-		"timestamp": t.Unix(),
-		"msg_type":  interactiveMessage,
-		"card":      m,
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		if wh.Signature != "" {
-			payload["sign"] = b.genSignature(t.Unix(), wh.Signature)
-		}
-		res, err := b.httpClient.R().SetBody(payload).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-		delete(payload, "sign")
-	}
-
-	return nil
-}
-
 func (b *bot) genSignature(timestamp int64, signature string) string {
 	if signature == "" {
 		return ""
@@ -382,19 +255,6 @@ func (b *bot) genSignature(timestamp int64, signature string) string {
 	strToSign := fmt.Sprintf("%d\n%s", timestamp, signature)
 	h := hmac.New(sha256.New, []byte(strToSign))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
-}
-
-func (b *bot) generatePayload(content map[string]interface{}, msgType messageType, wh WebHook) interface{} {
-	t := time.Now()
-	payload := map[string]interface{}{
-		"timestamp": t.Unix(),
-		"msg_type":  msgType,
-		"content":   content,
-	}
-	if wh.Signature != "" {
-		payload["sign"] = b.genSignature(t.Unix(), wh.Signature)
-	}
-	return payload
 }
 
 type botContent struct {
