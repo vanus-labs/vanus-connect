@@ -86,13 +86,9 @@ func (f *feishuSink) Arrived(_ context.Context, events ...*v2.Event) cdkgo.Resul
 	}
 
 	atomic.AddInt64(&f.count, int64(len(events)))
-
 	e := events[0]
-	if err := f.b.sendMessage(e); err != nil {
-		return cdkgo.NewResult(http.StatusInternalServerError, err.Error())
-	}
 
-	return cdkgo.SuccessResult
+	return f.b.sendMessage(e)
 }
 
 func (f *feishuSink) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {

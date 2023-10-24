@@ -21,13 +21,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
 	v2 "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-resty/resty/v2"
 	"github.com/rs/zerolog"
-	"github.com/tidwall/gjson"
+
+	cdk "github.com/vanus-labs/cdk-go"
 )
 
 type messageType string
@@ -46,14 +48,14 @@ const (
 )
 
 var (
-	errChatGroup = errors.New("feishu: xvfeishuchatgroup is missing or incorrect, please check your Feishu " +
+	errChatGroup = cdk.NewResult(http.StatusBadRequest, "feishu: xvfeishuchatgroup is missing or incorrect, please check your Feishu "+
 		"Sink config or subscription")
-	errMessageType = errors.New("feishu: xvfeishumsgtype is missing or invalid, only" +
+	errMessageType = cdk.NewResult(http.StatusBadRequest, "feishu: xvfeishumsgtype is missing or invalid, only"+
 		" [text, post, share_chat, image, interactive] are supported")
 	errInvalidPostMessage     = errors.New("feishu: invalid post message, please make sure it's the json format")
-	errInvalidAttributes      = errors.New("feishu: invalid xvfeishuboturls or xvfeishubotsigs")
-	errInvalidAttributeNumber = errors.New("feishu: the number of bot url and signature must be equal")
-	errNoBotWebhookFound      = errors.New("feishu: no feishu bot target webhook found")
+	errInvalidAttributes      = cdk.NewResult(http.StatusBadRequest, "feishu: invalid xvfeishuboturls or xvfeishubotsigs")
+	errInvalidAttributeNumber = cdk.NewResult(http.StatusBadRequest, "feishu: the number of bot url and signature must be equal")
+	errNoBotWebhookFound      = cdk.NewResult(http.StatusBadRequest, "feishu: no feishu bot target webhook found")
 )
 
 type bot struct {
@@ -108,17 +110,11 @@ func (c *BotConfig) Validate() error {
 	return nil
 }
 
-func (b *bot) sendMessage(e *v2.Event) (err error) {
+func (b *bot) sendMessage(e *v2.Event) cdk.Result {
 	var (
 		whs     []WebHook
 		groupID string
 	)
-	defer func() {
-		if err != nil {
-			d, _ := e.MarshalJSON()
-			b.logger.Warn().Str("event", string(d)).Interface("webhooks", whs).Err(err).Msg("failed to send message")
-		}
-	}()
 	groupID, ok := e.Extensions()[xChatGroupID].(string)
 	if ok {
 		wh, exist := b.cm[groupID]
@@ -164,21 +160,74 @@ func (b *bot) sendMessage(e *v2.Event) (err error) {
 	if !ok {
 		t = string(textMessage)
 	}
-	switch messageType(t) {
-	case textMessage:
-		return b.sendTextMessage(e, whs)
-	case postMessage:
-		return b.sendPostMessage(e, whs)
-	case shareChatMessage:
-		return b.sendShareChatMessage(e, whs)
-	case imageMessage:
-		return b.sendImageMessage(e, whs)
-	case interactiveMessage:
-		return b.sendInteractiveMessage(e, whs)
-	default:
-		return errMessageType
+	botMsg, err := b.event2BotMessage(e, messageType(t))
+	if err != nil {
+		return cdk.NewResult(http.StatusBadRequest, "event parse error:"+err.Error())
 	}
+	now := time.Now().Unix()
+	for _, wh := range whs {
+		if wh.Signature != "" {
+			botMsg.Timestamp = &now
+			botMsg.Sign = b.genSignature(now, wh.Signature)
+		} else {
+			botMsg.Timestamp = nil
+			botMsg.Sign = ""
+		}
+		res, err := b.httpClient.R().SetBody(botMsg).Post(wh.URL)
+		if err != nil {
+			return cdk.NewResult(http.StatusInternalServerError, "call feishu error: "+err.Error())
+		}
+		if err = b.processResponse(e, res); err != nil {
+			return cdk.NewResult(http.StatusBadRequest, "call feishu response error:"+err.Error())
+		}
+	}
+	return cdk.SuccessResult
+}
 
+func (b *bot) event2BotMessage(e *v2.Event, msgType messageType) (*botMessage, error) {
+	msg := &botMessage{
+		MsgType: msgType,
+	}
+	switch msgType {
+	case textMessage:
+		var text string
+		if isJSONString(e) {
+			err := json.Unmarshal(e.Data(), &text)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			text = string(e.Data())
+		}
+		msg.Content = &botContent{
+			Text: text,
+		}
+	case postMessage:
+		m := map[string]interface{}{}
+		if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
+			return nil, err
+		}
+		msg.Content = &botContent{
+			Post: m,
+		}
+	case shareChatMessage:
+		msg.Content = &botContent{
+			ShareChatID: string(e.Data()),
+		}
+	case imageMessage:
+		msg.Content = &botContent{
+			ImageKey: string(e.Data()),
+		}
+	case interactiveMessage:
+		m := map[string]interface{}{}
+		if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
+			return nil, err
+		}
+		msg.Card = m
+	default:
+		return nil, errMessageType.Error()
+	}
+	return msg, nil
 }
 
 func isJSONString(e *v2.Event) bool {
@@ -199,162 +248,46 @@ func isJSONString(e *v2.Event) bool {
 	return false
 }
 
-func (b *bot) sendTextMessage(e *v2.Event, whs []WebHook) error {
-	var text string
-	if isJSONString(e) {
-		err := json.Unmarshal(e.Data(), &text)
-		if err != nil {
-			return err
-		}
-	} else {
-		text = string(e.Data())
-	}
-	content := map[string]interface{}{
-		"text": text,
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, textMessage, wh)).Post(wh.URL)
-		if err != nil {
-
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendPostMessage(e *v2.Event, whs []WebHook) error {
-	m := map[string]interface{}{}
-	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
-
-		return errInvalidPostMessage
-	}
-	content := map[string]interface{}{
-		"post": m,
-	}
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, postMessage, wh)).Post(wh.URL)
-		if err != nil {
-
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendShareChatMessage(e *v2.Event, whs []WebHook) error {
-	content := map[string]interface{}{
-		"share_chat_id": string(e.Data()),
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, shareChatMessage, wh)).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendImageMessage(e *v2.Event, whs []WebHook) error {
-	content := map[string]interface{}{
-		"image_key": string(e.Data()),
-	}
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		res, err := b.httpClient.R().SetBody(b.generatePayload(content, imageMessage, wh)).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *bot) sendInteractiveMessage(e *v2.Event, whs []WebHook) error {
-	m := map[string]interface{}{}
-
-	if err := json.Unmarshal(trim(e.Data()), &m); err != nil {
-		return errInvalidPostMessage
-	}
-
-	t := time.Now()
-	payload := map[string]interface{}{
-		"timestamp": t.Unix(),
-		"msg_type":  interactiveMessage,
-		"card":      m,
-	}
-
-	for _, wh := range whs {
-		if wh.URL == "" {
-			continue
-		}
-		if wh.Signature != "" {
-			payload["sign"] = b.genSignature(t, wh.Signature)
-		}
-		res, err := b.httpClient.R().SetBody(payload).Post(wh.URL)
-		if err != nil {
-			return err
-		}
-		if err = b.processResponse(e, res); err != nil {
-			return err
-		}
-		delete(payload, "sign")
-	}
-
-	return nil
-}
-
-func (b *bot) genSignature(t time.Time, signature string) string {
+func (b *bot) genSignature(timestamp int64, signature string) string {
 	if signature == "" {
 		return ""
 	}
-	strToSign := fmt.Sprintf("%d\n%s", t.Unix(), signature)
+	strToSign := fmt.Sprintf("%d\n%s", timestamp, signature)
 	h := hmac.New(sha256.New, []byte(strToSign))
 	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
-func (b *bot) generatePayload(content map[string]interface{}, msgType messageType, wh WebHook) interface{} {
-	t := time.Now()
-	payload := map[string]interface{}{
-		"timestamp": t.Unix(),
-		"msg_type":  msgType,
-		"content":   content,
-	}
-	if wh.Signature != "" {
-		payload["sign"] = b.genSignature(t, wh.Signature)
-	}
-	return payload
+type botContent struct {
+	Text        string                 `json:"text,omitempty"`
+	Post        map[string]interface{} `json:"post,omitempty"`
+	ShareChatID string                 `json:"share_chat_id,omitempty"`
+	ImageKey    string                 `json:"image_key,omitempty"`
+}
+
+type botMessage struct {
+	MsgType messageType            `json:"msg_type"`
+	Content *botContent            `json:"content,omitempty"`
+	Card    map[string]interface{} `json:"card,omitempty"`
+
+	Sign      string `json:"sign,omitempty"`
+	Timestamp *int64 `json:"timestamp,omitempty"`
+}
+
+type botResponse struct {
+	Code int `json:"code"`
+	//Msg  string `json:"msg"`
 }
 
 func (b *bot) processResponse(e *v2.Event, res *resty.Response) error {
 	// docs: https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN?lang=zh-CN#756b882f
-	obj := gjson.ParseBytes(res.Body())
-	if obj.Get("StatusCode").Int() == 0 &&
-		obj.Get("StatusMessage").String() == "success" {
+	var resp botResponse
+	err := json.Unmarshal(res.Body(), &resp)
+	if err != nil {
+		b.logger.Info().Err(err).Str("event_id", e.ID()).
+			Str("body", string(res.Body())).Msg("unmarshal error")
+		return err
+	}
+	if resp.Code == 0 {
 		b.logger.Info().Str("event_id", e.ID()).Msg("success send message to feishu Bot")
 		return nil
 	}
