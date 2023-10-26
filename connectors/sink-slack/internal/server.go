@@ -82,16 +82,16 @@ func (e *slackSink) Arrived(ctx context.Context, events ...*v2.Event) cdkgo.Resu
 		}
 		m := &Message{}
 		if err := json.Unmarshal(event.Data(), m); err != nil {
-			e.logger.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("json unmarshal failed")
+			e.logger.Error().Err(err).Str("channel", channelID).Str("event_id", event.ID()).Msg("json unmarshal failed")
 			return errInvalidMessage
 		}
 		if err := m.validate(); err != nil {
-			e.logger.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("message validate failed")
+			e.logger.Error().Err(err).Str("channel", channelID).Str("event_id", event.ID()).Msg("message validate failed")
 			return errInvalidMessage
 		}
 		start := time.Now()
 		if err := e.send(ctx, channelID, m); err != nil {
-			e.logger.Error().Str("channel", channelID).Str("event_id", event.ID()).Msg("failed to send slack")
+			e.logger.Error().Err(err).Str("channel", channelID).Str("event_id", event.ID()).Msg("failed to send slack")
 			return errFailedToSend
 		} else if time.Now().Sub(start) > time.Second {
 			e.logger.Info().Str("channel", channelID).Str("event_id", event.ID()).
