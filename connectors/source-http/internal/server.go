@@ -106,19 +106,29 @@ func (c *httpSource) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	e := v2.NewEvent()
 	mappingAttributes(req, he, &e)
 
-	// try to convert request.Body to json
-	m := map[string]interface{}{}
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	err = json.Unmarshal(body, &m)
-	if err == nil {
-		he.Body = m
-		e.SetExtension(extendAttributesBodyIsJSON, true)
-	} else {
+	bodyType := getBodyType(body)
+	if bodyType > 0 {
+		var m interface{}
+		if bodyType == 1 {
+			// object
+			m = map[string]interface{}{}
+		} else if bodyType == 2 {
+			// array
+			m = []interface{}{}
+		}
+		err = json.Unmarshal(body, &m)
+		if err == nil {
+			he.Body = m
+			e.SetExtension(extendAttributesBodyIsJSON, true)
+		}
+	}
+	if bodyType == 0 || err != nil {
 		he.Body = string(body)
 		e.SetExtension(extendAttributesBodyIsJSON, false)
 	}
@@ -169,6 +179,22 @@ func getHeaders(req *http.Request) map[string]string {
 		m[key] = header[0]
 	}
 	return m
+}
+
+func getBodyType(body []byte) int {
+	for _, c := range body {
+		switch c {
+		case ' ', '\t':
+			continue
+		case '{':
+			return 1
+		case '[':
+			return 2
+		default:
+			return 0
+		}
+	}
+	return 0
 }
 
 func mappingAttributes(req *http.Request, he *HTTPEvent, e *v2.Event) {
