@@ -30,6 +30,7 @@ import (
 	"github.com/rs/zerolog"
 
 	cdk "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/connector"
 )
 
 type messageType string
@@ -177,8 +178,8 @@ func (b *bot) sendMessage(e *v2.Event) cdk.Result {
 		if err != nil {
 			return cdk.NewResult(http.StatusInternalServerError, "call feishu error: "+err.Error())
 		}
-		if err = b.processResponse(e, res); err != nil {
-			return cdk.NewResult(http.StatusBadRequest, "call feishu response error:"+err.Error())
+		if code, err := b.processResponse(e, res); err != nil {
+			return cdk.NewResult(connector.Code(code), "call feishu response error:"+err.Error())
 		}
 	}
 	return cdk.SuccessResult
@@ -278,20 +279,27 @@ type botResponse struct {
 	//Msg  string `json:"msg"`
 }
 
-func (b *bot) processResponse(e *v2.Event, res *resty.Response) error {
+func (b *bot) processResponse(e *v2.Event, res *resty.Response) (int, error) {
 	// docs: https://open.feishu.cn/document/ukTMukTMukTM/ucTM5YjL3ETO24yNxkjN?lang=zh-CN#756b882f
 	var resp botResponse
 	err := json.Unmarshal(res.Body(), &resp)
 	if err != nil {
 		b.logger.Info().Err(err).Str("event_id", e.ID()).
 			Str("body", string(res.Body())).Msg("unmarshal error")
-		return err
+		return http.StatusBadRequest, err
 	}
 	if resp.Code == 0 {
 		b.logger.Info().Str("event_id", e.ID()).Msg("success send message to feishu Bot")
-		return nil
+		return 0, nil
 	}
-	return fmt.Errorf("failed to call feishu: %s", string(res.Body()))
+	var code int
+	switch resp.Code {
+	case 9499:
+		code = http.StatusTooManyRequests
+	default:
+		code = http.StatusBadRequest
+	}
+	return code, fmt.Errorf("failed to call feishu: %s", string(res.Body()))
 }
 
 func trim(data []byte) []byte {
