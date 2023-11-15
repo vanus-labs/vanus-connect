@@ -16,11 +16,11 @@ package internal
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	goshopify "github.com/bold-commerce/go-shopify/v3"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -42,9 +42,11 @@ type shopifySource struct {
 	client        *goshopify.Client
 	syncBeginTime time.Time
 	syncInternal  time.Duration
+	logger        zerolog.Logger
 }
 
 func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*shopifyConfig)
 	t, err := time.Parse("2006-01-02", s.config.SyncBeginDate)
 	if err != nil {
@@ -59,7 +61,7 @@ func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 		s.config.SyncIntervalHour = 1
 	}
 	s.syncInternal = time.Duration(s.config.SyncIntervalHour) * time.Hour
-	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-04"))
+	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-10"))
 	go s.start(ctx)
 	return nil
 }
@@ -82,9 +84,9 @@ func (s *shopifySource) initSyncTime(ctx context.Context) error {
 		return errors.Wrap(err, "get sync begin date error")
 	}
 	if syncBeginDate == s.config.SyncBeginDate {
-		log.Info("sync begin date no change", map[string]interface{}{
-			"sync_begin_date": s.config.SyncBeginDate,
-		})
+		s.logger.Info().
+			Str("sync_begin_date", s.config.SyncBeginDate).
+			Msg("sync begin date no change")
 		return nil
 	}
 	for _, t := range syncApiArr {
@@ -97,9 +99,9 @@ func (s *shopifySource) initSyncTime(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrapf(err, "set sync begin date error")
 	}
-	log.Info("init sync time success", map[string]interface{}{
-		"sync_begin_date": s.config.SyncBeginDate,
-	})
+	s.logger.Info().
+		Str("sync_begin_date", s.config.SyncBeginDate).
+		Msg("init sync time success")
 	return nil
 }
 
@@ -121,16 +123,17 @@ func (s *shopifySource) sync(ctx context.Context) {
 	for _, apiType := range syncApiArr {
 		begin, err := getSyncTime(ctx, apiType)
 		if err != nil {
-			log.Warning(fmt.Sprintf("get %v sync begin timer error", apiType), map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Warn().Err(err).
+				Interface("api", apiType).
+				Msg("get sync begin timer error")
 			continue
 		}
 		end := time.Now().UTC()
-		log.Info(fmt.Sprintf("sync %v data begin", apiType), map[string]interface{}{
-			"begin_time": begin,
-			"end_time":   end,
-		})
+		s.logger.Info().
+			Time("begin", begin).
+			Time("end", end).
+			Interface("api", apiType).
+			Msg("sync data begin")
 		var c int
 		switch apiType {
 		case OrderApi:
@@ -139,25 +142,25 @@ func (s *shopifySource) sync(ctx context.Context) {
 			c, err = s.syncProducts(ctx, begin, end)
 		}
 		if err != nil {
-			log.Warning(fmt.Sprintf("sync %v data error", apiType), map[string]interface{}{
-				log.KeyError: err,
-				"count":      c,
-			})
+			s.logger.Warn().Err(err).
+				Interface("api", apiType).
+				Msg("sync data error")
 			continue
 		}
-		log.Info(fmt.Sprintf("sync %v data success", apiType), map[string]interface{}{
-			"count": c,
-		})
+		s.logger.Info().
+			Int("count", c).
+			Interface("api", apiType).
+			Msg("sync data success")
 		err = setSyncTime(ctx, apiType, end)
 		if err != nil {
-			log.Warning(fmt.Sprintf("%v set sync time error", apiType), map[string]interface{}{
-				log.KeyError: err,
-			})
+			s.logger.Warn().Err(err).
+				Interface("api", apiType).
+				Msg("set sync time error")
 		}
 	}
 }
 
-func (s *shopifySource) syncOrders(ctx context.Context, begin, end time.Time) (int, error) {
+func (s *shopifySource) syncOrders(_ context.Context, begin, end time.Time) (int, error) {
 	var listOptions interface{}
 	listOptions = &goshopify.OrderListOptions{
 		ListOptions: goshopify.ListOptions{
@@ -186,7 +189,7 @@ func (s *shopifySource) syncOrders(ctx context.Context, begin, end time.Time) (i
 	return c, nil
 }
 
-func (s *shopifySource) syncProducts(ctx context.Context, begin, end time.Time) (int, error) {
+func (s *shopifySource) syncProducts(_ context.Context, begin, end time.Time) (int, error) {
 	listOptions := &goshopify.ListOptions{
 		CreatedAtMin: begin,
 		CreatedAtMax: end,
