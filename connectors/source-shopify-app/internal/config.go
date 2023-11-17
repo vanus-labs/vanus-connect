@@ -24,6 +24,7 @@ type shopifyConfig struct {
 	ApiAccessToken     string `json:"api_access_token" yaml:"api_access_token" validate:"required"`
 	SyncBeginDate      string `json:"sync_begin_date" yaml:"sync_begin_date" validate:"required"`
 	SyncIntervalHour   int    `json:"sync_interval_hour" yaml:"sync_interval_hour"`
+	DelaySecond        int    `json:"delay_second" yaml:"delay_second"`
 }
 
 func NewConfig() cdkgo.SourceConfigAccessor {

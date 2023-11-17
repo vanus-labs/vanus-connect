@@ -60,6 +60,9 @@ func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 	if s.config.SyncIntervalHour <= 0 || s.config.SyncIntervalHour > 24 {
 		s.config.SyncIntervalHour = 1
 	}
+	if s.config.DelaySecond <= 0 {
+		s.config.DelaySecond = 5
+	}
 	s.syncInternal = time.Duration(s.config.SyncIntervalHour) * time.Hour
 	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-10"))
 	go s.start(ctx)
@@ -120,6 +123,7 @@ func (s *shopifySource) start(ctx context.Context) {
 }
 
 func (s *shopifySource) sync(ctx context.Context) {
+	time.Sleep(time.Second * time.Duration(s.config.DelaySecond))
 	for _, apiType := range syncApiArr {
 		begin, err := getSyncTime(ctx, apiType)
 		if err != nil {
