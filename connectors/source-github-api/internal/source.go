@@ -17,14 +17,17 @@ package internal
 import (
 	"context"
 	"fmt"
-	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/go-github/v52/github"
-	"github.com/google/uuid"
-	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/cdk-go/log"
-	"go.uber.org/ratelimit"
 	"sync"
 	"time"
+
+	ce "github.com/cloudevents/sdk-go/v2"
+	"github.com/google/go-github/v58/github"
+	"github.com/google/uuid"
+	"github.com/rs/zerolog"
+	"go.uber.org/ratelimit"
+
+	cdkgo "github.com/vanus-labs/cdk-go"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 var _ cdkgo.Source = &GitHubAPISource{}
@@ -35,6 +38,7 @@ type GitHubAPISource struct {
 	client  *github.Client
 	m       sync.Map
 	Limiter ratelimit.Limiter
+	logger  zerolog.Logger
 
 	numRepos   int
 	numRecords int
@@ -48,9 +52,10 @@ func Source() cdkgo.Source {
 }
 
 func (s *GitHubAPISource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
+	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*GitHubAPIConfig)
 	s.config.Init()
-	s.client = github.NewTokenClient(ctx, s.config.GitHubAccessToken)
+	s.client = github.NewClient(nil).WithAuthToken(s.config.GitHubAccessToken)
 	s.Limiter = ratelimit.New(s.config.GitHubHourLimit / 3600)
 
 	go s.start(ctx)
@@ -70,9 +75,7 @@ func (s *GitHubAPISource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *GitHubAPISource) start(ctx context.Context) {
-	log.Info("!!! starting !!!", map[string]interface{}{
-		"starting time": time.Now(),
-	})
+	s.logger.Info().Time("time", time.Now()).Msg("starting")
 
 	switch s.config.APIType {
 	case PR:
@@ -80,10 +83,7 @@ func (s *GitHubAPISource) start(ctx context.Context) {
 	case Contributor:
 		s.startContr(ctx)
 	}
-
-	log.Info("!!! ending !!!", map[string]interface{}{
-		"ending time": time.Now(),
-	})
+	s.logger.Info().Time("time", time.Now()).Msg("ending")
 }
 
 func (s *GitHubAPISource) sendEvent(eventType, org string, data map[string]interface{}) []byte {

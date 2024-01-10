@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	ce "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/go-github/v52/github"
+	"github.com/google/go-github/v58/github"
 	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"

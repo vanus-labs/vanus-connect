@@ -16,15 +16,11 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
-	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/store"
-)
-
-const (
-	storeKeySyncTime = "sync_time"
 )
 
 type apiType string
@@ -38,11 +34,10 @@ func syncBeginDateKey() string {
 	return fmt.Sprintf("sync_begin_date")
 }
 
-func getSyncBeginDate(ctx context.Context) (string, error) {
-	kvStore := cdkgo.GetKVStore()
-	v, err := kvStore.Get(ctx, syncBeginDateKey())
+func (s *shopifySource) getSyncBeginDate(ctx context.Context) (string, error) {
+	v, err := s.store.Get(ctx, syncBeginDateKey())
 	if err != nil {
-		if err == store.ErrKeyNotExist {
+		if errors.Is(err, store.ErrKeyNotExist) {
 			return "", nil
 		}
 		return "", err
@@ -50,18 +45,16 @@ func getSyncBeginDate(ctx context.Context) (string, error) {
 	return string(v), nil
 }
 
-func setSyncBeginDate(ctx context.Context, t string) error {
-	kvStore := cdkgo.GetKVStore()
-	return kvStore.Set(ctx, syncBeginDateKey(), []byte(t))
+func (s *shopifySource) setSyncBeginDate(ctx context.Context, t string) error {
+	return s.store.Set(ctx, syncBeginDateKey(), []byte(t))
 }
 
 func syncTimeKey(apiType apiType) string {
 	return fmt.Sprintf("sync_time_%s", apiType)
 }
 
-func getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
-	kvStore := cdkgo.GetKVStore()
-	v, err := kvStore.Get(ctx, syncTimeKey(apiType))
+func (s *shopifySource) getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
+	v, err := s.store.Get(ctx, syncTimeKey(apiType))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -72,7 +65,6 @@ func getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
 	return t, nil
 }
 
-func setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
-	kvStore := cdkgo.GetKVStore()
-	return kvStore.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
+func (s *shopifySource) setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
+	return s.store.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
 }
