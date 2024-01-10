@@ -24,7 +24,6 @@ import (
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
-	"github.com/vanus-labs/cdk-go/store"
 )
 
 var _ cdkgo.Source = &shopifySource{}
@@ -44,12 +43,10 @@ type shopifySource struct {
 	syncBeginTime time.Time
 	syncInternal  time.Duration
 	logger        zerolog.Logger
-	store         store.KVStore
 }
 
 func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
 	s.logger = log.FromContext(ctx)
-	s.store = store.FromContext(ctx)
 	s.config = cfg.(*shopifyConfig)
 	t, err := time.Parse("2006-01-02", s.config.SyncBeginDate)
 	if err != nil {
@@ -85,7 +82,7 @@ func (s *shopifySource) Chan() <-chan *cdkgo.Tuple {
 }
 
 func (s *shopifySource) initSyncTime(ctx context.Context) error {
-	syncBeginDate, err := s.getSyncBeginDate(ctx)
+	syncBeginDate, err := getSyncBeginDate(ctx)
 	if err != nil {
 		return errors.Wrap(err, "get sync begin date error")
 	}
@@ -96,12 +93,12 @@ func (s *shopifySource) initSyncTime(ctx context.Context) error {
 		return nil
 	}
 	for _, t := range syncApiArr {
-		err = s.setSyncTime(ctx, t, s.syncBeginTime)
+		err = setSyncTime(ctx, t, s.syncBeginTime)
 		if err != nil {
 			return errors.Wrapf(err, "api %v set sync time error", t)
 		}
 	}
-	err = s.setSyncBeginDate(ctx, s.config.SyncBeginDate)
+	err = setSyncBeginDate(ctx, s.config.SyncBeginDate)
 	if err != nil {
 		return errors.Wrapf(err, "set sync begin date error")
 	}
@@ -128,7 +125,7 @@ func (s *shopifySource) start(ctx context.Context) {
 func (s *shopifySource) sync(ctx context.Context) {
 	time.Sleep(time.Second * time.Duration(s.config.DelaySecond))
 	for _, apiType := range syncApiArr {
-		begin, err := s.getSyncTime(ctx, apiType)
+		begin, err := getSyncTime(ctx, apiType)
 		if err != nil {
 			s.logger.Warn().Err(err).
 				Interface("api", apiType).
@@ -158,7 +155,7 @@ func (s *shopifySource) sync(ctx context.Context) {
 			Int("count", c).
 			Interface("api", apiType).
 			Msg("sync data success")
-		err = s.setSyncTime(ctx, apiType, end)
+		err = setSyncTime(ctx, apiType, end)
 		if err != nil {
 			s.logger.Warn().Err(err).
 				Interface("api", apiType).

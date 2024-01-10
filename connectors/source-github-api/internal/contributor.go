@@ -16,9 +16,9 @@ package internal
 
 import (
 	"context"
-
-	"github.com/google/go-github/v58/github"
+	"github.com/google/go-github/v52/github"
 	lodash "github.com/samber/lo"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 func (s *GitHubAPISource) startContr(ctx context.Context) {
@@ -51,17 +51,19 @@ func (s *GitHubAPISource) listOrgRepo(ctx context.Context, orgName string) {
 		s.Limiter.Take()
 		repos, resp, err := s.client.Repositories.ListByOrg(ctx, orgName, listOption)
 		if err != nil {
-			s.logger.Warn().Err(err).Msg("repo list by org error")
+			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
+				log.KeyError: err,
+			})
 		}
 		if len(repos) == 0 {
 			break
 		}
-		s.logger.Info().
-			Str("org", orgName).
-			Int("page", listOption.ListOptions.Page).
-			Int("next_page", resp.NextPage).
-			Interface("rate", resp.Rate).
-			Msg("list by org")
+		log.Info("ListByOrg", map[string]interface{}{
+			"Page":         listOption.ListOptions.Page,
+			"Next Page":    resp.NextPage,
+			"GitHub Rate":  resp.Rate,
+			"Organization": orgName,
+		})
 
 		for _, repo := range repos {
 			if *repo.StargazersCount < 1000 {
@@ -91,7 +93,9 @@ func (s *GitHubAPISource) listUserRepo(ctx context.Context, user string) {
 		s.Limiter.Take()
 		repos, resp, err := s.client.Repositories.List(ctx, user, listOption)
 		if err != nil {
-			s.logger.Warn().Err(err).Msg("resp list error")
+			log.Warning("Repositories.ListByOrg error", map[string]interface{}{
+				log.KeyError: err,
+			})
 		}
 		if len(repos) == 0 {
 			break
@@ -125,7 +129,9 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 		s.Limiter.Take()
 		contributors, resp, err := s.client.Repositories.ListContributors(ctx, *repo.Owner.Login, *repo.Name, listOption)
 		if err != nil {
-			s.logger.Warn().Err(err).Msg("repo list contributors errors")
+			log.Warning("Repositories.ListContributors error", map[string]interface{}{
+				log.KeyError: err,
+			})
 		}
 		if len(contributors) == 0 {
 			break
@@ -136,14 +142,15 @@ func (s *GitHubAPISource) listContributors(ctx context.Context, repo *github.Rep
 		for _, contributor := range contributors {
 			s.userInfo(ctx, contributor, repo)
 		}
-		s.logger.Info().
-			Str("project", *repo.Name).
-			Int("page", listOption.ListOptions.Page).
-			Int("next_page", resp.NextPage).
-			Int("total_repo", s.numRepos).
-			Int("total_record", s.numRecords).
-			Int("project_record", projectRecords).
-			Msg("list contributors")
+
+		log.Info("ListContributors", map[string]interface{}{
+			"Page":           listOption.ListOptions.Page,
+			"Next Page":      resp.NextPage,
+			"Project":        *repo.Name,
+			"totalRecords":   s.numRecords,
+			"totalRepos":     s.numRepos,
+			"projectRecords": projectRecords,
+		})
 
 		if resp.NextPage <= listOption.ListOptions.Page {
 			break
@@ -159,7 +166,9 @@ func (s *GitHubAPISource) userInfo(ctx context.Context, contributor *github.Cont
 		s.Limiter.Take()
 		user0, _, err := s.client.Users.Get(ctx, *contributor.Login)
 		if err != nil {
-			s.logger.Warn().Err(err).Msg("user get error")
+			log.Warning("Users.Get error", map[string]interface{}{
+				log.KeyError: err,
+			})
 			return
 		}
 		user = user0

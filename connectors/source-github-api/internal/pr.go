@@ -16,19 +16,21 @@ package internal
 
 import (
 	"context"
-
-	"github.com/google/go-github/v58/github"
+	"github.com/google/go-github/v52/github"
 	lodash "github.com/samber/lo"
+	"github.com/vanus-labs/cdk-go/log"
 )
 
 func (s *GitHubAPISource) startPR(ctx context.Context) {
 	for i := range s.config.PRConfigs {
 		config := s.config.PRConfigs[i]
 		s.listPullRequests(ctx, config)
-		s.logger.Info().Str("organization", config.Organization).
-			Str("repo", config.Repo).
-			Int("prs", s.numPRs).
-			Msg("listPullRequests")
+
+		log.Info("listPullRequests", map[string]interface{}{
+			"Organization": config.Organization,
+			"Repo":         config.Repo,
+			"numPRs":       s.numPRs,
+		})
 	}
 }
 
@@ -45,7 +47,9 @@ func (s *GitHubAPISource) listPullRequests(ctx context.Context, config PRConfig)
 		s.Limiter.Take()
 		prs, resp, err := s.client.PullRequests.List(ctx, config.Organization, config.Repo, listOption)
 		if err != nil {
-			s.logger.Warn().Err(err).Msg("pull request list error")
+			log.Warning("PullRequests.List error", map[string]interface{}{
+				log.KeyError: err,
+			})
 		}
 		if len(prs) == 0 {
 			break

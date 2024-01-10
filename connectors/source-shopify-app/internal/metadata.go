@@ -16,11 +16,15 @@ package internal
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
+	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/store"
+)
+
+const (
+	storeKeySyncTime = "sync_time"
 )
 
 type apiType string
@@ -34,10 +38,11 @@ func syncBeginDateKey() string {
 	return fmt.Sprintf("sync_begin_date")
 }
 
-func (s *shopifySource) getSyncBeginDate(ctx context.Context) (string, error) {
-	v, err := s.store.Get(ctx, syncBeginDateKey())
+func getSyncBeginDate(ctx context.Context) (string, error) {
+	kvStore := cdkgo.GetKVStore()
+	v, err := kvStore.Get(ctx, syncBeginDateKey())
 	if err != nil {
-		if errors.Is(err, store.ErrKeyNotExist) {
+		if err == store.ErrKeyNotExist {
 			return "", nil
 		}
 		return "", err
@@ -45,16 +50,18 @@ func (s *shopifySource) getSyncBeginDate(ctx context.Context) (string, error) {
 	return string(v), nil
 }
 
-func (s *shopifySource) setSyncBeginDate(ctx context.Context, t string) error {
-	return s.store.Set(ctx, syncBeginDateKey(), []byte(t))
+func setSyncBeginDate(ctx context.Context, t string) error {
+	kvStore := cdkgo.GetKVStore()
+	return kvStore.Set(ctx, syncBeginDateKey(), []byte(t))
 }
 
 func syncTimeKey(apiType apiType) string {
 	return fmt.Sprintf("sync_time_%s", apiType)
 }
 
-func (s *shopifySource) getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
-	v, err := s.store.Get(ctx, syncTimeKey(apiType))
+func getSyncTime(ctx context.Context, apiType apiType) (time.Time, error) {
+	kvStore := cdkgo.GetKVStore()
+	v, err := kvStore.Get(ctx, syncTimeKey(apiType))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -65,6 +72,7 @@ func (s *shopifySource) getSyncTime(ctx context.Context, apiType apiType) (time.
 	return t, nil
 }
 
-func (s *shopifySource) setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
-	return s.store.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
+func setSyncTime(ctx context.Context, apiType apiType, t time.Time) error {
+	kvStore := cdkgo.GetKVStore()
+	return kvStore.Set(ctx, syncTimeKey(apiType), []byte(t.Format(time.RFC3339)))
 }

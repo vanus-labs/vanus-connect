@@ -23,7 +23,6 @@ import (
 	ce "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/event"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
 	"github.com/vanus-labs/cdk-go/log"
@@ -42,11 +41,9 @@ type cloudEventsSource struct {
 	events chan *cdkgo.Tuple
 	count  int64
 	server ce.Client
-	logger zerolog.Logger
 }
 
 func (s *cloudEventsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
-	s.logger = log.FromContext(ctx)
 	s.config = cfg.(*cloudEventsConfig)
 	if s.config.Port <= 0 {
 		s.config.Port = 8080
@@ -64,7 +61,7 @@ func (s *cloudEventsSource) Initialize(ctx context.Context, cfg cdkgo.ConfigAcce
 	}
 	s.server = server
 	go func() {
-		if err = s.server.StartReceiver(ctx, s.handleEvent); err != nil {
+		if err := s.server.StartReceiver(ctx, s.handleEvent); err != nil {
 			panic(fmt.Sprintf("start CloudEvents receiver failed: %s", err.Error()))
 		}
 	}()
@@ -85,9 +82,13 @@ func (s *cloudEventsSource) Chan() <-chan *cdkgo.Tuple {
 
 func (s *cloudEventsSource) handleEvent(_ context.Context, e event.Event) ce.Result {
 	atomic.AddInt64(&s.count, 1)
-	s.logger.Info().Int64("total", atomic.LoadInt64(&s.count)).Msg("receive a new event")
+	log.Info("receive a new event", map[string]interface{}{
+		"in_total": atomic.LoadInt64(&s.count),
+	})
 	s.events <- &cdkgo.Tuple{Event: &e, Success: func() {
-		s.logger.Info().Str("event_id", e.ID()).Msg("send an event success")
+		log.Info("send an event success", map[string]interface{}{
+			"id": e.ID(),
+		})
 	}}
 	return ce.ResultACK
 }
