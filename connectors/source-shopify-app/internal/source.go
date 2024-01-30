@@ -19,7 +19,6 @@ import (
 	"time"
 
 	goshopify "github.com/bold-commerce/go-shopify/v3"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
 	cdkgo "github.com/vanus-labs/cdk-go"
@@ -29,22 +28,25 @@ import (
 
 var _ cdkgo.Source = &shopifySource{}
 
-func NewSource() cdkgo.Source {
+func NewSource() cdkgo.HTTPSource {
 	return &shopifySource{
-		events: make(chan *cdkgo.Tuple, 1024),
+		events:    make(chan *cdkgo.Tuple, 1024),
+		eventType: map[ApiType]struct{}{},
 	}
 }
 
-var syncApiArr = []apiType{OrderApi, ProductApi}
+var syncApiArr = []ApiType{OrderApi, ProductApi}
 
 type shopifySource struct {
 	events        chan *cdkgo.Tuple
 	config        *shopifyConfig
 	client        *goshopify.Client
 	syncBeginTime time.Time
-	syncInternal  time.Duration
+	eventType     map[ApiType]struct{}
 	logger        zerolog.Logger
 	store         store.KVStore
+	shopifyApp    goshopify.App
+	count         int64
 }
 
 func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor) error {
@@ -56,18 +58,14 @@ func (s *shopifySource) Initialize(ctx context.Context, cfg cdkgo.ConfigAccessor
 		return err
 	}
 	s.syncBeginTime = t
-	err = s.initSyncTime(ctx)
-	if err != nil {
-		return err
-	}
-	if s.config.SyncIntervalHour <= 0 || s.config.SyncIntervalHour > 24 {
-		s.config.SyncIntervalHour = 1
-	}
 	if s.config.DelaySecond <= 0 {
 		s.config.DelaySecond = 5
 	}
-	s.syncInternal = time.Duration(s.config.SyncIntervalHour) * time.Hour
-	s.client = goshopify.NewClient(goshopify.App{}, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2023-10"))
+	for _, et := range s.config.EventTypes {
+		s.eventType[et] = struct{}{}
+	}
+	s.shopifyApp = goshopify.App{ApiSecret: s.config.ClientSecret}
+	s.client = goshopify.NewClient(s.shopifyApp, s.config.ShopName, s.config.ApiAccessToken, goshopify.WithVersion("2024-01"))
 	go s.start(ctx)
 	return nil
 }
@@ -84,57 +82,34 @@ func (s *shopifySource) Chan() <-chan *cdkgo.Tuple {
 	return s.events
 }
 
-func (s *shopifySource) initSyncTime(ctx context.Context) error {
-	syncBeginDate, err := s.getSyncBeginDate(ctx)
-	if err != nil {
-		return errors.Wrap(err, "get sync begin date error")
-	}
-	if syncBeginDate == s.config.SyncBeginDate {
-		s.logger.Info().
-			Str("sync_begin_date", s.config.SyncBeginDate).
-			Msg("sync begin date no change")
-		return nil
-	}
-	for _, t := range syncApiArr {
-		err = s.setSyncTime(ctx, t, s.syncBeginTime)
-		if err != nil {
-			return errors.Wrapf(err, "api %v set sync time error", t)
-		}
-	}
-	err = s.setSyncBeginDate(ctx, s.config.SyncBeginDate)
-	if err != nil {
-		return errors.Wrapf(err, "set sync begin date error")
-	}
-	s.logger.Info().
-		Str("sync_begin_date", s.config.SyncBeginDate).
-		Msg("init sync time success")
-	return nil
-}
-
 func (s *shopifySource) start(ctx context.Context) {
 	s.sync(ctx)
-	t := time.NewTicker(s.syncInternal)
-	defer t.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-			s.sync(ctx)
-		}
-	}
 }
 
-func (s *shopifySource) sync(ctx context.Context) {
+func (s *shopifySource) isSync(t ApiType) bool {
+	if len(s.eventType) == 0 {
+		return true
+	}
+	_, exist := s.eventType[t]
+	return exist
+}
+func (s *shopifySource) sync(ctx context.Context) error {
 	time.Sleep(time.Second * time.Duration(s.config.DelaySecond))
 	for _, apiType := range syncApiArr {
-		begin, err := s.getSyncTime(ctx, apiType)
-		if err != nil {
-			s.logger.Warn().Err(err).
-				Interface("api", apiType).
-				Msg("get sync begin timer error")
+		if !s.isSync(apiType) {
+			s.logger.Info().Interface("api", apiType).Msg("sync ignore")
 			continue
 		}
+		need, err := s.isApiNeedSync(ctx, apiType)
+		if err != nil {
+			s.logger.Error().Err(err).Interface("api", apiType).Msg("check need sync error")
+			continue
+		}
+		if !need {
+			s.logger.Info().Interface("api", apiType).Msg("has sync")
+			continue
+		}
+		begin := s.syncBeginTime
 		end := time.Now().UTC()
 		s.logger.Info().
 			Time("begin", begin).
@@ -158,13 +133,14 @@ func (s *shopifySource) sync(ctx context.Context) {
 			Int("count", c).
 			Interface("api", apiType).
 			Msg("sync data success")
-		err = s.setSyncTime(ctx, apiType, end)
+		err = s.setApiSync(ctx, apiType)
 		if err != nil {
 			s.logger.Warn().Err(err).
 				Interface("api", apiType).
-				Msg("set sync time error")
+				Msg("set sync error")
 		}
 	}
+	return nil
 }
 
 func (s *shopifySource) syncOrders(_ context.Context, begin, end time.Time) (int, error) {
