@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@ package main
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/shopifyapp/internal"
+	"github.com/vanus-labs/connector/sink/mandrill/internal"
 )
 
 func main() {
-	cdkgo.RunHttpSource(internal.NewConfig, internal.NewSource)
+	cdkgo.RunSink(internal.NewConfig, internal.NewMandrillSink)
 }

@@ -1,4 +1,4 @@
-// Copyright 2022 Linkall Inc.
+// Copyright 2023 Linkall Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package internal
 
 import (
 	cdkgo "github.com/vanus-labs/cdk-go"
-	"github.com/vanus-labs/connector/source/shopifyapp/internal"
 )
 
-func main() {
-	cdkgo.RunHttpSource(internal.NewConfig, internal.NewSource)
+func NewConfig() cdkgo.SinkConfigAccessor {
+	return &sinkConfig{}
+}
+
+type sinkConfig struct {
+	cdkgo.SinkConfig `json:",inline" yaml:",inline"`
+
+	ApiKey       string `json:"api_key" yaml:"api_key" validate:"required"`
+	TemplateName string `json:"template_name" yaml:"template_name"`
 }

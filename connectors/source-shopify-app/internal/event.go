@@ -46,6 +46,7 @@ func (s *shopifySource) productEvent(products []goshopify.Product) {
 	for _, product := range products {
 		event := s.newEvent()
 		event.SetType("products")
+		event.SetExtension(extendAttributesAction, "create")
 		event.SetData(ce.ApplicationJSON, product)
 		s.events <- &cdkgo.Tuple{
 			Event: &event,
